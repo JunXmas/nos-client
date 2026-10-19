@@ -46,7 +46,9 @@ public final class SceneRenderer {
 	private int nW, nNear, nWater, nCl, nSB;
 	private Prog pw, ps, pp, psh, ppo, pcopy;
 	private int vaoW, vaoWater, vaoP, bufP, vaoCl, bufCl, vaoS, bufS, vaoEmpty;
-	private int txa, txw, txs, txm, fb, fbt, fbDepth, sfb, stx, mfb, mtx, mdt, outFbo, outTex = -1;
+	private int txa, txw, txs, txm, fb, fbt, fbDepth, sfb, stx, mfb, mtx, mdt, outFbo;
+	/** Texture màu của khung chính mà outFbo đang gắn — so theo ĐỐI TƯỢNG, không theo số id GL. */
+	private Object outTex;
 	private int tw = -1, th = -1, rw, rh;
 	private boolean[] cloudMask;
 	private int cShift = Integer.MIN_VALUE;
@@ -346,7 +348,8 @@ public final class SceneRenderer {
 
 	/** Ảnh phụ theo cỡ khung của game; dựng lại khi đổi cỡ cửa sổ. Khung ra gắn thẳng vào texture màu của khung chính. */
 	private void targets(RenderTarget main) {
-		int w = main.width, h = main.height, colorId = ((GlTexture) main.getColorTexture()).glId();
+		int w = main.width, h = main.height;
+		GlTexture color = (GlTexture) main.getColorTexture();
 		if (w != tw || h != th) {
 			if (tw > 0) {
 				glDeleteFramebuffers(new int[]{fb, mfb});
@@ -387,12 +390,14 @@ public final class SceneRenderer {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mdt, 0);
 			check("scene");
 		}
-		if (colorId != outTex) {
+		// Đổi GUI scale/cỡ cửa sổ: game xoá rồi tạo lại texture màu, và GL hay cấp lại ĐÚNG số id cũ.
+		// So số id thì tưởng không đổi → cứ vẽ vào texture cũ đã xoá (vẫn gắn trong FBO) → màn chính đen.
+		if (color != outTex) {
 			if (outFbo == 0) outFbo = glGenFramebuffers();
 			glBindFramebuffer(GL_FRAMEBUFFER, outFbo);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorId, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color.glId(), 0);
 			check("out");
-			outTex = colorId;
+			outTex = color;
 		}
 	}
 
