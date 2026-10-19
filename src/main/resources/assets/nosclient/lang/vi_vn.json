@@ -6,5 +6,14 @@
 	"nosclient.scene.dusk": "Tối",
 	"nosclient.scene.night": "Đêm",
 	"nosclient.scene.title": "CẢNH NỀN",
-	"nosclient.scene.tod": "Hoàng hôn – đêm"
+	"nosclient.scene.tod": "Hoàng hôn – đêm",
+	"nosclient.hud.day": "Ngày %s",
+	"nosclient.dir.n": "B",
+	"nosclient.dir.ne": "ĐB",
+	"nosclient.dir.e": "Đ",
+	"nosclient.dir.se": "ĐN",
+	"nosclient.dir.s": "N",
+	"nosclient.dir.sw": "TN",
+	"nosclient.dir.w": "T",
+	"nosclient.dir.nw": "TB"
 }

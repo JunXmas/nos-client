@@ -6,6 +6,11 @@ Bản 0.1: màn chính là cảnh hồ 3D (anh đào, mía, cừu, hoàng hôn �
 bóng đổ, AO, mây khối, nước gương, tia nắng — thay panorama gốc. Bảng **Cảnh nền** ở góc phải
 màn chính bật/tắt anh đào, mía, shader và kéo hoàng hôn ↔ đêm; lưu ở `config/nosclient.properties`.
 
+HUD trong game (Fabric HudElementRegistry, vẽ sau tâm ngắm): FPS + 1% low, toạ độ + biome, la bàn dải,
+ngày (đọc mỗi 2 giây), CPS (đệm vòng 1 giây), ping, keystrokes. Mặc định: toạ độ, hướng, FPS, keystrokes bật;
+ngày, ping, CPS tắt — đổi trong `config/nosclient.properties` (`hud.*`). Tự kiểm CPS:
+`java -cp build/classes/java/client dev.jun.nosclient.hud.Cps`.
+
 Cảnh được port từ bản preview HTML đã duyệt (`~/nostalgia-hud-preview/preview.html`).
 Texture đọc từ chính game (theo resource pack đang bật), mod không chép texture của Mojang.
 

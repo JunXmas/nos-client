@@ -1,6 +1,10 @@
 package dev.jun.nosclient;
 
+import dev.jun.nosclient.hud.Hud;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -8,6 +12,8 @@ import net.minecraft.client.gui.screens.TitleScreen;
 public final class NosClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		// HUD vẽ ngay sau tâm ngắm: dưới chat/menu tạm dừng, trên thế giới
+		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, Identifier.fromNamespaceAndPath("nosclient", "hud"), Hud.INSTANCE::render);
 		// bảng "Cảnh nền" kiểu mica ở góc phải màn chính
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
 			if (!(screen instanceof TitleScreen)) return;

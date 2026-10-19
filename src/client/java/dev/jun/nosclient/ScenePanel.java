@@ -66,23 +66,6 @@ final class ScenePanel extends AbstractWidget {
 	}
 
 	// ---------- vẽ ----------
-	/** Hình chữ nhật bo góc bằng các dải fill: GuiGraphics không có rounded rect. */
-	private static void round(GuiGraphics g, int x0, int y0, int x1, int y1, int r, int col) {
-		for (int k = 0; k < r; k++) {
-			double dy = r - k - .5;
-			int ins = (int) Math.round(r - Math.sqrt(Math.max(0, r * r - dy * dy)));
-			g.fill(x0 + ins, y0 + k, x1 - ins, y0 + k + 1, col);
-			g.fill(x0 + ins, y1 - k - 1, x1 - ins, y1 - k, col);
-		}
-		g.fill(x0, y0 + r, x1, y1 - r, col);
-	}
-
-	private static int lerpCol(int a, int b, float k) {
-		int r = 0;
-		for (int s = 0; s < 32; s += 8) r |= Math.round(((a >>> s) & 255) + (((b >>> s) & 255) - ((a >>> s) & 255)) * k) << s;
-		return r;
-	}
-
 	private static float ease(float x) {
 		return 1 - (1 - x) * (1 - x) * (1 - x);
 	}
@@ -107,8 +90,8 @@ final class ScenePanel extends AbstractWidget {
 
 	private void draw(GuiGraphics g, Font f, int x, int y, float dt) {
 		// mica: nền tối trong suốt, viền sáng mảnh, vệt sáng đỉnh
-		round(g, x, y, x + W, y + H, 8, 0x9E141821);
-		round(g, x, y, x + W, y + 1 + 8, 8, 0x0FFFFFFF);
+		Ui.round(g, x, y, x + W, y + H, 8, 0x9E141821);
+		Ui.round(g, x, y, x + W, y + 1 + 8, 8, 0x0FFFFFFF);
 		g.fill(x + 8, y, x + W - 8, y + 1, 0x24FFFFFF);
 		g.drawString(f, Component.translatable("nosclient.scene.title"), x + 10, y + 8, MUTED, false);
 
@@ -121,10 +104,10 @@ final class ScenePanel extends AbstractWidget {
 			knob[i] += (tgt - knob[i]) * (1 - (float) Math.exp(-dt * 14));
 			float k = ease(knob[i]);
 			int sx1 = x + W - 10, sx0 = sx1 - 24, sy0 = ry, sy1 = ry + 13;
-			round(g, sx0, sy0, sx1, sy1, 6, lerpCol(OFF, ACC0, k));
-			if (k > .02f) round(g, sx0 + 12, sy0, sx1, sy1, 6, lerpCol(OFF, ACC1, k) & 0x00FFFFFF | Math.round(k * 255) << 24);
+			Ui.round(g, sx0, sy0, sx1, sy1, 6, Ui.lerpCol(OFF, ACC0, k));
+			if (k > .02f) Ui.round(g, sx0 + 12, sy0, sx1, sy1, 6, Ui.lerpCol(OFF, ACC1, k) & 0x00FFFFFF | Math.round(k * 255) << 24);
 			int kx = Math.round(sx0 + 2 + k * 11);
-			round(g, kx, sy0 + 2, kx + 9, sy1 - 2, 4, lerpCol(KNOB_OFF, 0xFFFFFFFF, k));
+			Ui.round(g, kx, sy0 + 2, kx + 9, sy1 - 2, 4, Ui.lerpCol(KNOB_OFF, 0xFFFFFFFF, k));
 		}
 
 		// hoàng hôn ↔ đêm
@@ -134,19 +117,19 @@ final class ScenePanel extends AbstractWidget {
 		g.drawString(f, Component.translatable("nosclient.scene.tod"), x + 10, ty - 12, TEXT, false);
 		Component val = Component.translatable(key);
 		g.drawString(f, val, tx1 - f.width(val), ty - 12, 0xFFD9B8F5, false);
-		round(g, tx0, ty, tx1, ty + 4, 2, 0x26FFFFFF);
+		Ui.round(g, tx0, ty, tx1, ty + 4, 2, 0x26FFFFFF);
 		int px = (int) Math.round(tx0 + p * (tx1 - tx0));
 		g.fillGradient(tx0 + 1, ty, px, ty + 4, ACC0, ACC0); // dải đã kéo
 		g.fill(tx0, ty + 1, tx0 + 1, ty + 3, ACC0);
-		round(g, px - 5, ty - 3, px + 5, ty + 7, 5, 0xFFFFFFFF);
+		Ui.round(g, px - 5, ty - 3, px + 5, ty + 7, 5, 0xFFFFFFFF);
 
 		// hai nút chọn nhanh
 		int sy = segY(), half = (W - 20) / 2;
-		round(g, x + 10, sy, x + W - 10, sy + 16, 5, 0x38000000);
+		Ui.round(g, x + 10, sy, x + W - 10, sy + 16, 5, 0x38000000);
 		for (int i = 0; i < 2; i++) {
 			int bx = x + 12 + i * half;
 			boolean sel = i == 0 ? c.tod < 62 : c.tod >= 80;
-			if (sel) round(g, bx, sy + 2, bx + half - 4, sy + 14, 4, 0x8C6A3B94);
+			if (sel) Ui.round(g, bx, sy + 2, bx + half - 4, sy + 14, 4, 0x8C6A3B94);
 			Component t = Component.translatable(i == 0 ? "nosclient.scene.sunset" : "nosclient.scene.night");
 			g.drawString(f, t, bx + (half - 4 - f.width(t)) / 2, sy + 4, sel ? 0xFFEAD4FB : MUTED, false);
 		}
