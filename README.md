@@ -14,6 +14,12 @@ ngày, ping, CPS tắt — đổi trong `config/nosclient.properties` (`hud.*`).
 Cảnh được port từ bản preview HTML đã duyệt (`~/nostalgia-hud-preview/preview.html`).
 Texture đọc từ chính game (theo resource pack đang bật), mod không chép texture của Mojang.
 
+Giao diện theo preview, font Inter/Manrope đóng gói trong mod (SIL OFL 1.1, giấy phép trong `assets/nosclient/font/`):
+- **Màn chính** thay màn vanilla: logo Nostalgia, menu kính mica có icon và dòng phụ (Enter = Chơi đơn), chip tài khoản,
+  bảng Cảnh nền, chân trang. Các nút mở đúng màn của vanilla.
+- **Cài đặt Nos client** (R-Shift ở màn chính và trong game): danh mục bên trái, lưới thẻ mod có công tắc trượt.
+  Mới có nhóm HUD; các danh mục khác hiện "—" cho tới khi làm.
+
 ## Build
 
     ./gradlew build        # ra build/libs/nosclient-<version>.jar
