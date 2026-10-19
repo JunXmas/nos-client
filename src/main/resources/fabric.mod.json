@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "nosclient",
+	"version": "${version}",
+	"name": "Nos client",
+	"description": "Mod client của Nostalgia Launcher. Bản đầu: màn chính là cảnh hồ 3D (anh đào, mía, hoàng hôn – đêm) có shader riêng.",
+	"authors": ["JunXmas"],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["dev.jun.nosclient.NosClient"]
+	},
+	"mixins": [
+		{
+			"config": "nosclient.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.0",
+		"fabric-screen-api-v1": "*",
+		"minecraft": ">=1.21.11 <1.22",
+		"java": ">=21"
+	}
+}

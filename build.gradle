@@ -1,0 +1,68 @@
+// Fabric mod client-side cho Minecraft 1.21.11.
+//
+// 1.21.11 vẫn là bản CÒN obfuscate, nên phải dùng plugin `fabric-loom-remap`
+// (KHÔNG phải `fabric-loom` thường — bản đó dành cho runtime không-obfuscate 26.1+,
+// xuất jar tên Mojang và sẽ NoClassDefFoundError khi loader nạp trên intermediary).
+// Loom jar đăng ký cả hai plugin id nên nạp qua buildscript rồi apply đúng id.
+buildscript {
+	repositories {
+		maven { url = 'https://maven.fabricmc.net/' }
+		gradlePluginPortal()
+		mavenCentral()
+	}
+	dependencies {
+		classpath "net.fabricmc:fabric-loom:${loom_version}"
+	}
+}
+
+apply plugin: 'net.fabricmc.fabric-loom-remap'
+
+base {
+	archivesName = 'nosclient'
+}
+
+repositories {
+	// loom tự thêm maven của Mojang/Fabric.
+}
+
+loom {
+	splitEnvironmentSourceSets()
+	mods {
+		"nosclient" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	// Dev map = tên Mojang (Minecraft, EndCrystal, ...); loom remap jar sang intermediary.
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+}
+
+processResources {
+	inputs.property 'version', project.version
+	filesMatching('fabric.mod.json') {
+		expand 'version': project.version
+	}
+}
+
+// Game 1.21.11 chạy Java 21 -> bytecode phải ≤ 21.
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	from('LICENSE') {
+		rename { "${it}_${project.name}" }
+	}
+}
