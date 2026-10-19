@@ -4,5 +4,7 @@
 	"nosclient.scene.shader": "Shader",
 	"nosclient.scene.sunset": "Hoàng hôn",
 	"nosclient.scene.dusk": "Tối",
-	"nosclient.scene.night": "Đêm"
+	"nosclient.scene.night": "Đêm",
+	"nosclient.scene.title": "CẢNH NỀN",
+	"nosclient.scene.tod": "Hoàng hôn – đêm"
 }

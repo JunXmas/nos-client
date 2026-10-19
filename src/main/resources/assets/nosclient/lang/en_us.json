@@ -4,5 +4,7 @@
 	"nosclient.scene.shader": "Shader",
 	"nosclient.scene.sunset": "Sunset",
 	"nosclient.scene.dusk": "Dusk",
-	"nosclient.scene.night": "Night"
+	"nosclient.scene.night": "Night",
+	"nosclient.scene.title": "SCENERY",
+	"nosclient.scene.tod": "Sunset – night"
 }
