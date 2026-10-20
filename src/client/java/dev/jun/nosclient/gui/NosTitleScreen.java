@@ -98,11 +98,11 @@ public final class NosTitleScreen extends Screen {
 		Minecraft mc = Minecraft.getInstance();
 		Component name = Ui.bold(Component.literal(mc.getUser().getName())), kind = Ui.small(Component.translatable("nosclient.account.offline"));
 		int cw = 34 + Math.max(Ui.width(name), Ui.width(kind)) + 18, cx = width - cw - 12, cy = 10;
-		Ui.mica(g, cx, cy, cx + cw, cy + 24, 7, 0);
+		Ui.panel(g, cx, cy, cx + cw, cy + 24, 0);
 		PlayerFaceRenderer.draw(g, skin, cx + 5, cy + 4, 16);
 		Ui.text(g, name, cx + 26, cy + 4, Ui.TEXT);
 		Ui.text(g, kind, cx + 26, cy + 14, Ui.MUTED);
-		Ui.round(g, cx + cw - 9, cy + 10, cx + cw - 5, cy + 14, 2, Ui.BRAND);
+		g.fill(cx + cw - 9, cy + 10, cx + cw - 5, cy + 14, Ui.BRAND);
 		// chân trang
 		Component ver = Ui.small(Component.literal("Minecraft " + SharedConstants.getCurrentVersion().name() + " · Fabric · Nos client 0.1"));
 		Ui.text(g, ver, x, height - 12, Ui.FAINT);
@@ -161,22 +161,22 @@ public final class NosTitleScreen extends Screen {
 			float in = Ui.ease(Math.min(1, Math.max(0, (t - .08f * idx) / .5f)));
 			int dx = Math.round((1 - in) * -24 + hover * 3), x = getX() + dx, y = getY(), w = width, h = height;
 			int tint = it.primary ? Ui.lerpCol(0xD9734AA8, 0xE68A5BC4, hover) : Ui.lerpCol(0xA6141821, 0xBF262D3A, hover);
-			Ui.mica(g, x, y, x + w, y + h, 8, Ui.alpha(tint, in));
-			if (it.primary) Ui.outline(g, x, y, x + w, y + h, 8, Ui.alpha(0x66D3A8F5, in));
+			Ui.panel(g, x, y, x + w, y + h, Ui.alpha(tint, in));
+			if (it.primary) Ui.frame(g, x, y, x + w, y + h, Ui.alpha(0x66D3A8F5, in));
 			if (hover > .02f) { // vạch tím bên trái như .mb:before của preview
 				int half = Math.round((h / 2f - 8) * Ui.ease(hover));
-				Ui.round(g, x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, 2, Ui.alpha(0x59B06EE6, hover));
+				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));
 				g.fill(x, y + h / 2 - half, x + 2, y + h / 2 + half, Ui.ACCENT);
 			}
-			Ui.round(g, x + 6, y + 6, x + 26, y + 26, 6, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
+			g.fill(x + 6, y + 6, x + 26, y + 26, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
 			g.renderFakeItem(it.icon, x + 8, y + 8);
 			Ui.text(g, Ui.bold(Component.translatable(it.title)), x + 34, y + 7, Ui.alpha(Ui.TEXT, in));
 			Ui.text(g, Ui.small(Component.translatable(it.sub)), x + 34, y + 19, Ui.alpha(it.primary ? 0xD9EAD4FB : Ui.MUTED, in));
 			if (it.key != null) {
 				Component k = Ui.small(Component.literal(it.key));
 				int kw = Ui.width(k) + 10, kx = x + w - kw - 8;
-				Ui.round(g, kx, y + 10, kx + kw, y + 22, 4, 0x33000000);
-				Ui.outline(g, kx, y + 10, kx + kw, y + 22, 4, 0x1AFFFFFF);
+				g.fill(kx, y + 10, kx + kw, y + 22, 0x33000000);
+				Ui.frame(g, kx, y + 10, kx + kw, y + 22, 0x1AFFFFFF);
 				Ui.text(g, k, kx + 5, y + 12, Ui.MUTED);
 			}
 		}

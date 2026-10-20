@@ -100,10 +100,10 @@ public final class NosSettingsScreen extends Screen {
 		last = now;
 		float in = Ui.ease(Math.min(1, t / .35f));
 		int x = px(), y = py() + Math.round((1 - in) * 10), w = pw(), h = ph();
-		Ui.mica(g, x, y, x + w, y + h, 14, Ui.alpha(0xB8141821, in));
+		Ui.panel(g, x, y, x + w, y + h, Ui.alpha(0xB8141821, in));
 		// cột trái
 		g.fill(x + SIDE, y + 1, x + SIDE + 1, y + h - 1, 0x14FFFFFF);
-		Ui.round(g, x + 1, y + 1, x + SIDE, y + h - 1, 13, 0x1A000000);
+		g.fill(x + 1, y + 1, x + SIDE, y + h - 1, 0x1A000000);
 		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, LOGO, x + 12, y + 12, 0, 0, 22, 22, 22, 22);
 		Ui.text(g, Ui.bold(Component.literal("Nos client")), x + 40, y + 13, Ui.TEXT);
 		Ui.text(g, Ui.small(Component.literal("NOSTALGIA · R-SHIFT")), x + 40, y + 24, Ui.FAINT);
@@ -112,7 +112,7 @@ public final class NosSettingsScreen extends Screen {
 			int cy = y + 58 + i * 22;
 			boolean sel = i == 0, live = i == 0;
 			if (sel) {
-				Ui.round(g, x + 8, cy, x + SIDE - 8, cy + 19, 6, 0x405E3A8A);
+				g.fill(x + 8, cy, x + SIDE - 8, cy + 19, 0x405E3A8A);
 				g.fill(x + 2, cy + 4, x + 4, cy + 15, Ui.ACCENT);
 			}
 			g.pose().pushMatrix();
@@ -123,16 +123,16 @@ public final class NosSettingsScreen extends Screen {
 			Ui.text(g, Ui.ui(Component.translatable("nosclient.cat." + CATS[i])), x + 32, cy + 5, live ? Ui.TEXT : Ui.FAINT);
 			Component badge = Ui.small(Component.literal(live ? count() + "/" + mods.size() : "—"));
 			int bw = Ui.width(badge) + 8;
-			Ui.round(g, x + SIDE - 12 - bw, cy + 4, x + SIDE - 12, cy + 15, 4, sel ? 0x40B06EE6 : 0x14FFFFFF);
+			g.fill(x + SIDE - 12 - bw, cy + 4, x + SIDE - 12, cy + 15, sel ? 0x40B06EE6 : 0x14FFFFFF);
 			Ui.text(g, badge, x + SIDE - 12 - bw + 4, cy + 6, sel ? 0xFFEAD4FB : Ui.FAINT);
 		}
 		int on = count();
 		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.on")), x + 12, y + h - 36, Ui.MUTED);
 		Component n = Ui.bold(Component.literal(on + "/" + mods.size()));
 		Ui.text(g, n, x + SIDE - 12 - Ui.width(n), y + h - 37, Ui.TEXT);
-		Ui.round(g, x + 12, y + h - 24, x + SIDE - 12, y + h - 21, 2, 0x1FFFFFFF);
+		g.fill(x + 12, y + h - 24, x + SIDE - 12, y + h - 21, 0x1FFFFFFF);
 		int fw = Math.round((SIDE - 24) * on / (float) mods.size());
-		if (fw > 2) Ui.hgrad(g, x + 12, y + h - 24, x + 12 + fw, y + h - 21, Ui.ACC0, Ui.ACC1);
+		if (fw > 2) g.fill(x + 12, y + h - 24, x + 12 + fw, y + h - 21, Ui.ACC1);
 		// phần phải
 		int rx = x + SIDE + 16;
 		Ui.text(g, Ui.big(Component.translatable("nosclient.cat.hud")), rx, y + 14, Ui.TEXT);
@@ -156,9 +156,9 @@ public final class NosSettingsScreen extends Screen {
 		m.k[1] = Ui.approach(m.k[1], hov ? 1 : 0, dt, 12);
 		float k = Ui.ease(m.k[0]), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
 		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), m.k[1]);
-		Ui.round(g, x, y, x + w, y + h, 9, Ui.alpha(top, in));
-		Ui.outline(g, x, y, x + w, y + h, 9, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
-		Ui.round(g, x + 10, y + 10, x + 30, y + 30, 6, Ui.alpha(0x1FFFFFFF, in));
+		g.fill(x, y, x + w, y + h, Ui.alpha(top, in));
+		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
+		g.fill(x + 10, y + 10, x + 30, y + 30, Ui.alpha(0x1FFFFFFF, in));
 		g.renderFakeItem(m.icon, x + 12, y + 12);
 		Ui.toggle(g, x + w - 10 - 26, y + 10, k);
 		Ui.text(g, Ui.bold(Component.translatable("nosclient.mod." + m.id)), x + 10, y + 36, Ui.alpha(Ui.TEXT, in));

@@ -69,7 +69,7 @@ final class ScenePanel extends AbstractWidget {
 		g.pose().scale(s, s);
 		g.pose().translate(-x, -y);
 		try {
-			Ui.mica(g, x, y, x + W, y + H, 10, 0);
+			Ui.panel(g, x, y, x + W, y + H, 0);
 			Ui.text(g, Ui.small(Component.translatable("nosclient.scene.title")), x + 12, y + 10, Ui.MUTED);
 			for (int i = 0; i < 3; i++) {
 				int ry = rowY(i);
@@ -89,21 +89,21 @@ final class ScenePanel extends AbstractWidget {
 			Ui.text(g, Ui.ui(Component.translatable("nosclient.scene.tod")), a, ty - 14, Ui.TEXT);
 			Component val = Ui.bold(Component.translatable(c.tod < 62 ? "nosclient.scene.sunset" : c.tod < 80 ? "nosclient.scene.dusk" : "nosclient.scene.night"));
 			Ui.text(g, val, b - Ui.width(val), ty - 14, Ui.ACCENT_HI);
-			Ui.round(g, a, ty, b, ty + 4, 2, 0x1FFFFFFF);
+			g.fill(a, ty, b, ty + 4, 0x1FFFFFFF);
 			int px = Math.round(a + p * (b - a));
 			if (px > a + 2) {
-				Ui.round(g, a, ty, px + 2, ty + 4, 2, Ui.ACC0);
-				Ui.hgrad(g, a + 2, ty, px, ty + 4, Ui.ACC0, Ui.ACC1);
+				g.fill(a, ty, px + 2, ty + 4, Ui.ACC0);
+				g.fill(a + 2, ty, px, ty + 4, Ui.ACC1);
 			}
-			Ui.round(g, px - 7, ty - 5, px + 7, ty + 9, 7, 0x40B06EE6);
-			Ui.round(g, px - 5, ty - 3, px + 5, ty + 7, 5, 0xFFFFFFFF);
+			g.fill(px - 7, ty - 5, px + 7, ty + 9, 0x40B06EE6);
+			g.fill(px - 5, ty - 3, px + 5, ty + 7, 0xFFFFFFFF);
 			int sy = segY(), half = (W - 24) / 2;
-			Ui.round(g, x + 12, sy, x + W - 12, sy + 18, 6, 0x38000000);
-			Ui.outline(g, x + 12, sy, x + W - 12, sy + 18, 6, 0x12FFFFFF);
+			g.fill(x + 12, sy, x + W - 12, sy + 18, 0x38000000);
+			Ui.frame(g, x + 12, sy, x + W - 12, sy + 18, 0x12FFFFFF);
 			for (int i = 0; i < 2; i++) {
 				int bx = x + 14 + i * half;
 				boolean sel = i == 0 ? c.tod < 62 : c.tod >= 80;
-				if (sel) Ui.round(g, bx, sy + 2, bx + half - 4, sy + 16, 5, 0xA65E3A8A);
+				if (sel) g.fill(bx, sy + 2, bx + half - 4, sy + 16, 0xA65E3A8A);
 				Component t = Ui.bold(Component.translatable(i == 0 ? "nosclient.scene.sunset" : "nosclient.scene.night"));
 				Ui.text(g, t, bx + (half - 4 - Ui.width(t)) / 2, sy + 4, sel ? 0xFFEAD4FB : Ui.MUTED);
 			}

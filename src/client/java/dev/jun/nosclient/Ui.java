@@ -70,59 +70,28 @@ public final class Ui {
 	}
 
 	// ---------- hình ----------
-	/** Hình chữ nhật bo góc bằng các dải fill: GuiGraphics không có rounded rect. */
-	public static void round(GuiGraphics g, int x0, int y0, int x1, int y1, int r, int col) {
-		r = Math.min(r, Math.min(x1 - x0, y1 - y0) / 2);
-		for (int k = 0; k < r; k++) {
-			double dy = r - k - .5;
-			int ins = (int) Math.round(r - Math.sqrt(Math.max(0, r * r - dy * dy)));
-			g.fill(x0 + ins, y0 + k, x1 - ins, y0 + k + 1, col);
-			g.fill(x0 + ins, y1 - k - 1, x1 - ins, y1 - k, col);
-		}
-		g.fill(x0, y0 + r, x1, y1 - r, col);
-	}
-
-	/** Viền bo góc dày 1 px. */
-	public static void outline(GuiGraphics g, int x0, int y0, int x1, int y1, int r, int col) {
-		r = Math.min(r, Math.min(x1 - x0, y1 - y0) / 2);
-		int prev = r;
-		for (int k = 0; k < r; k++) {
-			double dy = r - k - .5;
-			int ins = (int) Math.round(r - Math.sqrt(Math.max(0, r * r - dy * dy)));
-			int a = Math.min(prev, ins), b = Math.max(prev, ins);
-			g.fill(x0 + a, y0 + k, x0 + b + 1, y0 + k + 1, col);
-			g.fill(x1 - b - 1, y0 + k, x1 - a, y0 + k + 1, col);
-			g.fill(x0 + a, y1 - k - 1, x0 + b + 1, y1 - k, col);
-			g.fill(x1 - b - 1, y1 - k - 1, x1 - a, y1 - k, col);
-			prev = ins;
-		}
-		g.fill(x0 + r, y0, x1 - r, y0 + 1, col);
-		g.fill(x0 + r, y1 - 1, x1 - r, y1, col);
-		g.fill(x0, y0 + r, x0 + 1, y1 - r, col);
-		g.fill(x1 - 1, y0 + r, x1, y1 - r, col);
-	}
-
-	/** Bóng đổ mềm dưới tấm kính: vài lớp bo góc mờ dần. */
-	public static void shadow(GuiGraphics g, int x0, int y0, int x1, int y1, int r, int spread) {
-		for (int i = spread; i > 0; i -= 2) {
-			int a = (int) (26 * (1 - (double) i / spread) + 4);
-			round(g, x0 - i, y0 - i + spread / 2, x1 + i, y1 + i + spread / 2, r + i, a << 24);
-		}
+	/*
+	 * Góc vuông, mỗi hình chỉ vài quad: bản bo góc vẽ mỗi góc bằng hàng chục dải fill (cả trăm quad cho một viên HUD)
+	 * và làm tụt FPS trong game. Vẻ đẹp giữ bằng lớp: nền trong, vệt sáng chuyển màu dọc, viền mảnh, gờ sáng mép trên.
+	 */
+	/** Viền 1 px: 4 quad. */
+	public static void frame(GuiGraphics g, int x0, int y0, int x1, int y1, int col) {
+		g.fill(x0, y0, x1, y0 + 1, col);
+		g.fill(x0, y1 - 1, x1, y1, col);
+		g.fill(x0, y0 + 1, x0 + 1, y1 - 1, col);
+		g.fill(x1 - 1, y0 + 1, x1, y1 - 1, col);
 	}
 
 	/**
-	 * Tấm kính mica như preview: bóng đổ, nền tối trong, vệt sáng dọc nửa trên, viền sáng mảnh, gờ sáng ở mép trên.
-	 * tint = màu ARGB pha thêm (vd. tím cho nút chính), 0 nếu không.
+	 * Tấm kính phẳng: bóng 1 lớp lệch xuống, nền tối trong, vệt sáng chuyển màu dọc nửa trên, viền mảnh, gờ sáng mép trên.
+	 * Tổng 8 quad. tint = nền ARGB riêng (vd. tím cho nút chính), 0 = nền mặc định.
 	 */
-	public static void mica(GuiGraphics g, int x0, int y0, int x1, int y1, int r, int tint) {
-		shadow(g, x0, y0, x1, y1, r, 10);
-		round(g, x0, y0, x1, y1, r, tint != 0 ? tint : 0xA6141821);
-		int h = y1 - y0;
-		for (int i = 0; i < Math.min(h / 2, 24); i++) // vệt sáng mờ dần từ trên xuống
-			g.fill(x0 + (i < r ? r - (int) Math.sqrt(Math.max(0, r * r - (r - i) * (r - i))) : 0), y0 + i,
-				x1 - (i < r ? r - (int) Math.sqrt(Math.max(0, r * r - (r - i) * (r - i))) : 0), y0 + i + 1, ((int) (18 * (1 - i / 24.0))) << 24 | 0xFFFFFF);
-		outline(g, x0, y0, x1, y1, r, 0x1FFFFFFF);
-		g.fill(x0 + r, y0, x1 - r, y0 + 1, 0x38FFFFFF);
+	public static void panel(GuiGraphics g, int x0, int y0, int x1, int y1, int tint) {
+		g.fill(x0 + 1, y1, x1 + 1, y1 + 2, 0x30000000);
+		g.fill(x0, y0, x1, y1, tint != 0 ? tint : 0xA6141821);
+		g.fillGradient(x0, y0, x1, y0 + Math.min((y1 - y0) / 2, 24), 0x14FFFFFF, 0x00FFFFFF);
+		frame(g, x0, y0, x1, y1, 0x1FFFFFFF);
+		g.fill(x0 + 1, y0, x1 - 1, y0 + 1, 0x40FFFFFF);
 	}
 
 	public static int lerpCol(int a, int b, float k) {
@@ -135,23 +104,13 @@ public final class Ui {
 		return Math.round(((col >>> 24) & 255) * a) << 24 | col & 0xFFFFFF;
 	}
 
-	/** Dải chuyển màu ngang (fillGradient của game chỉ dọc). */
-	public static void hgrad(GuiGraphics g, int x0, int y0, int x1, int y1, int c0, int c1) {
-		for (int x = x0; x < x1; x++) g.fill(x, y0, x + 1, y1, lerpCol(c0, c1, (x - x0) / (float) Math.max(1, x1 - x0 - 1)));
-	}
-
-	/** Công tắc trượt kiểu iOS như preview; k = 0 tắt … 1 bật (đã làm mượt bên gọi). */
+	/** Công tắc phẳng: rãnh + núm vuông, 4 quad; k = 0 tắt … 1 bật (đã làm mượt bên gọi). */
 	public static void toggle(GuiGraphics g, int x, int y, float k) {
-		int w = 26, h = 14;
-		round(g, x, y, x + w, y + h, 7, lerpCol(0x24FFFFFF, ACC0, k));
-		if (k > .02f) { // ánh tím phát sáng như box-shadow
-			round(g, x - 2, y - 1, x + w + 2, y + h + 1, 8, alpha(0x40B06EE6, k));
-			round(g, x, y, x + w, y + h, 7, lerpCol(0x24FFFFFF, ACC0, k));
-			hgrad(g, x + 7, y, x + w - 7, y + h, alpha(ACC0, k), alpha(ACC1, k));
-			round(g, x + w - 14, y, x + w, y + h, 7, alpha(ACC1, k));
-		}
-		int kx = Math.round(x + 2 + k * 12);
-		round(g, kx, y + 2, kx + 10, y + h - 2, 5, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
+		int w = 24, h = 12;
+		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, ACC0, k));
+		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, 0x66D3A8F5, k));
+		int kx = Math.round(x + 2 + k * (w - 12));
+		g.fill(kx, y + 2, kx + 8, y + h - 2, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
 	}
 
 	public static float ease(float x) {

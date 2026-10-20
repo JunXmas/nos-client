@@ -38,7 +38,26 @@ public final class Hud {
 
 	private Hud() {}
 
+	/** Chỉ để đo: -Dnosclient.countHud=true in số phần tử GUI HUD đẩy vào mỗi 120 khung. */
+	private static final boolean COUNT = Boolean.getBoolean("nosclient.countHud");
+	private int counted;
+
 	public void render(GuiGraphics g, DeltaTracker dt) {
+		if (!COUNT) {
+			draw(g, dt);
+			return;
+		}
+		int[] n = {0};
+		var st = g.guiRenderState;
+		st.forEachElement(e -> n[0]++, net.minecraft.client.gui.render.state.GuiRenderState.TraverseRange.ALL);
+		int before = n[0];
+		draw(g, dt);
+		n[0] = 0;
+		st.forEachElement(e -> n[0]++, net.minecraft.client.gui.render.state.GuiRenderState.TraverseRange.ALL);
+		if (++counted % 120 == 0) org.slf4j.LoggerFactory.getLogger("nosclient").info("HUD: {} phần tử GUI/khung", n[0] - before);
+	}
+
+	private void draw(GuiGraphics g, DeltaTracker dt) {
 		Minecraft mc = Minecraft.getInstance();
 		long now = System.nanoTime();
 		float d = lastFrame == 0 ? 0 : Math.min(.05f, (now - lastFrame) / 1e9f);
@@ -93,18 +112,17 @@ public final class Hud {
 	}
 
 	// ---------- viên kính ----------
+	/** Viên kính phẳng: nền + vệt sáng dọc + gờ sáng trên + vạch tối dưới = 4 quad. */
 	private static void glass(GuiGraphics g, int x, int y, int w, int h) {
-		Ui.round(g, x - 1, y, x + w + 1, y + h + 2, 7, 0x22000000); // bóng mềm
-		Ui.round(g, x, y, x + w, y + h, 6, 0x9E141821);
-		Ui.round(g, x, y, x + w, y + h / 2, 6, 0x0CFFFFFF);
-		Ui.outline(g, x, y, x + w, y + h, 6, 0x1CFFFFFF);
-		g.fill(x + 6, y, x + w - 6, y + 1, 0x33FFFFFF);
+		g.fill(x, y, x + w, y + h, 0x9E141821);
+		g.fillGradient(x, y + 1, x + w, y + h / 2 + 1, 0x12FFFFFF, 0x00FFFFFF);
+		g.fill(x, y, x + w, y + 1, 0x38FFFFFF);
+		g.fill(x, y + h - 1, x + w, y + h, 0x40000000);
 	}
 
-	/** Chấm màu có quầng sáng như .dot của preview. */
+	/** Dải màu nhận diện ở mép trái viên (thay chấm tròn phát sáng của preview): 1 quad. */
 	private static void dot(GuiGraphics g, int x, int y, int col) {
-		Ui.round(g, x - 2, y - 2, x + 6, y + 6, 4, Ui.alpha(col, .25f));
-		Ui.round(g, x, y, x + 4, y + 4, 2, col);
+		g.fill(x - 7, y - 7, x - 5, y + 11, col);
 	}
 
 	private static int pill(GuiGraphics g, Font f, int x, int y, int col, String label, String val, String extra) {
@@ -226,9 +244,8 @@ public final class Hud {
 	private void key(GuiGraphics g, Font f, int i, int x, int y, int w, int h, String label, String sub, KeyMapping k, float dt) {
 		keyGlow[i] = Ui.approach(keyGlow[i], k.isDown() ? 1 : 0, dt, 22);
 		float e = keyGlow[i];
-		if (e > .02f) Ui.round(g, x - 2, y - 2, x + w + 2, y + h + 2, 7, Ui.alpha(0x59B06EE6, e));
-		Ui.round(g, x, y, x + w, y + h, 5, Ui.lerpCol(0x9E141821, 0xF2C79AF0, e));
-		Ui.outline(g, x, y, x + w, y + h, 5, Ui.lerpCol(0x1CFFFFFF, 0x66FFFFFF, e));
+		g.fill(x, y, x + w, y + h, Ui.lerpCol(0x9E141821, 0xF2C79AF0, e));
+		g.fill(x, y, x + w, y + 1, Ui.lerpCol(0x38FFFFFF, 0x99FFFFFF, e));
 		int col = Ui.lerpCol(TEXT, 0xFF2A1640, e);
 		if (label.isEmpty()) g.fill(x + w / 2 - 10, y + h / 2, x + w / 2 + 10, y + h / 2 + 1, Ui.lerpCol(DIM, 0xFF2A1640, e));
 		else if (sub == null) g.drawString(f, label, x + (w - f.width(label)) / 2 + 1, y + (h - 7) / 2, col, e < .5f);
