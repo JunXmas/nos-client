@@ -23,7 +23,9 @@ public final class Hud {
 	private final SceneConfig c = SceneConfig.INSTANCE;
 
 	private static final int TEXT = 0xFFFFFFFF, DIM = 0xFFAAB1C0, ACC = 0xFFD3A8F5;
-	private static final int PAD = 4, H = 13, GAP = 2;
+	/** Ô 17 cao, chữ font game vẽ 85% (≈7 px) → 5 px thở trên/dưới; đệm ngang 7; khoảng cách ô 4. */
+	private static final int PAD = 7, H = 17, GAP = 4;
+	private static final float TS = .85f;
 
 	/** Chỉ để đo: -Dnosclient.countHud=true in số phần tử GUI HUD đẩy vào mỗi 120 khung. */
 	private static final boolean COUNT = Boolean.getBoolean("nosclient.countHud");
@@ -102,7 +104,7 @@ public final class Hud {
 	}
 
 	private void drawScaled(GuiGraphics g, Minecraft mc, LocalPlayer p, Font f, long now, float d, int W) {
-		int x = 4, y = 4;
+		int x = 6, y = 6;
 		if (c.fps) y = fps(g, f, x, y, mc.getFps(), low(now)) + GAP;
 		if (c.coords) {
 			BlockPos b = p.blockPosition();
@@ -128,10 +130,10 @@ public final class Hud {
 			PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
 			y = row(g, f, x, y, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms") + GAP;
 		}
-		if (c.keys) keys(g, f, mc, x, y + 2, now, d);
+		if (c.keys) keys(g, f, mc, x, y + GAP, now, d);
 		if (c.direction) {
 			int boss = ((dev.jun.nosclient.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
-			compass(g, f, p, W / 2, boss > 0 ? 4 + boss * 19 : 4);
+			compass(g, f, p, W / 2, boss > 0 ? 6 + boss * 19 : 6);
 		}
 	}
 
@@ -147,27 +149,41 @@ public final class Hud {
 
 	/** Một dòng: [nhãn mờ] giá trị trắng [đuôi mờ]. Chữ font game cao 8, ô cao 13 → chữ nằm giữa ô. */
 	private static int row(GuiGraphics g, Font f, int x, int y, String label, String val, String suffix) {
-		int w = PAD + (label != null ? f.width(label) + 4 : 0) + f.width(val) + (suffix != null ? 4 + f.width(suffix) : 0) + PAD;
+		int w = PAD + sw(f, label != null ? label + " " : "") + sw(f, val) + (suffix != null ? sw(f, " " + suffix) : 0) + PAD;
 		bg(g, x, y, w, H);
-		int tx = x + PAD, ty = y + 3;
+		float tx = x + PAD, ty = y + (H - 8 * TS) / 2;
 		if (label != null) {
-			g.drawString(f, label, tx, ty, T(DIM), false);
-			tx += f.width(label) + 4;
+			txt(g, f, label, tx, ty, T(DIM));
+			tx += sw(f, label + " ");
 		}
-		g.drawString(f, val, tx, ty, T(TEXT), false);
-		if (suffix != null) g.drawString(f, suffix, tx + f.width(val) + 4, ty, T(DIM), false);
+		txt(g, f, val, tx, ty, T(TEXT));
+		if (suffix != null) txt(g, f, suffix, tx + sw(f, val + " "), ty, T(DIM));
 		return y + H;
+	}
+
+	/** Bề rộng chữ ở cỡ TS. */
+	private static int sw(Font f, String s) {
+		return Math.round(f.width(s) * TS);
+	}
+
+	private static void txt(GuiGraphics g, Font f, String s, float x, float y, int col) {
+		g.pose().pushMatrix();
+		g.pose().translate(x, y);
+		g.pose().scale(TS, TS);
+		g.drawString(f, s, 0, 0, col, false);
+		g.pose().popMatrix();
 	}
 
 	private int fps(GuiGraphics g, Font f, int x, int y, int fps, int low) {
 		String v = String.valueOf(fps), lo = "1% " + low;
-		int sw = 24, w = PAD + f.width(v) + 4 + f.width("FPS") + 6 + sw + 6 + f.width(lo) + PAD;
+		int spw = 22, w = PAD + sw(f, v + " FPS") + 8 + spw + 8 + sw(f, lo) + PAD;
 		bg(g, x, y, w, H);
-		int tx = x + PAD, ty = y + 3;
-		g.drawString(f, v, tx, ty, T(TEXT), false);
-		tx += f.width(v) + 4;
-		g.drawString(f, "FPS", tx, ty, T(DIM), false);
-		tx += f.width("FPS") + 6;
+		float ty = y + (H - 8 * TS) / 2;
+		int tx = x + PAD;
+		txt(g, f, v, tx, ty, T(TEXT));
+		txt(g, f, "FPS", tx + sw(f, v + " "), ty, T(DIM));
+		tx += sw(f, v + " FPS") + 8;
+		int sw = spw;
 		int mn = Integer.MAX_VALUE, mx = 0; // sparkline: 24 mẫu FPS gần nhất
 		for (int s : spark) {
 			mn = Math.min(mn, s);
@@ -175,12 +191,12 @@ public final class Hud {
 		}
 		int prev = -1;
 		for (int i = 0; i < spark.length; i++) {
-			int s = spark[(sp + i) % spark.length], yy = y + 9 - Math.round((s - mn) / (float) Math.max(1, mx - mn) * 5);
+			int s = spark[(sp + i) % spark.length], yy = y + H - 6 - Math.round((s - mn) / (float) Math.max(1, mx - mn) * 5);
 			int xx = tx + Math.round(i * (sw - 1) / (float) (spark.length - 1));
 			if (prev >= 0) g.fill(xx - 1, Math.min(prev, yy), xx, Math.max(prev, yy) + 1, T(0xFF7FD873));
 			prev = yy;
 		}
-		g.drawString(f, lo, tx + sw + 6, ty, T(DIM), false);
+		txt(g, f, lo, tx + sw + 8, ty, T(DIM));
 		return y + H;
 	}
 
@@ -189,7 +205,7 @@ public final class Hud {
 	/** La bàn dải: vạch mỗi 15°, chữ mỗi 45°, kim giữa. Không scissor (cắt bằng điều kiện) để không bẻ lô vẽ. */
 	private static void compass(GuiGraphics g, Font f, LocalPlayer p, int cx, int y) {
 		float yaw = ((p.getYRot() % 360) + 360 + 180) % 360;
-		int w = 160, h = 14, x0 = cx - w / 2;
+		int w = 180, h = 17, x0 = cx - w / 2;
 		bg(g, x0, y, w, h);
 		for (int d = -180; d <= 540; d += 15) {
 			float dx = (d - yaw) * 1.6f;
@@ -199,19 +215,19 @@ public final class Hud {
 			if (d % 45 == 0) {
 				int di = ((d / 45) % 8 + 8) % 8;
 				String s = Component.translatable("nosclient.dir." + DIRS[di]).getString();
-				g.drawString(f, s, xx - f.width(s) / 2 + 1, y + 3, T(Ui.alpha(di == 0 ? ACC : TEXT, Math.max(.2f, edge))), false);
-			} else g.fill(xx, y + h - 4, xx + 1, y + h - 2, T(Ui.alpha(0x80FFFFFF, edge)));
+				txt(g, f, s, xx - sw(f, s) / 2f + .5f, y + 4, T(Ui.alpha(di == 0 ? ACC : TEXT, Math.max(.2f, edge))));
+			} else g.fill(xx, y + h - 5, xx + 1, y + h - 3, T(Ui.alpha(0x80FFFFFF, edge)));
 		}
 		g.fill(cx, y, cx + 1, y + h, T(0xFFFFFFFF));
 		String deg = Math.round(yaw) % 360 + "°";
-		int bw = f.width(deg) + 2 * PAD;
-		bg(g, cx - bw / 2, y + h + 2, bw, 12);
-		g.drawString(f, deg, cx - f.width(deg) / 2 + 1, y + h + 4, T(TEXT), false);
+		int bw = sw(f, deg) + 2 * PAD;
+		bg(g, cx - bw / 2, y + h + GAP, bw, 15);
+		txt(g, f, deg, cx - sw(f, deg) / 2f + .5f, y + h + GAP + (15 - 8 * TS) / 2, T(TEXT));
 	}
 
 	private void keys(GuiGraphics g, Font f, Minecraft mc, int x, int y, long now, float dt) {
 		var o = mc.options;
-		int s = 18, gap = 2;
+		int s = 22, gap = 4;
 		key(g, f, 0, x + s + gap, y, s, s, "W", o.keyUp, dt);
 		key(g, f, 1, x, y + s + gap, s, s, "A", o.keyLeft, dt);
 		key(g, f, 2, x + s + gap, y + s + gap, s, s, "S", o.keyDown, dt);
@@ -219,7 +235,7 @@ public final class Hud {
 		int full = 3 * s + 2 * gap, mw = (full - gap) / 2, my = y + 2 * (s + gap);
 		key(g, f, 4, x, my, mw, s, "LMB " + left.count(now), o.keyAttack, dt);
 		key(g, f, 5, x + mw + gap, my, mw, s, "RMB " + right.count(now), o.keyUse, dt);
-		key(g, f, 6, x, my + s + gap, full, 8, "", o.keyJump, dt);
+		key(g, f, 6, x, my + s + gap, full, 10, "", o.keyJump, dt);
 	}
 
 	/** Phím kiểu Lunar: ô tối trong suốt, bấm thì nền trắng chữ đen. */
@@ -229,7 +245,7 @@ public final class Hud {
 		int a = Math.round((BA + (Math.max(BA, .85f) - BA) * e) * 255);
 		g.fill(x, y, x + w, y + h, a << 24 | (Ui.lerpCol(0x000000, 0xFFFFFF, e) & 0xFFFFFF));
 		int col = T(Ui.lerpCol(TEXT, 0xFF000000, e));
-		if (label.isEmpty()) g.fill(x + w / 2 - 8, y + h / 2, x + w / 2 + 8, y + h / 2 + 1, col);
-		else g.drawString(f, label, x + (w - f.width(label)) / 2 + 1, y + (h - 7) / 2, col, false);
+		if (label.isEmpty()) g.fill(x + w / 2 - 10, y + h / 2, x + w / 2 + 10, y + h / 2 + 1, col);
+		else txt(g, f, label, x + (w - sw(f, label)) / 2f + .5f, y + (h - 8 * TS) / 2, col);
 	}
 }

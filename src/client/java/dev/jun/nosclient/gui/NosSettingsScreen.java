@@ -56,11 +56,11 @@ public final class NosSettingsScreen extends Screen {
 
 	// ---------- bố cục ----------
 	private int pw() {
-		return Math.min(width - 24, 560);
+		return Math.min(width - 24, 600);
 	}
 
 	private int ph() {
-		return Math.min(height - 24, 330);
+		return Math.min(height - 24, 360);
 	}
 
 	private int px() {
@@ -71,7 +71,12 @@ public final class NosSettingsScreen extends Screen {
 		return (height - ph()) / 2;
 	}
 
-	private static final int SIDE = 128, GAP = 6;
+	private static final int GAP = 8;
+
+	/** Cột trái hẹp lại khi màn hẹp để lưới thẻ còn đủ 2 cột. */
+	private int side() {
+		return pw() >= 560 ? 140 : 112;
+	}
 	/** 0 = thẻ mod, 1 = giao diện HUD. Tách tab để màn thấp không phải nhồi hai khu chồng lên nhau. */
 	private int tab;
 
@@ -79,15 +84,15 @@ public final class NosSettingsScreen extends Screen {
 	private int cardH() {
 		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count(), adv = mods.size() - basic;
 		int rows = (basic + cols() - 1) / cols() + (adv + cols() - 1) / cols();
-		return 64 + rows * (44 + GAP) + 18 + 8 <= ph() ? 44 : 28;
+		return 76 + rows * (50 + GAP) + 22 + 14 <= ph() ? 50 : 36;
 	}
 
 	private int cols() {
-		return Math.max(1, (pw() - SIDE - 32 + GAP) / (120 + GAP));
+		return Math.max(1, (pw() - side() - 44 + GAP) / (118 + GAP));
 	}
 
 	private int cardW() {
-		return (pw() - SIDE - 32 - (cols() - 1) * GAP) / cols();
+		return (pw() - side() - 44 - (cols() - 1) * GAP) / cols();
 	}
 
 	/** Vị trí thẻ thứ i trong nhóm của nó; nhóm Nâng cao nằm dưới Cơ bản. */
@@ -96,8 +101,8 @@ public final class NosSettingsScreen extends Screen {
 		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count();
 		int idx = m.group.equals("basic") ? i : i - basic;
 		int rowsBasic = (basic + cols() - 1) / cols();
-		int top = py() + 52 + 12 + (m.group.equals("basic") ? 0 : rowsBasic * (cardH() + GAP) + 18);
-		int x = px() + SIDE + 16 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (cardH() + GAP);
+		int top = py() + 76 - (int) scroll + (m.group.equals("basic") ? 0 : rowsBasic * (cardH() + GAP) + 22);
+		int x = px() + side() + 22 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (cardH() + GAP);
 		return new int[]{x, y};
 	}
 
@@ -111,48 +116,57 @@ public final class NosSettingsScreen extends Screen {
 		int x = px(), y = py() + Math.round((1 - in) * 10), w = pw(), h = ph();
 		Ui.panel(g, x, y, x + w, y + h, Ui.alpha(0xB8141821, in));
 		// cột trái
-		g.fill(x + SIDE, y + 1, x + SIDE + 1, y + h - 1, 0x14FFFFFF);
-		g.fill(x + 1, y + 1, x + SIDE, y + h - 1, 0x1A000000);
-		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, LOGO, x + 12, y + 12, 0, 0, 22, 22, 22, 22);
-		Ui.text(g, Ui.bold(Component.literal("Nos client")), x + 40, y + 13, Ui.TEXT);
-		Ui.text(g, Ui.small(Component.literal("NOSTALGIA · R-SHIFT")), x + 40, y + 24, Ui.FAINT);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.cats")), x + 12, y + 46, Ui.FAINT);
+		g.fill(x + side(), y + 1, x + side() + 1, y + h - 1, 0x14FFFFFF);
+		g.fill(x + 1, y + 1, x + side(), y + h - 1, 0x1A000000);
+		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, LOGO, x + 16, y + 16, 0, 0, 22, 22, 22, 22);
+		Ui.text(g, Ui.bold(Component.literal("Nos client")), x + 46, y + 18, Ui.TEXT);
+		Ui.text(g, Ui.small(Component.literal("NOSTALGIA · R-SHIFT")), x + 46, y + 29, Ui.FAINT);
+		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.cats")), x + 16, y + 56, Ui.FAINT);
 		for (int i = 0; i < CATS.length; i++) {
-			int cy = y + 58 + i * 22;
+			int cy = y + 70 + i * 26;
 			boolean sel = i == 0, live = i == 0;
 			if (sel) {
-				g.fill(x + 8, cy, x + SIDE - 8, cy + 19, 0x405E3A8A);
-				g.fill(x + 2, cy + 4, x + 4, cy + 15, Ui.ACCENT);
+				g.fill(x + 10, cy, x + side() - 10, cy + 22, 0x405E3A8A);
+				g.fill(x + 3, cy + 5, x + 5, cy + 17, Ui.ACCENT);
 			}
 			g.pose().pushMatrix();
-			g.pose().translate(x + 14, cy + 3);
+			g.pose().translate(x + 18, cy + 4);
 			g.pose().scale(.8f, .8f);
 			g.renderFakeItem(CAT_ICON[i], 0, 0);
 			g.pose().popMatrix();
-			Ui.text(g, Ui.ui(Component.translatable("nosclient.cat." + CATS[i])), x + 32, cy + 5, live ? Ui.TEXT : Ui.FAINT);
+			Ui.text(g, Ui.ui(Component.translatable("nosclient.cat." + CATS[i])), x + 38, cy + 7, live ? Ui.TEXT : Ui.FAINT);
 			Component badge = Ui.small(Component.literal(live ? count() + "/" + mods.size() : "—"));
-			int bw = Ui.width(badge) + 8;
-			g.fill(x + SIDE - 12 - bw, cy + 4, x + SIDE - 12, cy + 15, sel ? 0x40B06EE6 : 0x14FFFFFF);
-			Ui.text(g, badge, x + SIDE - 12 - bw + 4, cy + 6, sel ? 0xFFEAD4FB : Ui.FAINT);
+			int bw = Ui.width(badge) + 10;
+			g.fill(x + side() - 16 - bw, cy + 5, x + side() - 16, cy + 17, sel ? 0x40B06EE6 : 0x14FFFFFF);
+			Ui.text(g, badge, x + side() - 16 - bw + 5, cy + 8, sel ? 0xFFEAD4FB : Ui.FAINT);
 		}
 		int on = count();
-		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.on")), x + 12, y + h - 36, Ui.MUTED);
+		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.on")), x + 16, y + h - 40, Ui.MUTED);
 		Component n = Ui.bold(Component.literal(on + "/" + mods.size()));
-		Ui.text(g, n, x + SIDE - 12 - Ui.width(n), y + h - 37, Ui.TEXT);
-		g.fill(x + 12, y + h - 24, x + SIDE - 12, y + h - 21, 0x1FFFFFFF);
-		int fw = Math.round((SIDE - 24) * on / (float) mods.size());
-		if (fw > 2) g.fill(x + 12, y + h - 24, x + 12 + fw, y + h - 21, Ui.ACC1);
+		Ui.text(g, n, x + side() - 16 - Ui.width(n), y + h - 41, Ui.TEXT);
+		g.fill(x + 16, y + h - 26, x + side() - 16, y + h - 23, 0x1FFFFFFF);
+		int fw = Math.round((side() - 32) * on / (float) mods.size());
+		if (fw > 2) g.fill(x + 16, y + h - 26, x + 16 + fw, y + h - 23, Ui.ACC1);
 		// phần phải
-		int rx = x + SIDE + 16;
-		Ui.text(g, Ui.big(Component.translatable("nosclient.cat.hud")), rx, y + 14, Ui.TEXT);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.cat.hud.sub")), rx, y + 34, Ui.MUTED);
+		int rx = x + side() + 22;
+		Ui.text(g, Ui.big(Component.translatable("nosclient.cat.hud")), rx, y + 18, Ui.TEXT);
+		Ui.text(g, Ui.small(Component.translatable("nosclient.cat.hud.sub")), rx, y + 40, Ui.MUTED);
 		int dy = Math.round((1 - in) * 10);
 		tabs(g, dy);
 		if (tab == 0) {
-			Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 52 + 2 + dy, Ui.FAINT);
+			scroll = Ui.approach(scroll, (float) scrollTarget, dt, 16);
+			g.enableScissor(x + side() + 1, py() + 56, x + w - 1, py() + ph() - 6);
+			Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 62 - (int) scroll + dy, Ui.FAINT);
 			int adv = cardPos((int) mods.stream().filter(m -> m.group.equals("basic")).count())[1];
-			Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, adv - 12 + dy, Ui.FAINT);
+			Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, adv - 14 + dy, Ui.FAINT);
 			for (int i = 0; i < mods.size(); i++) card(g, i, mx, my, dt, t, dy);
+			g.disableScissor();
+			int over = maxScroll();
+			if (over > 0) { // thanh cuộn mảnh bên phải
+				int top = py() + 58, bot = py() + ph() - 8, len = Math.max(16, (bot - top) * (bot - top) / (bot - top + over));
+				int pos = top + Math.round((bot - top - len) * scroll / over);
+				g.fill(x + w - 5, pos, x + w - 3, pos + len, 0x55FFFFFF);
+			}
 		} else look(g, dt, dy);
 	}
 
@@ -160,9 +174,9 @@ public final class NosSettingsScreen extends Screen {
 
 	/** [x0, x1] của tab i, canh phải ngang hàng tiêu đề. */
 	private int[] tabBox(int i) {
-		int x1 = px() + pw() - 16;
+		int x1 = px() + pw() - 22;
 		for (int k = TABS.length - 1; k >= 0; k--) {
-			int w = Ui.width(Ui.bold(Component.translatable(TABS[k]))) + 16, x0 = x1 - w;
+			int w = Ui.width(Ui.bold(Component.translatable(TABS[k]))) + 22, x0 = x1 - w;
 			if (k == i) return new int[]{x0, x1};
 			x1 = x0 - 4;
 		}
@@ -170,28 +184,28 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	private void tabs(GuiGraphics g, int dy) {
-		int y = py() + 16 + dy;
+		int y = py() + 20 + dy;
 		for (int i = 0; i < TABS.length; i++) {
 			int[] b = tabBox(i);
 			boolean sel = i == tab;
-			g.fill(b[0], y, b[1], y + 16, sel ? 0x665E3A8A : 0x14FFFFFF);
-			if (sel) g.fill(b[0], y + 15, b[1], y + 16, Ui.ACCENT);
+			g.fill(b[0], y, b[1], y + 18, sel ? 0x665E3A8A : 0x14FFFFFF);
+			if (sel) g.fill(b[0], y + 17, b[1], y + 18, Ui.ACCENT);
 			Component c = Ui.bold(Component.translatable(TABS[i]));
-			Ui.text(g, c, b[0] + 8, y + 4, sel ? 0xFFEAD4FB : Ui.MUTED);
+			Ui.text(g, c, b[0] + 11, y + 5, sel ? 0xFFEAD4FB : Ui.MUTED);
 		}
 	}
 
 	// ---------- khu "Giao diện HUD": kích thước, độ trong suốt nền, mờ khi đứng yên ----------
 	private int lookY() {
-		return py() + 58;
+		return py() + 70;
 	}
 
 	private int lookX0() {
-		return px() + SIDE + 16;
+		return px() + side() + 22;
 	}
 
 	private int lookX1() {
-		return px() + pw() - 16;
+		return px() + pw() - 22;
 	}
 
 	private int dragging = -1;
@@ -267,6 +281,24 @@ public final class NosSettingsScreen extends Screen {
 		return super.mouseReleased(e);
 	}
 
+	private float scroll;
+	private double scrollTarget;
+
+	/** Phần nội dung thẻ cao hơn khung bao nhiêu. */
+	private int maxScroll() {
+		int last = cardPos(mods.size() - 1)[1] + (int) scroll + cardH();
+		return Math.max(0, last - (py() + ph() - 10));
+	}
+
+	@Override
+	public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+		if (tab == 0 && maxScroll() > 0) {
+			scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget - sy * 24));
+			return true;
+		}
+		return super.mouseScrolled(mx, my, sx, sy);
+	}
+
 	private int count() {
 		return (int) mods.stream().filter(m -> m.get.get()).count();
 	}
@@ -282,24 +314,24 @@ public final class NosSettingsScreen extends Screen {
 		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), m.k[1]);
 		g.fill(x, y, x + w, y + h, Ui.alpha(top, in));
 		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
-		int iy = h >= 44 ? 8 : (h - 18) / 2;
-		g.fill(x + 8, y + iy, x + 26, y + iy + 18, Ui.alpha(0x1FFFFFFF, in));
+		int iy = h >= 50 ? 10 : (h - 18) / 2;
+		g.fill(x + 12, y + iy, x + 30, y + iy + 18, Ui.alpha(0x1FFFFFFF, in));
 		g.pose().pushMatrix();
-		g.pose().translate(x + 17, y + iy + 9);
+		g.pose().translate(x + 21, y + iy + 9);
 		g.pose().scale(.9f, .9f);
 		g.renderFakeItem(m.icon, -8, -8);
 		g.pose().popMatrix();
-		Ui.toggle(g, x + w - 8 - 24, y + iy + 3, k);
-		int tx = x + 32, tw = w - 32 - 8 - 24 - 6;
+		Ui.toggle(g, x + w - 12 - 24, y + iy + 3, k);
+		int tx = x + 40, tw = w - 40 - 12 - 24 - 8;
 		Ui.text(g, Ui.fit(Ui.bold(Component.translatable("nosclient.mod." + m.id)), tw), tx, y + iy + 5, Ui.alpha(Ui.TEXT, in));
-		if (h >= 44) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id + ".desc")), w - 16), x + 8, y + 31, Ui.alpha(Ui.MUTED, in));
+		if (h >= 50) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id + ".desc")), w - 24), x + 12, y + 35, Ui.alpha(Ui.MUTED, in));
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
 		for (int i = 0; i < TABS.length; i++) {
 			int[] b = tabBox(i);
-			if (e.x() >= b[0] && e.x() < b[1] && e.y() >= py() + 16 && e.y() < py() + 32) {
+			if (e.x() >= b[0] && e.x() < b[1] && e.y() >= py() + 20 && e.y() < py() + 38) {
 				tab = i;
 				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
 				return true;
@@ -325,7 +357,7 @@ public final class NosSettingsScreen extends Screen {
 		}
 		for (int i = 0; i < mods.size(); i++) {
 			int[] p = cardPos(i);
-			if (e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {
+			if (tab == 0 && e.y() >= py() + 56 && e.y() < py() + ph() - 6 && e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {
 				Mod m = mods.get(i);
 				m.set.accept(!m.get.get());
 				c.save();

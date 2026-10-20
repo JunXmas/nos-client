@@ -3,7 +3,7 @@
   {
    "type": "ttf",
    "file": "nosclient:inter-medium.ttf",
-   "size": 6.5,
+   "size": 6,
    "oversample": 4.0,
    "shift": [
     0,

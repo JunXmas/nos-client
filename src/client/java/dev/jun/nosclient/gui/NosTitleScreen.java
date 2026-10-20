@@ -49,11 +49,11 @@ public final class NosTitleScreen extends Screen {
 
 	private void layout() {
 		bx = Math.max(12, width / 18);
-		bw = Math.min(240, Math.max(150, width / 3));
+		bw = Math.min(260, Math.max(160, width / 3));
 		int avail = height - 16 - 14; // trừ lề trên và dòng chân trang
-		bh = avail >= 330 ? 32 : avail >= 280 ? 28 : 24;
-		gap = avail >= 330 ? 6 : 3;
-		int menu = 5 * (bh + gap) + 18, logo = 58;
+		bh = avail >= 360 ? 38 : avail >= 300 ? 32 : 26;
+		gap = avail >= 360 ? 8 : avail >= 300 ? 6 : 4;
+		int menu = 5 * (bh + gap) + 22, logo = 62;
 		int top = Math.max(10, (avail - logo - menu) / 2 + 4);
 		logoY = top;
 		menuY = top + logo;
@@ -79,9 +79,9 @@ public final class NosTitleScreen extends Screen {
 		for (int i = 0; i < items.size(); i++) addRenderableWidget(new MenuButton(x, y + i * (h + gap), w, h, items.get(i), i));
 		addRenderableWidget(new QuitLink(x + 4, y + items.size() * (h + gap) + 2));
 		// bảng cảnh nền: vừa phần trống bên phải, dưới chip tài khoản, không đè chân trang
-		float free = width - (x + w) - 28, scale = Math.min(1, Math.min(free / ScenePanel.W, (height - 40 - 20) / (float) ScenePanel.H));
+		float free = width - (x + w) - 28, scale = Math.min(1, Math.min(free / ScenePanel.W, (height - 48 - 20) / (float) ScenePanel.H));
 		panelX = scale >= .45f ? Math.round(width - ScenePanel.W * scale - 10) : width;
-		if (panelX < width) addRenderableWidget(new ScenePanel(panelX, 40, scale));
+		if (panelX < width) addRenderableWidget(new ScenePanel(panelX, 48, scale));
 	}
 
 	private record Item(ItemStack icon, String title, String sub, String key, boolean primary, Runnable action) {}
@@ -115,12 +115,12 @@ public final class NosTitleScreen extends Screen {
 		// chip tài khoản góc phải trên
 		Minecraft mc = Minecraft.getInstance();
 		Component name = Ui.bold(Component.literal(mc.getUser().getName())), kind = Ui.small(Component.translatable("nosclient.account.offline"));
-		int cw = 34 + Math.max(Ui.width(name), Ui.width(kind)) + 18, cx = width - cw - 12, cy = 10;
-		Ui.panel(g, cx, cy, cx + cw, cy + 24, 0);
-		PlayerFaceRenderer.draw(g, skin, cx + 5, cy + 4, 16);
-		Ui.text(g, name, cx + 26, cy + 4, Ui.TEXT);
-		Ui.text(g, kind, cx + 26, cy + 14, Ui.MUTED);
-		g.fill(cx + cw - 9, cy + 10, cx + cw - 5, cy + 14, Ui.BRAND);
+		int cw = 8 + 18 + 10 + Math.max(Ui.width(name), Ui.width(kind)) + 22, cx = width - cw - 12, cy = 10;
+		Ui.panel(g, cx, cy, cx + cw, cy + 30, 0);
+		PlayerFaceRenderer.draw(g, skin, cx + 8, cy + 6, 18);
+		Ui.text(g, name, cx + 36, cy + 6, Ui.TEXT);
+		Ui.text(g, kind, cx + 36, cy + 17, Ui.MUTED);
+		g.fill(cx + cw - 12, cy + 13, cx + cw - 8, cy + 17, Ui.BRAND);
 		// chân trang
 		Component ver = Ui.small(Component.literal("Minecraft " + SharedConstants.getCurrentVersion().name() + " · Fabric · Nos client 0.1"));
 		Ui.text(g, ver, x, height - 12, Ui.FAINT);
@@ -187,26 +187,26 @@ public final class NosTitleScreen extends Screen {
 				g.fill(x, y + h / 2 - half, x + 2, y + h / 2 + half, Ui.ACCENT);
 			}
 			// mọi toạ độ theo chiều cao thật của nút (24–32): màn thấp thì nút co, chữ không chồng
-			int ic = Math.min(20, h - 8), iy = y + (h - ic) / 2;
-			g.fill(x + 6, iy, x + 6 + ic, iy + ic, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
+			int ic = Math.min(22, h - 12), iy = y + (h - ic) / 2;
+			g.fill(x + 10, iy, x + 10 + ic, iy + ic, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
 			g.pose().pushMatrix();
-			g.pose().translate(x + 6 + ic / 2f, iy + ic / 2f);
-			g.pose().scale(ic / 20f, ic / 20f);
+			g.pose().translate(x + 10 + ic / 2f, iy + ic / 2f);
+			g.pose().scale(ic / 22f, ic / 22f);
 			g.renderFakeItem(it.icon, -8, -8);
 			g.pose().popMatrix();
-			int tx = x + 12 + ic, right = x + w - 8;
+			int tx = x + 20 + ic, right = x + w - 12;
 			Component k = it.key != null ? Ui.small(Component.literal(it.key)) : null;
 			if (k != null) { // nhãn phím tắt ở góc phải, dòng chữ phải dừng trước nó
-				int kw = Ui.width(k) + 8, kx = right - kw, ky = y + (h - 11) / 2;
-				g.fill(kx, ky, kx + kw, ky + 11, 0x33000000);
-				Ui.frame(g, kx, ky, kx + kw, ky + 11, 0x1AFFFFFF);
-				Ui.text(g, k, kx + 4, ky + 2, Ui.MUTED);
-				right = kx - 6;
+				int kw = Ui.width(k) + 12, kx = right - kw, ky = y + (h - 13) / 2;
+				g.fill(kx, ky, kx + kw, ky + 13, 0x33000000);
+				Ui.frame(g, kx, ky, kx + kw, ky + 13, 0x1AFFFFFF);
+				Ui.text(g, k, kx + 6, ky + 3, Ui.MUTED);
+				right = kx - 10;
 			}
 			Component title = Ui.bold(Component.translatable(it.title));
-			if (h >= 28) {
-				Ui.text(g, title, tx, y + h / 2 - 9, Ui.alpha(Ui.TEXT, in));
-				Ui.text(g, Ui.fit(Ui.small(Component.translatable(it.sub)), right - tx), tx, y + h / 2 + 2, Ui.alpha(it.primary ? 0xD9EAD4FB : Ui.MUTED, in));
+			if (h >= 32) {
+				Ui.text(g, title, tx, y + h / 2 - 10, Ui.alpha(Ui.TEXT, in));
+				Ui.text(g, Ui.fit(Ui.small(Component.translatable(it.sub)), right - tx), tx, y + h / 2 + 3, Ui.alpha(it.primary ? 0xD9EAD4FB : Ui.MUTED, in));
 			} else Ui.text(g, title, tx, y + (h - 8) / 2, Ui.alpha(Ui.TEXT, in)); // nút thấp: bỏ dòng phụ thay vì nhồi
 		}
 
