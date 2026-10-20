@@ -10,7 +10,9 @@
 		"OptionInstanceAccessor",
 		"GameRendererMixin",
 		"CameraMixin",
-		"FramerateLimitTrackerMixin"
+		"FramerateLimitTrackerMixin",
+		"AbstractContainerScreenAccessor",
+		"MultiPlayerGameModeAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

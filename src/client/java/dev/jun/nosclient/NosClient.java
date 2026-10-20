@@ -18,6 +18,8 @@ public final class NosClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		dev.jun.nosclient.feat.Feats.init();
+		dev.jun.nosclient.feat.Peek.init();
+		dev.jun.nosclient.feat.RecipeAuto.init();
 		// HUD vẽ ngay sau tâm ngắm: dưới chat/menu tạm dừng, trên thế giới
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, Identifier.fromNamespaceAndPath("nosclient", "hud"), Hud.INSTANCE::render);
 		// bật Hiệu ứng thuốc của Nos client thì ẩn ô hiệu ứng gốc ở góc phải, khỏi hiện hai lần

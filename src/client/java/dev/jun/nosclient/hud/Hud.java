@@ -136,6 +136,7 @@ public final class Hud {
 		if (c.effects) ry = effects(g, f, p, W - 6, ry) + GAP * 2;
 		if (c.armor) ry = armor(g, f, p, W - 6, ry);
 		if (c.invhud) invhud(g, mc, p, W);
+		if (c.blockinfo) blockinfo(g, f, mc, W / 2, c.direction ? 44 : 6, now);
 		if (c.direction) {
 			int boss = ((dev.jun.nosclient.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
 			compass(g, f, p, W / 2, boss > 0 ? 6 + boss * 19 : 6);
@@ -242,6 +243,73 @@ public final class Hud {
 		key(g, f, 5, x + mw + gap, my, mw, s, "RMB " + right.count(now), o.keyUse, dt);
 		key(g, f, 6, x, my + s + gap, full, 10, "", o.keyJump, dt);
 		return my + s + gap + 10;
+	}
+
+	// ---------- thông tin khối & mob ----------
+	/** Theo spec: đọc thứ đang nhìn mỗi 10 tick (0,5 giây), giữa hai lần chỉ vẽ lại bản đã đọc. */
+	private long lastLook;
+	private String lookName = "", lookSub = "";
+	private net.minecraft.world.item.ItemStack lookIcon = net.minecraft.world.item.ItemStack.EMPTY, lookTool = net.minecraft.world.item.ItemStack.EMPTY;
+	private boolean lookHas;
+	private float lookHp = -1;
+
+	private void blockinfo(GuiGraphics g, Font f, Minecraft mc, int cx, int y, long now) {
+		if (now - lastLook > 500_000_000L) {
+			lastLook = now;
+			readLook(mc);
+		}
+		if (!lookHas) return;
+		int iw = lookIcon.isEmpty() ? 0 : 20, w = Math.max(sw(f, lookName), sw(f, lookSub) + (lookTool.isEmpty() ? 0 : 14)) + iw + 2 * PAD;
+		int h = 28, x = cx - w / 2;
+		bg(g, x, y, w, h);
+		if (iw > 0) g.renderItem(lookIcon, x + PAD - 1, y + 6);
+		int tx = x + PAD + iw;
+		txt(g, f, lookName, tx, y + 5, T(TEXT));
+		txt(g, f, lookSub, tx, y + 16, T(DIM));
+		if (!lookTool.isEmpty()) {
+			g.pose().pushMatrix();
+			g.pose().translate(tx + sw(f, lookSub) + 3, y + 14);
+			g.pose().scale(.6f, .6f);
+			g.renderItem(lookTool, 0, 0);
+			g.pose().popMatrix();
+		}
+		// thanh dưới đáy: tiến độ đập khối, hoặc máu của mob
+		float bar = lookHp >= 0 ? lookHp : ((dev.jun.nosclient.mixin.MultiPlayerGameModeAccessor) mc.gameMode).nosclient$progress();
+		if (bar > 0) g.fill(x, y + h - 2, x + Math.round(w * Math.min(1, bar)), y + h, T(lookHp >= 0 ? 0xFFF2555A : ACC));
+	}
+
+	private static final net.minecraft.world.item.ItemStack[] TOOLS = {new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE),
+		new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_AXE), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SHOVEL),
+		new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_HOE)};
+
+	private void readLook(Minecraft mc) {
+		lookHas = false;
+		lookHp = -1;
+		var hit = mc.hitResult;
+		if (hit == null || mc.level == null) return;
+		if (hit instanceof net.minecraft.world.phys.EntityHitResult eh) {
+			var e = eh.getEntity();
+			lookName = e.getDisplayName().getString();
+			lookSub = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
+			lookIcon = net.minecraft.world.item.ItemStack.EMPTY;
+			lookTool = net.minecraft.world.item.ItemStack.EMPTY;
+			if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+				lookHp = le.getHealth() / Math.max(1, le.getMaxHealth());
+				lookSub = Math.round(le.getHealth()) + "/" + Math.round(le.getMaxHealth()) + " ♥  " + lookSub;
+			}
+			lookHas = true;
+		} else if (hit instanceof net.minecraft.world.phys.BlockHitResult bh && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+			var st = mc.level.getBlockState(bh.getBlockPos());
+			if (st.isAir()) return;
+			lookName = st.getBlock().getName().getString();
+			lookSub = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(st.getBlock()).toString();
+			lookIcon = new net.minecraft.world.item.ItemStack(st.getBlock().asItem());
+			// công cụ đúng: theo tag mineable của game
+			lookTool = st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE) ? TOOLS[0] : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE) ? TOOLS[1]
+				: st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL) ? TOOLS[2] : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE) ? TOOLS[3]
+				: net.minecraft.world.item.ItemStack.EMPTY;
+			lookHas = true;
+		}
 	}
 
 	// ---------- hiệu ứng thuốc ----------
