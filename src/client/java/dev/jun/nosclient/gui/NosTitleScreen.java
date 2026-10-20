@@ -44,12 +44,27 @@ public final class NosTitleScreen extends Screen {
 		super(Component.translatable("narrator.screen.title"));
 	}
 
+	/** Bố cục co theo màn: nút cao 32 → 24, khoảng cách 6 → 3 khi màn thấp; logo luôn nằm trên menu, menu luôn trên chân trang. */
+	private int bx, bw, bh, gap, menuY, logoY, panelX;
+
+	private void layout() {
+		bx = Math.max(12, width / 18);
+		bw = Math.min(240, Math.max(150, width / 3));
+		int avail = height - 16 - 14; // trừ lề trên và dòng chân trang
+		bh = avail >= 330 ? 32 : avail >= 280 ? 28 : 24;
+		gap = avail >= 330 ? 6 : 3;
+		int menu = 5 * (bh + gap) + 18, logo = 58;
+		int top = Math.max(10, (avail - logo - menu) / 2 + 4);
+		logoY = top;
+		menuY = top + logo;
+	}
+
 	@Override
 	protected void init() {
 		Minecraft mc = Minecraft.getInstance();
 		mc.getSkinManager().get(mc.getGameProfile()).thenAccept(o -> o.ifPresent(s -> skin = s));
-		int x = Math.max(16, width / 18), w = Math.min(240, width / 3), h = 32, gap = 6;
-		int y = Math.max(height / 2 - 70, 96);
+		layout();
+		int x = bx, w = bw, h = bh, y = menuY;
 		List<Item> items = new ArrayList<>();
 		items.add(new Item(new ItemStack(Items.GRASS_BLOCK), "nosclient.menu.single", "nosclient.menu.single.sub", "Enter", true,
 			() -> mc.setScreen(new SelectWorldScreen(this))));
@@ -62,10 +77,11 @@ public final class NosTitleScreen extends Screen {
 		items.add(new Item(new ItemStack(Items.REDSTONE), "nosclient.menu.options", "nosclient.menu.options.sub", null, false,
 			() -> mc.setScreen(new OptionsScreen(this, mc.options))));
 		for (int i = 0; i < items.size(); i++) addRenderableWidget(new MenuButton(x, y + i * (h + gap), w, h, items.get(i), i));
-		addRenderableWidget(new QuitLink(x + 4, y + items.size() * (h + gap) + 6));
-		float free = width - (x + w) - 24;
-		float scale = Math.min(1, free / ScenePanel.W);
-		addRenderableWidget(new ScenePanel(Math.round(width - ScenePanel.W * scale - 12), 40, scale));
+		addRenderableWidget(new QuitLink(x + 4, y + items.size() * (h + gap) + 2));
+		// bảng cảnh nền: vừa phần trống bên phải, dưới chip tài khoản, không đè chân trang
+		float free = width - (x + w) - 28, scale = Math.min(1, Math.min(free / ScenePanel.W, (height - 40 - 20) / (float) ScenePanel.H));
+		panelX = scale >= .45f ? Math.round(width - ScenePanel.W * scale - 10) : width;
+		if (panelX < width) addRenderableWidget(new ScenePanel(panelX, 40, scale));
 	}
 
 	private record Item(ItemStack icon, String title, String sub, String key, boolean primary, Runnable action) {}
@@ -74,23 +90,25 @@ public final class NosTitleScreen extends Screen {
 	public void render(GuiGraphics g, int mx, int my, float pt) {
 		t = (System.nanoTime() - opened) / 1e9f;
 		super.render(g, mx, my, pt);
-		int x = Math.max(16, width / 18);
+		int x = bx;
 		// logo: khối lá + "Nostalgia" (gia xanh) + LAUNCHER giãn chữ, trượt vào khi mở màn
 		float k = Ui.ease(Math.min(1, t / .6f));
-		int ly = Math.max(14, height / 2 - 70 - 64) + Math.round((1 - k) * -12);
+		int ly = logoY + Math.round((1 - k) * -12);
 		g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x, ly, 0, 0, 40, 40, 40, 40);
 		Component nos = Ui.logo("Nostal"), gia = Ui.logo("gia");
 		int tx = x + 48;
 		Ui.text(g, nos, tx, ly + 4, Ui.alpha(Ui.TEXT, k));
 		Ui.text(g, gia, tx + Ui.width(nos), ly + 4, Ui.alpha(Ui.BRAND, k));
 		Component sub = Ui.small(Component.literal("L A U N C H E R"));
-		Ui.text(g, sub, tx + 2, ly + 32, Ui.alpha(Ui.MUTED, k));
+		Ui.text(g, sub, tx + 2, ly + 38, Ui.alpha(Ui.MUTED, k));
 		// splash vàng xoay như vanilla
 		Component sp = Component.translatable("nosclient.splash." + splash);
 		g.pose().pushMatrix();
-		g.pose().translate(tx + Ui.width(nos) + Ui.width(gia) + 10, ly + 30);
+		g.pose().translate(tx + Ui.width(nos) + Ui.width(gia) + 8, ly + 34);
 		g.pose().rotate((float) Math.toRadians(-12));
-		float s = 1 + (float) Math.abs(Math.sin(t * 4.5)) * .06f;
+		float fit = Math.min(1, (panelX - 16 - (tx + Ui.width(nos) + Ui.width(gia) + 8)) / (float) Math.max(1, font.width(sp)));
+		float s = fit * (1 + (float) Math.abs(Math.sin(t * 4.5)) * .06f);
+		if (fit < .7f) s = 0; // không đủ chỗ thì bỏ splash, không để đè bảng
 		g.pose().scale(s, s);
 		g.drawString(font, sp, 0, 0, 0xFFFFFF00, true);
 		g.pose().popMatrix();
@@ -107,7 +125,7 @@ public final class NosTitleScreen extends Screen {
 		Component ver = Ui.small(Component.literal("Minecraft " + SharedConstants.getCurrentVersion().name() + " · Fabric · Nos client 0.1"));
 		Ui.text(g, ver, x, height - 12, Ui.FAINT);
 		Component legal = Ui.small(Component.translatable("nosclient.legal"));
-		Ui.text(g, legal, width - Ui.width(legal) - 12, height - 12, Ui.FAINT);
+		if (x + Ui.width(ver) + 16 + Ui.width(legal) + 12 <= width) Ui.text(g, legal, width - Ui.width(legal) - 12, height - 12, Ui.FAINT);
 	}
 
 	@Override
@@ -168,17 +186,28 @@ public final class NosTitleScreen extends Screen {
 				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));
 				g.fill(x, y + h / 2 - half, x + 2, y + h / 2 + half, Ui.ACCENT);
 			}
-			g.fill(x + 6, y + 6, x + 26, y + 26, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
-			g.renderFakeItem(it.icon, x + 8, y + 8);
-			Ui.text(g, Ui.bold(Component.translatable(it.title)), x + 34, y + 7, Ui.alpha(Ui.TEXT, in));
-			Ui.text(g, Ui.small(Component.translatable(it.sub)), x + 34, y + 19, Ui.alpha(it.primary ? 0xD9EAD4FB : Ui.MUTED, in));
-			if (it.key != null) {
-				Component k = Ui.small(Component.literal(it.key));
-				int kw = Ui.width(k) + 10, kx = x + w - kw - 8;
-				g.fill(kx, y + 10, kx + kw, y + 22, 0x33000000);
-				Ui.frame(g, kx, y + 10, kx + kw, y + 22, 0x1AFFFFFF);
-				Ui.text(g, k, kx + 5, y + 12, Ui.MUTED);
+			// mọi toạ độ theo chiều cao thật của nút (24–32): màn thấp thì nút co, chữ không chồng
+			int ic = Math.min(20, h - 8), iy = y + (h - ic) / 2;
+			g.fill(x + 6, iy, x + 6 + ic, iy + ic, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
+			g.pose().pushMatrix();
+			g.pose().translate(x + 6 + ic / 2f, iy + ic / 2f);
+			g.pose().scale(ic / 20f, ic / 20f);
+			g.renderFakeItem(it.icon, -8, -8);
+			g.pose().popMatrix();
+			int tx = x + 12 + ic, right = x + w - 8;
+			Component k = it.key != null ? Ui.small(Component.literal(it.key)) : null;
+			if (k != null) { // nhãn phím tắt ở góc phải, dòng chữ phải dừng trước nó
+				int kw = Ui.width(k) + 8, kx = right - kw, ky = y + (h - 11) / 2;
+				g.fill(kx, ky, kx + kw, ky + 11, 0x33000000);
+				Ui.frame(g, kx, ky, kx + kw, ky + 11, 0x1AFFFFFF);
+				Ui.text(g, k, kx + 4, ky + 2, Ui.MUTED);
+				right = kx - 6;
 			}
+			Component title = Ui.bold(Component.translatable(it.title));
+			if (h >= 28) {
+				Ui.text(g, title, tx, y + h / 2 - 9, Ui.alpha(Ui.TEXT, in));
+				Ui.text(g, Ui.fit(Ui.small(Component.translatable(it.sub)), right - tx), tx, y + h / 2 + 2, Ui.alpha(it.primary ? 0xD9EAD4FB : Ui.MUTED, in));
+			} else Ui.text(g, title, tx, y + (h - 8) / 2, Ui.alpha(Ui.TEXT, in)); // nút thấp: bỏ dòng phụ thay vì nhồi
 		}
 
 		@Override

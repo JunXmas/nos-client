@@ -71,7 +71,14 @@ public final class NosSettingsScreen extends Screen {
 		return (height - ph()) / 2;
 	}
 
-	private static final int SIDE = 128, CARD_H = 70, GAP = 8;
+	private static final int SIDE = 128, GAP = 6;
+
+	/** Thẻ cao 44 (có mô tả); không đủ chỗ trong tấm kính thì 28 (chỉ tên + công tắc) để lưới không tràn. */
+	private int cardH() {
+		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count(), adv = mods.size() - basic;
+		int rows = (basic + cols() - 1) / cols() + (adv + cols() - 1) / cols();
+		return 64 + rows * (44 + GAP) + 18 + 8 <= ph() ? 44 : 28;
+	}
 
 	private int cols() {
 		return Math.max(1, (pw() - SIDE - 32 + GAP) / (120 + GAP));
@@ -87,8 +94,8 @@ public final class NosSettingsScreen extends Screen {
 		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count();
 		int idx = m.group.equals("basic") ? i : i - basic;
 		int rowsBasic = (basic + cols() - 1) / cols();
-		int top = py() + 52 + 12 + (m.group.equals("basic") ? 0 : rowsBasic * (CARD_H + GAP) + 18);
-		int x = px() + SIDE + 16 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (CARD_H + GAP);
+		int top = py() + 52 + 12 + (m.group.equals("basic") ? 0 : rowsBasic * (cardH() + GAP) + 18);
+		int x = px() + SIDE + 16 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (cardH() + GAP);
 		return new int[]{x, y};
 	}
 
@@ -150,7 +157,7 @@ public final class NosSettingsScreen extends Screen {
 	private void card(GuiGraphics g, int i, int mx, int my, float dt, float t, int dy) {
 		Mod m = mods.get(i);
 		int[] p = cardPos(i);
-		int x = p[0], y = p[1] + dy, w = cardW(), h = CARD_H;
+		int x = p[0], y = p[1] + dy, w = cardW(), h = cardH();
 		boolean hov = mx >= x && mx < x + w && my >= y && my < y + h, on = m.get.get();
 		m.k[0] = Ui.approach(m.k[0], on ? 1 : 0, dt, 14);
 		m.k[1] = Ui.approach(m.k[1], hov ? 1 : 0, dt, 12);
@@ -158,19 +165,24 @@ public final class NosSettingsScreen extends Screen {
 		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), m.k[1]);
 		g.fill(x, y, x + w, y + h, Ui.alpha(top, in));
 		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
-		g.fill(x + 10, y + 10, x + 30, y + 30, Ui.alpha(0x1FFFFFFF, in));
-		g.renderFakeItem(m.icon, x + 12, y + 12);
-		Ui.toggle(g, x + w - 10 - 26, y + 10, k);
-		Ui.text(g, Ui.bold(Component.translatable("nosclient.mod." + m.id)), x + 10, y + 36, Ui.alpha(Ui.TEXT, in));
-		var lines = font.split(Ui.small(Component.translatable("nosclient.mod." + m.id + ".desc")), w - 20);
-		for (int l = 0; l < Math.min(2, lines.size()); l++) g.drawString(font, lines.get(l), x + 10, y + 47 + l * 8, Ui.alpha(Ui.MUTED, in), false);
+		int iy = h >= 44 ? 8 : (h - 18) / 2;
+		g.fill(x + 8, y + iy, x + 26, y + iy + 18, Ui.alpha(0x1FFFFFFF, in));
+		g.pose().pushMatrix();
+		g.pose().translate(x + 17, y + iy + 9);
+		g.pose().scale(.9f, .9f);
+		g.renderFakeItem(m.icon, -8, -8);
+		g.pose().popMatrix();
+		Ui.toggle(g, x + w - 8 - 24, y + iy + 3, k);
+		int tx = x + 32, tw = w - 32 - 8 - 24 - 6;
+		Ui.text(g, Ui.fit(Ui.bold(Component.translatable("nosclient.mod." + m.id)), tw), tx, y + iy + 5, Ui.alpha(Ui.TEXT, in));
+		if (h >= 44) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id + ".desc")), w - 16), x + 8, y + 31, Ui.alpha(Ui.MUTED, in));
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
 		for (int i = 0; i < mods.size(); i++) {
 			int[] p = cardPos(i);
-			if (e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + CARD_H) {
+			if (e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {
 				Mod m = mods.get(i);
 				m.set.accept(!m.get.get());
 				c.save();

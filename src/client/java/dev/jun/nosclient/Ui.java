@@ -69,6 +69,14 @@ public final class Ui {
 		return font().width(c);
 	}
 
+	/** Cắt chữ cho vừa bề rộng, thêm "…" — chữ không bao giờ tràn sang ô bên cạnh. */
+	public static Component fit(Component c, int maxW) {
+		Font f = font();
+		if (f.width(c) <= maxW) return c;
+		var cut = f.substrByWidth(c, Math.max(0, maxW - f.width("…")));
+		return Component.literal(cut.getString() + "…").withStyle(c.getStyle());
+	}
+
 	// ---------- hình ----------
 	/*
 	 * Góc vuông, mỗi hình chỉ vài quad: bản bo góc vẽ mỗi góc bằng hàng chục dải fill (cả trăm quad cho một viên HUD)

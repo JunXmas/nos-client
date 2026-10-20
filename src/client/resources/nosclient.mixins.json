@@ -5,7 +5,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"PanoramaRendererMixin",
-		"MouseHandlerMixin"
+		"MouseHandlerMixin",
+		"BossHealthOverlayAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
