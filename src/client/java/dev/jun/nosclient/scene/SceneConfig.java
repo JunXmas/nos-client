@@ -3,6 +3,8 @@ package dev.jun.nosclient.scene;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -10,16 +12,42 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Lựa chọn của bảng "Cảnh nền": lưu ở config/nosclient.properties. */
+/**
+ * Mọi lựa chọn của Nos client, lưu ở config/nosclient.properties.
+ * Mỗi field public (boolean/int/double) là một khoá — thêm tuỳ chọn chỉ cần khai báo field kèm mặc định.
+ * Mặc định bật/tắt theo spec của jun (ghi chú cạnh từng nhóm).
+ */
 public final class SceneConfig {
 	private static final Logger LOG = LoggerFactory.getLogger("nosclient");
-	public static final SceneConfig INSTANCE = load();
+	public static final SceneConfig INSTANCE = load(file());
 
+	// ---- cảnh nền màn chính ----
 	public boolean blossom = true, cane = true, fx = true;
-	/** 40 = hoàng hôn … 100 = đêm (thang của preview; ban ngày đã bỏ theo yêu cầu). */
+	/** 40 = hoàng hôn … 100 = đêm (ban ngày đã bỏ theo yêu cầu). */
 	public double tod = 47;
-	/** HUD — mặc định theo spec: toạ độ, hướng, FPS bật; ngày, ping, CPS tắt; keystrokes (tính năng gốc) bật. */
-	public boolean coords = true, direction = true, day = false, fps = true, ping = false, cps = false, keys = true;
+
+	// ---- HUD cơ bản: toạ độ, hướng bật; ngày tắt ----
+	public boolean coords = true, direction = true, day = false;
+	// ---- HUD nâng cao: FPS bật; ping, CPS, Inventory HUD tắt; hiệu ứng thuốc bật ----
+	public boolean fps = true, ping = false, cps = false, invhud = false, effects = true;
+	// ---- túi đồ: công thức, shulker, bản đồ, giáp đều bật ----
+	public boolean recipe = true, shulker = true, mappv = true, armor = true;
+	// ---- thế giới: waypoint, minimap tắt; thông tin khối, zoom, ánh sáng bật ----
+	public boolean waypoint = false, minimap = false, blockinfo = true, zoom = true, dynlight = true;
+	/** Minimap: bán kính tối đa tính theo chunk (spec: cắt theo bề rộng tối đa, không vẽ hang). */
+	public int minimapChunks = 4;
+	/** Gamma ghi vào tuỳ chọn độ sáng của game; -1 = giữ độ sáng gốc của game. */
+	public double gamma = -1;
+	// ---- PvP & phím: keystrokes, toggle sprint bật; freelook tắt ----
+	public boolean keys = true, sprint = true, freelook = false;
+	public boolean sprintSneak = false;
+	public int zoomLevel = 4;
+	// ---- hệ thống: Dynamic FPS bật; chơi chung bật ----
+	public boolean dfps = true, mp = true;
+	public int dfpsBg = 15;
+	public boolean mpOffline = true, mpPvp = true;
+
+	// ---- giao diện HUD ----
 	/** Cỡ HUD (0,5–1,5 × cỡ giao diện), độ đục nền ô (0–1), mờ khi đứng yên. */
 	public double hudScale = .8, hudBg = .45;
 	public boolean hudIdleFade = true;
@@ -28,57 +56,78 @@ public final class SceneConfig {
 		return FabricLoader.getInstance().getConfigDir().resolve("nosclient.properties");
 	}
 
-	private static SceneConfig load() {
+	/** Khoá cũ của bản 0.1 → giữ nguyên để file cũ vẫn đọc được. */
+	static String key(Field f) {
+		return switch (f.getName()) {
+			case "fx" -> "shader";
+			case "coords", "direction", "day", "fps", "ping", "cps", "keys" -> "hud." + f.getName();
+			case "hudScale" -> "hud.scale";
+			case "hudBg" -> "hud.bg";
+			case "hudIdleFade" -> "hud.idleFade";
+			default -> f.getName();
+		};
+	}
+
+	static boolean option(Field f) {
+		int m = f.getModifiers();
+		return Modifier.isPublic(m) && !Modifier.isStatic(m) && (f.getType() == boolean.class || f.getType() == int.class || f.getType() == double.class);
+	}
+
+	static SceneConfig load(Path p) {
 		SceneConfig c = new SceneConfig();
-		Path f = file();
-		if (!Files.exists(f)) return c;
-		Properties p = new Properties();
-		try (Reader r = Files.newBufferedReader(f)) {
-			p.load(r);
-			c.blossom = Boolean.parseBoolean(p.getProperty("blossom", "true"));
-			c.cane = Boolean.parseBoolean(p.getProperty("cane", "true"));
-			c.fx = Boolean.parseBoolean(p.getProperty("shader", "true"));
-			c.tod = Math.min(100, Math.max(40, Double.parseDouble(p.getProperty("tod", "47"))));
-			c.coords = b(p, "hud.coords", c.coords);
-			c.direction = b(p, "hud.direction", c.direction);
-			c.day = b(p, "hud.day", c.day);
-			c.fps = b(p, "hud.fps", c.fps);
-			c.ping = b(p, "hud.ping", c.ping);
-			c.cps = b(p, "hud.cps", c.cps);
-			c.keys = b(p, "hud.keys", c.keys);
-			c.hudScale = Math.min(1.5, Math.max(.5, Double.parseDouble(p.getProperty("hud.scale", String.valueOf(c.hudScale)))));
-			c.hudBg = Math.min(1, Math.max(0, Double.parseDouble(p.getProperty("hud.bg", String.valueOf(c.hudBg)))));
-			c.hudIdleFade = b(p, "hud.idleFade", c.hudIdleFade);
-		} catch (IOException | NumberFormatException e) {
-			LOG.warn("Không đọc được {}, dùng mặc định", f, e);
+		if (!Files.exists(p)) return c;
+		Properties props = new Properties();
+		try (Reader r = Files.newBufferedReader(p)) {
+			props.load(r);
+		} catch (IOException e) {
+			LOG.warn("Không đọc được {}, dùng mặc định", p, e);
+			return c;
 		}
+		for (Field f : SceneConfig.class.getFields()) {
+			if (!option(f)) continue;
+			String v = props.getProperty(key(f));
+			if (v == null) continue;
+			try {
+				if (f.getType() == boolean.class) f.setBoolean(c, Boolean.parseBoolean(v.trim()));
+				else if (f.getType() == int.class) f.setInt(c, Integer.parseInt(v.trim()));
+				else f.setDouble(c, Double.parseDouble(v.trim()));
+			} catch (ReflectiveOperationException | NumberFormatException e) {
+				LOG.debug("Bỏ qua giá trị hỏng {}={}", key(f), v);
+			}
+		}
+		c.clamp();
 		return c;
 	}
 
-	private static boolean b(Properties p, String k, boolean def) {
-		return Boolean.parseBoolean(p.getProperty(k, String.valueOf(def)));
+	/** Giữ giá trị trong khoảng hợp lệ, kể cả khi người dùng sửa tay file. */
+	void clamp() {
+		tod = Math.min(100, Math.max(40, tod));
+		hudScale = Math.min(1.5, Math.max(.5, hudScale));
+		hudBg = Math.min(1, Math.max(0, hudBg));
+		minimapChunks = Math.min(32, Math.max(1, minimapChunks));
+		zoomLevel = zoomLevel <= 2 ? 2 : zoomLevel <= 4 ? 4 : 8;
+		dfpsBg = Math.min(60, Math.max(1, dfpsBg));
+		if (gamma != -1) gamma = Math.min(16, Math.max(0, gamma));
 	}
 
 	public void save() {
-		Properties p = new Properties();
-		p.setProperty("blossom", String.valueOf(blossom));
-		p.setProperty("cane", String.valueOf(cane));
-		p.setProperty("shader", String.valueOf(fx));
-		p.setProperty("tod", String.valueOf(tod));
-		p.setProperty("hud.coords", String.valueOf(coords));
-		p.setProperty("hud.direction", String.valueOf(direction));
-		p.setProperty("hud.day", String.valueOf(day));
-		p.setProperty("hud.fps", String.valueOf(fps));
-		p.setProperty("hud.ping", String.valueOf(ping));
-		p.setProperty("hud.cps", String.valueOf(cps));
-		p.setProperty("hud.keys", String.valueOf(keys));
-		p.setProperty("hud.scale", String.valueOf(hudScale));
-		p.setProperty("hud.bg", String.valueOf(hudBg));
-		p.setProperty("hud.idleFade", String.valueOf(hudIdleFade));
-		try (Writer w = Files.newBufferedWriter(file())) {
-			p.store(w, "Nos client - canh nen man chinh");
+		save(file());
+	}
+
+	void save(Path p) {
+		Properties props = new Properties();
+		for (Field f : SceneConfig.class.getFields()) {
+			if (!option(f)) continue;
+			try {
+				props.setProperty(key(f), String.valueOf(f.get(this)));
+			} catch (IllegalAccessException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		try (Writer w = Files.newBufferedWriter(p)) {
+			props.store(w, "Nos client");
 		} catch (IOException e) {
-			LOG.warn("Không lưu được {}", file(), e);
+			LOG.warn("Không lưu được {}", p, e);
 		}
 	}
 }

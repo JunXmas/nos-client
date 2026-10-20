@@ -6,7 +6,11 @@
 	"client": [
 		"PanoramaRendererMixin",
 		"MouseHandlerMixin",
-		"BossHealthOverlayAccessor"
+		"BossHealthOverlayAccessor",
+		"OptionInstanceAccessor",
+		"GameRendererMixin",
+		"CameraMixin",
+		"FramerateLimitTrackerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

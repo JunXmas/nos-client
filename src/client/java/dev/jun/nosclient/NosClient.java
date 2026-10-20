@@ -17,8 +17,13 @@ import org.lwjgl.glfw.GLFW;
 public final class NosClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		dev.jun.nosclient.feat.Feats.init();
 		// HUD vẽ ngay sau tâm ngắm: dưới chat/menu tạm dừng, trên thế giới
 		HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, Identifier.fromNamespaceAndPath("nosclient", "hud"), Hud.INSTANCE::render);
+		// bật Hiệu ứng thuốc của Nos client thì ẩn ô hiệu ứng gốc ở góc phải, khỏi hiện hai lần
+		HudElementRegistry.replaceElement(VanillaHudElements.STATUS_EFFECTS, old -> (g, dt) -> {
+			if (!dev.jun.nosclient.scene.SceneConfig.INSTANCE.effects) old.render(g, dt);
+		});
 
 		// màn chính vanilla → màn chính Nos client (giữ đủ chức năng: chơi đơn, mạng, tuỳ chọn, thoát)
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {

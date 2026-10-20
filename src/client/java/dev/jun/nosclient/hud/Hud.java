@@ -18,7 +18,6 @@ import net.minecraft.network.chat.Component;
  * Rẻ nhất có thể: ~1 quad nền mỗi mục, chữ không vẽ bóng (bóng chữ nhân đôi số quad), biome dịch lại chỉ khi đổi.
  */
 public final class Hud {
-	public static final Hud INSTANCE = new Hud();
 	public final Cps left = new Cps(), right = new Cps();
 	private final SceneConfig c = SceneConfig.INSTANCE;
 
@@ -130,7 +129,13 @@ public final class Hud {
 			PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
 			y = row(g, f, x, y, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms") + GAP;
 		}
-		if (c.keys) keys(g, f, mc, x, y + GAP, now, d);
+		if (c.keys) y = keys(g, f, mc, x, y + GAP, now, d) + GAP;
+		if (c.sprint && dev.jun.nosclient.feat.Feats.sprintOn) y = row(g, f, x, y, null, Component.translatable("nosclient.hud.sprint").getString(), null) + GAP;
+		// cột phải bắt đầu ở 30% chiều cao: góc phải trên là chỗ toast (thành tựu, hướng dẫn) của game
+		int ry = Math.round(g.guiHeight() / (float) c.hudScale * .3f);
+		if (c.effects) ry = effects(g, f, p, W - 6, ry) + GAP * 2;
+		if (c.armor) ry = armor(g, f, p, W - 6, ry);
+		if (c.invhud) invhud(g, mc, p, W);
 		if (c.direction) {
 			int boss = ((dev.jun.nosclient.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
 			compass(g, f, p, W / 2, boss > 0 ? 6 + boss * 19 : 6);
@@ -225,7 +230,7 @@ public final class Hud {
 		txt(g, f, deg, cx - sw(f, deg) / 2f + .5f, y + h + GAP + (15 - 8 * TS) / 2, T(TEXT));
 	}
 
-	private void keys(GuiGraphics g, Font f, Minecraft mc, int x, int y, long now, float dt) {
+	private int keys(GuiGraphics g, Font f, Minecraft mc, int x, int y, long now, float dt) {
 		var o = mc.options;
 		int s = 22, gap = 4;
 		key(g, f, 0, x + s + gap, y, s, s, "W", o.keyUp, dt);
@@ -236,6 +241,96 @@ public final class Hud {
 		key(g, f, 4, x, my, mw, s, "LMB " + left.count(now), o.keyAttack, dt);
 		key(g, f, 5, x + mw + gap, my, mw, s, "RMB " + right.count(now), o.keyUse, dt);
 		key(g, f, 6, x, my + s + gap, full, 10, "", o.keyJump, dt);
+		return my + s + gap + 10;
+	}
+
+	// ---------- hiệu ứng thuốc ----------
+	/** Mỗi hiệu ứng một ô canh phải: icon, tên + cấp, thời gian còn. Sắp hết (dưới 10 giây) thì nhấp nháy. */
+	private int effects(GuiGraphics g, Font f, LocalPlayer p, int xr, int y) {
+		for (var e : p.getActiveEffects()) {
+			if (!e.showIcon()) continue;
+			String name = e.getEffect().value().getDisplayName().getString() + (e.getAmplifier() > 0 ? " " + roman(e.getAmplifier() + 1) : "");
+			String time = e.isInfiniteDuration() ? "∞" : mmss(e.getDuration() / 20);
+			int w = PAD + 14 + 5 + sw(f, name) + 6 + sw(f, time) + PAD, h = H + 2, x = xr - w;
+			bg(g, x, y, w, h);
+			float blink = !e.isInfiniteDuration() && e.endsWithin(200) ? .45f + .55f * (float) Math.abs(Math.sin(System.nanoTime() / 2.5e8)) : 1;
+			g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, net.minecraft.client.gui.Gui.getMobEffectSprite(e.getEffect()), x + PAD, y + 1, 14, 14, T(Ui.alpha(0xFFFFFFFF, blink)));
+			float ty = y + (h - 8 * TS) / 2;
+			txt(g, f, name, x + PAD + 19, ty, T(e.getEffect().value().isBeneficial() ? TEXT : 0xFFFF9A9A));
+			txt(g, f, time, x + w - PAD - sw(f, time), ty, T(Ui.alpha(DIM, blink)));
+			y += h + GAP;
+		}
+		return y;
+	}
+
+	private static String mmss(int s) {
+		return s / 60 + ":" + (s % 60 < 10 ? "0" : "") + s % 60;
+	}
+
+	private static String roman(int n) {
+		return n <= 10 ? new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}[n] : String.valueOf(n);
+	}
+
+	// ---------- trạng thái giáp ----------
+	private static final net.minecraft.world.entity.EquipmentSlot[] ARMOR = {net.minecraft.world.entity.EquipmentSlot.HEAD,
+		net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET,
+		net.minecraft.world.entity.EquipmentSlot.MAINHAND, net.minecraft.world.entity.EquipmentSlot.OFFHAND};
+	/** Theo spec: chỉ dựng lại chuỗi khi độ bền hoặc món đồ thay đổi; mỗi khung chỉ so 6 số. */
+	private final int[] armorKey = new int[ARMOR.length];
+	private final String[] armorText = new String[ARMOR.length];
+
+	private int armor(GuiGraphics g, Font f, LocalPlayer p, int xr, int y) {
+		for (int i = 0; i < ARMOR.length; i++) {
+			var it = p.getItemBySlot(ARMOR[i]);
+			if (it.isEmpty() || !it.isDamageableItem() && i < 4) continue;
+			if (!it.isDamageableItem()) continue;
+			int left = it.getMaxDamage() - it.getDamageValue(), k = System.identityHashCode(it.getItem()) * 31 + left;
+			if (armorKey[i] != k || armorText[i] == null) {
+				armorKey[i] = k;
+				armorText[i] = String.valueOf(left);
+			}
+			float frac = left / (float) Math.max(1, it.getMaxDamage());
+			int col = frac > .5f ? 0xFF7FD873 : frac > .2f ? 0xFFF5C451 : 0xFFF2555A;
+			int w = PAD + 16 + 5 + sw(f, armorText[i]) + PAD, h = 18, x = xr - w;
+			bg(g, x, y, w, h);
+			g.renderItem(it, x + PAD - 1, y + 1);
+			txt(g, f, armorText[i], x + PAD + 20, y + (h - 8 * TS) / 2, T(col));
+			g.fill(x, y + h - 1, x + Math.round(w * frac), y + h, T(col)); // vạch độ bền dưới đáy ô
+			y += h + GAP;
+		}
+		return y;
+	}
+
+	// ---------- Inventory HUD ----------
+	/**
+	 * 27 ô túi đồ (trừ hotbar) ngay trên hotbar. Theo spec: chỉ chụp lại danh sách khi túi đồ đổi (bộ đếm thay đổi
+	 * của game) hoặc khi chết; mỗi khung chỉ vẽ lại từ bản chụp.
+	 */
+	private final net.minecraft.world.item.ItemStack[] inv = new net.minecraft.world.item.ItemStack[27];
+	private int invStamp = -1;
+	private boolean invEmpty = true;
+
+	private void invhud(GuiGraphics g, Minecraft mc, LocalPlayer p, int W) {
+		var pi = p.getInventory();
+		int stamp = pi.getTimesChanged() + (p.isDeadOrDying() ? 1 << 30 : 0);
+		if (stamp != invStamp) {
+			invEmpty = true;
+			for (int i = 0; i < 27; i++) {
+				inv[i] = pi.getItem(9 + i).copy();
+				invEmpty &= inv[i].isEmpty();
+			}
+			invStamp = stamp;
+		}
+		if (invEmpty) return; // túi trống: không vẽ ô tối vô nghĩa
+		int cell = 17, cols = 9, w = cols * cell + 4, h = 3 * cell + 4, x = W / 2 - w / 2;
+		int y = Math.round(g.guiHeight() / (float) c.hudScale) - 22 - 40 - h; // trên hotbar + thanh máu
+		bg(g, x, y, w, h);
+		for (int i = 0; i < 27; i++) {
+			if (inv[i].isEmpty()) continue;
+			int cx = x + 2 + (i % cols) * cell, cy = y + 2 + (i / cols) * cell;
+			g.renderItem(inv[i], cx, cy);
+			g.renderItemDecorations(mc.font, inv[i], cx, cy);
+		}
 	}
 
 	/** Phím kiểu Lunar: ô tối trong suốt, bấm thì nền trắng chữ đen. */
@@ -248,4 +343,7 @@ public final class Hud {
 		if (label.isEmpty()) g.fill(x + w / 2 - 10, y + h / 2, x + w / 2 + 10, y + h / 2 + 1, col);
 		else txt(g, f, label, x + (w - sw(f, label)) / 2f + .5f, y + (h - 8 * TS) / 2, col);
 	}
+
+	/** Khai báo SAU mọi field static (ARMOR…): Java khởi tạo static theo thứ tự viết, tạo sớm thì constructor thấy null. */
+	public static final Hud INSTANCE = new Hud();
 }

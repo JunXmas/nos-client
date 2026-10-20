@@ -1,10 +1,9 @@
 package dev.jun.nosclient.gui;
 
+import dev.jun.nosclient.Mods;
 import dev.jun.nosclient.Ui;
 import dev.jun.nosclient.scene.SceneConfig;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -30,22 +29,25 @@ public final class NosSettingsScreen extends Screen {
 	private final long opened = System.nanoTime();
 	private long last = opened;
 
-	private record Mod(String id, ItemStack icon, String group, Supplier<Boolean> get, Consumer<Boolean> set, float[] k) {}
+	/** Danh mục đang chọn ở cột trái. */
+	private int cat;
+	/** Hoạt ảnh công tắc/rê chuột của từng thẻ, theo id mod. */
+	private final java.util.Map<String, float[]> anim = new java.util.HashMap<>();
 
-	private final List<Mod> mods = List.of(
-		mod("coords", Items.COMPASS, "basic", () -> c.coords, v -> c.coords = v),
-		mod("direction", Items.RECOVERY_COMPASS, "basic", () -> c.direction, v -> c.direction = v),
-		mod("day", Items.CLOCK, "basic", () -> c.day, v -> c.day = v),
-		mod("fps", Items.REDSTONE, "advanced", () -> c.fps, v -> c.fps = v),
-		mod("ping", Items.ENDER_PEARL, "advanced", () -> c.ping, v -> c.ping = v),
-		mod("cps", Items.IRON_SWORD, "advanced", () -> c.cps, v -> c.cps = v),
-		mod("keys", Items.OAK_BUTTON, "advanced", () -> c.keys, v -> c.keys = v));
-
-	private static Mod mod(String id, net.minecraft.world.item.Item icon, String group, Supplier<Boolean> get, Consumer<Boolean> set) {
-		return new Mod(id, new ItemStack(icon), group, get, set, new float[]{get.get() ? 1 : 0, 0});
+	private List<Mods.Mod> mods() {
+		return Mods.of(Mods.CATS[cat]);
 	}
 
-	private static final String[] CATS = {"hud", "inv", "world", "pvp", "sys"};
+	private float[] k(Mods.Mod m) {
+		return anim.computeIfAbsent(m.id(), id -> new float[]{m.get().get() ? 1 : 0, 0});
+	}
+
+	/** Nhóm của thẻ: HUD chia Cơ bản/Nâng cao như preview, danh mục khác một nhóm. */
+	private static boolean basic(Mods.Mod m) {
+		return !m.group().equals("advanced");
+	}
+
+	private static final String[] CATS = Mods.CATS;
 	private static final ItemStack[] CAT_ICON = {new ItemStack(Items.COMPASS), new ItemStack(Items.PURPLE_SHULKER_BOX), new ItemStack(Items.GRASS_BLOCK),
 		new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.ENDER_EYE)};
 
@@ -82,7 +84,7 @@ public final class NosSettingsScreen extends Screen {
 
 	/** Thẻ cao 44 (có mô tả); không đủ chỗ trong tấm kính thì 28 (chỉ tên + công tắc) để lưới không tràn. */
 	private int cardH() {
-		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count(), adv = mods.size() - basic;
+		int basic = (int) mods().stream().filter(NosSettingsScreen::basic).count(), adv = mods().size() - basic;
 		int rows = (basic + cols() - 1) / cols() + (adv + cols() - 1) / cols();
 		return 76 + rows * (50 + GAP) + 22 + 14 <= ph() ? 50 : 36;
 	}
@@ -97,11 +99,11 @@ public final class NosSettingsScreen extends Screen {
 
 	/** Vị trí thẻ thứ i trong nhóm của nó; nhóm Nâng cao nằm dưới Cơ bản. */
 	private int[] cardPos(int i) {
-		Mod m = mods.get(i);
-		int basic = (int) mods.stream().filter(x -> x.group.equals("basic")).count();
-		int idx = m.group.equals("basic") ? i : i - basic;
+		Mods.Mod m = mods().get(i);
+		int basic = (int) mods().stream().filter(NosSettingsScreen::basic).count();
+		int idx = basic(m) ? i : i - basic;
 		int rowsBasic = (basic + cols() - 1) / cols();
-		int top = py() + 76 - (int) scroll + (m.group.equals("basic") ? 0 : rowsBasic * (cardH() + GAP) + 22);
+		int top = py() + 76 - (int) scroll + (basic(m) ? 0 : rowsBasic * (cardH() + GAP) + 22);
 		int x = px() + side() + 22 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (cardH() + GAP);
 		return new int[]{x, y};
 	}
@@ -124,7 +126,7 @@ public final class NosSettingsScreen extends Screen {
 		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.cats")), x + 16, y + 56, Ui.FAINT);
 		for (int i = 0; i < CATS.length; i++) {
 			int cy = y + 70 + i * 26;
-			boolean sel = i == 0, live = i == 0;
+			boolean sel = i == cat, live = true;
 			if (sel) {
 				g.fill(x + 10, cy, x + side() - 10, cy + 22, 0x405E3A8A);
 				g.fill(x + 3, cy + 5, x + 5, cy + 17, Ui.ACCENT);
@@ -135,31 +137,34 @@ public final class NosSettingsScreen extends Screen {
 			g.renderFakeItem(CAT_ICON[i], 0, 0);
 			g.pose().popMatrix();
 			Ui.text(g, Ui.ui(Component.translatable("nosclient.cat." + CATS[i])), x + 38, cy + 7, live ? Ui.TEXT : Ui.FAINT);
-			Component badge = Ui.small(Component.literal(live ? count() + "/" + mods.size() : "—"));
+			Component badge = Ui.small(Component.literal(Mods.on(CATS[i]) + "/" + Mods.of(CATS[i]).size()));
 			int bw = Ui.width(badge) + 10;
 			g.fill(x + side() - 16 - bw, cy + 5, x + side() - 16, cy + 17, sel ? 0x40B06EE6 : 0x14FFFFFF);
 			Ui.text(g, badge, x + side() - 16 - bw + 5, cy + 8, sel ? 0xFFEAD4FB : Ui.FAINT);
 		}
-		int on = count();
+		int on = (int) Mods.ALL.stream().filter(m -> m.get().get()).count(), total = Mods.ALL.size();
 		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.on")), x + 16, y + h - 40, Ui.MUTED);
-		Component n = Ui.bold(Component.literal(on + "/" + mods.size()));
+		Component n = Ui.bold(Component.literal(on + "/" + total));
 		Ui.text(g, n, x + side() - 16 - Ui.width(n), y + h - 41, Ui.TEXT);
 		g.fill(x + 16, y + h - 26, x + side() - 16, y + h - 23, 0x1FFFFFFF);
-		int fw = Math.round((side() - 32) * on / (float) mods.size());
+		int fw = Math.round((side() - 32) * on / (float) total);
 		if (fw > 2) g.fill(x + 16, y + h - 26, x + 16 + fw, y + h - 23, Ui.ACC1);
 		// phần phải
 		int rx = x + side() + 22;
-		Ui.text(g, Ui.big(Component.translatable("nosclient.cat.hud")), rx, y + 18, Ui.TEXT);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.cat.hud.sub")), rx, y + 40, Ui.MUTED);
+		Ui.text(g, Ui.big(Component.translatable("nosclient.cat." + CATS[cat])), rx, y + 18, Ui.TEXT);
+		Ui.text(g, Ui.small(Component.translatable("nosclient.cat." + CATS[cat] + ".sub")), rx, y + 40, Ui.MUTED);
 		int dy = Math.round((1 - in) * 10);
-		tabs(g, dy);
+		if (cat == 0) tabs(g, dy);
+		else tab = 0;
 		if (tab == 0) {
 			scroll = Ui.approach(scroll, (float) scrollTarget, dt, 16);
 			g.enableScissor(x + side() + 1, py() + 56, x + w - 1, py() + ph() - 6);
-			Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 62 - (int) scroll + dy, Ui.FAINT);
-			int adv = cardPos((int) mods.stream().filter(m -> m.group.equals("basic")).count())[1];
-			Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, adv - 14 + dy, Ui.FAINT);
-			for (int i = 0; i < mods.size(); i++) card(g, i, mx, my, dt, t, dy);
+			int nb = (int) mods().stream().filter(NosSettingsScreen::basic).count();
+			if (nb < mods().size()) {
+				Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 62 - (int) scroll + dy, Ui.FAINT);
+				Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, cardPos(nb)[1] - 14 + dy, Ui.FAINT);
+			}
+			for (int i = 0; i < mods().size(); i++) card(g, i, mx, my, dt, t, dy);
 			g.disableScissor();
 			int over = maxScroll();
 			if (over > 0) { // thanh cuộn mảnh bên phải
@@ -286,7 +291,7 @@ public final class NosSettingsScreen extends Screen {
 
 	/** Phần nội dung thẻ cao hơn khung bao nhiêu. */
 	private int maxScroll() {
-		int last = cardPos(mods.size() - 1)[1] + (int) scroll + cardH();
+		int last = cardPos(mods().size() - 1)[1] + (int) scroll + cardH();
 		return Math.max(0, last - (py() + ph() - 10));
 	}
 
@@ -299,19 +304,17 @@ public final class NosSettingsScreen extends Screen {
 		return super.mouseScrolled(mx, my, sx, sy);
 	}
 
-	private int count() {
-		return (int) mods.stream().filter(m -> m.get.get()).count();
-	}
 
 	private void card(GuiGraphics g, int i, int mx, int my, float dt, float t, int dy) {
-		Mod m = mods.get(i);
+		Mods.Mod m = mods().get(i);
 		int[] p = cardPos(i);
 		int x = p[0], y = p[1] + dy, w = cardW(), h = cardH();
-		boolean hov = mx >= x && mx < x + w && my >= y && my < y + h, on = m.get.get();
-		m.k[0] = Ui.approach(m.k[0], on ? 1 : 0, dt, 14);
-		m.k[1] = Ui.approach(m.k[1], hov ? 1 : 0, dt, 12);
-		float k = Ui.ease(m.k[0]), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
-		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), m.k[1]);
+		boolean hov = mx >= x && mx < x + w && my >= y && my < y + h, on = m.get().get();
+		float[] mk = k(m);
+		mk[0] = Ui.approach(mk[0], on ? 1 : 0, dt, 14);
+		mk[1] = Ui.approach(mk[1], hov ? 1 : 0, dt, 12);
+		float k = Ui.ease(mk[0]), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
+		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), mk[1]);
 		g.fill(x, y, x + w, y + h, Ui.alpha(top, in));
 		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
 		int iy = h >= 50 ? 10 : (h - 18) / 2;
@@ -319,17 +322,29 @@ public final class NosSettingsScreen extends Screen {
 		g.pose().pushMatrix();
 		g.pose().translate(x + 21, y + iy + 9);
 		g.pose().scale(.9f, .9f);
-		g.renderFakeItem(m.icon, -8, -8);
+		g.renderFakeItem(m.icon(), -8, -8);
 		g.pose().popMatrix();
 		Ui.toggle(g, x + w - 12 - 24, y + iy + 3, k);
 		int tx = x + 40, tw = w - 40 - 12 - 24 - 8;
-		Ui.text(g, Ui.fit(Ui.bold(Component.translatable("nosclient.mod." + m.id)), tw), tx, y + iy + 5, Ui.alpha(Ui.TEXT, in));
-		if (h >= 50) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id + ".desc")), w - 24), x + 12, y + 35, Ui.alpha(Ui.MUTED, in));
+		Ui.text(g, Ui.fit(Ui.bold(Component.translatable("nosclient.mod." + m.id())), tw), tx, y + iy + 5, Ui.alpha(Ui.TEXT, in));
+		if (h >= 50) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id() + ".desc")), w - 24), x + 12, y + 35, Ui.alpha(Ui.MUTED, in));
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
-		for (int i = 0; i < TABS.length; i++) {
+		for (int i = 0; i < CATS.length; i++) {
+			int cy = py() + 70 + i * 26;
+			if (e.x() >= px() + 10 && e.x() < px() + side() - 10 && e.y() >= cy && e.y() < cy + 22) {
+				if (cat != i) {
+					cat = i;
+					scroll = 0;
+					scrollTarget = 0;
+					Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+				}
+				return true;
+			}
+		}
+		for (int i = 0; cat == 0 && i < TABS.length; i++) {
 			int[] b = tabBox(i);
 			if (e.x() >= b[0] && e.x() < b[1] && e.y() >= py() + 20 && e.y() < py() + 38) {
 				tab = i;
@@ -355,11 +370,11 @@ public final class NosSettingsScreen extends Screen {
 			}
 			return super.mouseClicked(e, dbl);
 		}
-		for (int i = 0; i < mods.size(); i++) {
+		for (int i = 0; i < mods().size(); i++) {
 			int[] p = cardPos(i);
 			if (tab == 0 && e.y() >= py() + 56 && e.y() < py() + ph() - 6 && e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {
-				Mod m = mods.get(i);
-				m.set.accept(!m.get.get());
+				Mods.Mod m = mods().get(i);
+				m.set().accept(!m.get().get());
 				c.save();
 				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
 				return true;
