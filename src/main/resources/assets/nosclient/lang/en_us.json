@@ -116,5 +116,19 @@
 	"nosclient.mod.dfps": "Dynamic FPS",
 	"nosclient.mod.dfps.desc": "Lower FPS when unfocused or minimized, keeps it cool.",
 	"nosclient.mod.mp": "Play together",
-	"nosclient.mod.mp.desc": "Open your world to friends, offline accounts too."
+	"nosclient.mod.mp.desc": "Open your world to friends, offline accounts too.",
+	"nosclient.key.waypoint": "Add / remove waypoint",
+	"nosclient.wp.added": "Waypoint %s set",
+	"nosclient.wp.removed": "Waypoint removed",
+	"nosclient.mp.title": "Play together",
+	"nosclient.mp.sub": "Open your world to friends on the same network (LAN, Radmin, ZeroTier).",
+	"nosclient.mp.offline": "Allow offline accounts",
+	"nosclient.mp.pvp": "PvP",
+	"nosclient.mp.open": "Open room",
+	"nosclient.mp.apply": "Apply",
+	"nosclient.mp.running": "Room open on port %s",
+	"nosclient.mp.notsp": "Only available in singleplayer.",
+	"nosclient.mp.chat": "Room opened on port %s. %s",
+	"nosclient.mp.chat.offline": "Offline accounts can join.",
+	"nosclient.mp.button": "Play together…"
 }

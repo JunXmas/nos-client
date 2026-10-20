@@ -17,7 +17,7 @@ public final class Feats {
 	private Feats() {}
 
 	private static final SceneConfig c = SceneConfig.INSTANCE;
-	public static KeyMapping ZOOM, FREELOOK;
+	public static KeyMapping ZOOM, FREELOOK, WAYPOINT;
 
 	// ---- Toggle Sprint ----
 	public static boolean sprintOn, sneakOn;
@@ -33,6 +33,9 @@ public final class Feats {
 	public static float lookYaw, lookPitch;
 	private static CameraType lookPrev;
 
+	/** FOV dọc của khung vừa vẽ (độ), đã tính zoom. */
+	public static volatile float lastFov = 70;
+
 	// ---- Gamma ----
 	private static double gammaApplied = Double.NaN;
 
@@ -40,17 +43,25 @@ public final class Feats {
 		KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nosclient", "feat"));
 		ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", GLFW.GLFW_KEY_C, cat));
 		FREELOOK = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.freelook", GLFW.GLFW_KEY_LEFT_ALT, cat));
+		WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", GLFW.GLFW_KEY_B, cat));
 		zoomMul = c.zoomLevel;
 		ClientTickEvents.END_CLIENT_TICK.register(Feats::tick);
 	}
 
 	private static void tick(Minecraft mc) {
 		gamma(mc);
+		DynLight.tick(mc);
+		dev.jun.nosclient.hud.Minimap.tick(mc);
 		if (mc.player == null) {
 			looking = false;
 			return;
 		}
 		sprint(mc);
+		while (WAYPOINT.consumeClick()) if (c.waypoint) {
+			// đứng ngay trên một waypoint thì bấm B để xoá, không thì đánh dấu chỗ đang đứng
+			if (Waypoints.removeNear(mc)) mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.removed"), false);
+			else mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.added", Waypoints.addHere(mc).name()), false);
+		}
 		boolean z = c.zoom && ZOOM.isDown() && mc.screen == null;
 		if (!z) zoomMul = c.zoomLevel; // thả phím: lần sau zoom lại từ mức đã chọn
 		zoomTarget = z ? zoomMul : 1;

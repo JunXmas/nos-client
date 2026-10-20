@@ -116,5 +116,19 @@
 	"nosclient.mod.dfps": "Dynamic FPS",
 	"nosclient.mod.dfps.desc": "Hạ FPS khi game ở nền hoặc thu nhỏ, đỡ nóng máy.",
 	"nosclient.mod.mp": "Chơi chung",
-	"nosclient.mod.mp.desc": "Mở thế giới cho bạn bè vào, kể cả tài khoản offline."
+	"nosclient.mod.mp.desc": "Mở thế giới cho bạn bè vào, kể cả tài khoản offline.",
+	"nosclient.key.waypoint": "Đánh dấu / xoá waypoint",
+	"nosclient.wp.added": "Đã đánh dấu waypoint %s",
+	"nosclient.wp.removed": "Đã xoá waypoint",
+	"nosclient.mp.title": "Chơi chung",
+	"nosclient.mp.sub": "Mở thế giới cho bạn bè cùng mạng (LAN, Radmin, ZeroTier).",
+	"nosclient.mp.offline": "Cho tài khoản offline vào",
+	"nosclient.mp.pvp": "PvP",
+	"nosclient.mp.open": "Mở phòng",
+	"nosclient.mp.apply": "Áp dụng",
+	"nosclient.mp.running": "Phòng đang mở ở cổng %s",
+	"nosclient.mp.notsp": "Chỉ mở được khi đang chơi đơn.",
+	"nosclient.mp.chat": "Đã mở phòng ở cổng %s. %s",
+	"nosclient.mp.chat.offline": "Tài khoản offline vào được.",
+	"nosclient.mp.button": "Chơi chung…"
 }

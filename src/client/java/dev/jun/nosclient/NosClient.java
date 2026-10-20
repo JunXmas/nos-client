@@ -27,6 +27,16 @@ public final class NosClient implements ClientModInitializer {
 			if (!dev.jun.nosclient.scene.SceneConfig.INSTANCE.effects) old.render(g, dt);
 		});
 
+		// menu tạm dừng (chơi đơn): thêm nút "Chơi chung" ngay trên nút thoát
+		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
+			if (!(screen instanceof net.minecraft.client.gui.screens.PauseScreen) || mc.getSingleplayerServer() == null || !dev.jun.nosclient.scene.SceneConfig.INSTANCE.mp) return;
+			var btns = net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen);
+			// nút "Mở cho LAN" của game nằm ở cột phải hàng gần cuối; đặt nút của ta ngay dưới menu
+			int bottom = btns.stream().mapToInt(b -> b.getY() + b.getHeight()).max().orElse(h / 2);
+			btns.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.translatable("nosclient.mp.button"),
+				b -> mc.setScreen(new dev.jun.nosclient.gui.PlayTogetherScreen(screen))).bounds(w / 2 - 102, bottom + 4, 204, 20).build());
+		});
+
 		// màn chính vanilla → màn chính Nos client (giữ đủ chức năng: chơi đơn, mạng, tuỳ chọn, thoát)
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
 			if (screen instanceof TitleScreen) mc.setScreen(new NosTitleScreen());

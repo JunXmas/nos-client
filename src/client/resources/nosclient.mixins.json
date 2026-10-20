@@ -12,7 +12,8 @@
 		"CameraMixin",
 		"FramerateLimitTrackerMixin",
 		"AbstractContainerScreenAccessor",
-		"MultiPlayerGameModeAccessor"
+		"MultiPlayerGameModeAccessor",
+		"LevelRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -133,9 +133,11 @@ public final class Hud {
 		if (c.sprint && dev.jun.nosclient.feat.Feats.sprintOn) y = row(g, f, x, y, null, Component.translatable("nosclient.hud.sprint").getString(), null) + GAP;
 		// cột phải bắt đầu ở 30% chiều cao: góc phải trên là chỗ toast (thành tựu, hướng dẫn) của game
 		int ry = Math.round(g.guiHeight() / (float) c.hudScale * .3f);
+		if (c.minimap) ry = Minimap.render(g, mc, W - 6, ry, Math.max(BA, .4f));
 		if (c.effects) ry = effects(g, f, p, W - 6, ry) + GAP * 2;
 		if (c.armor) ry = armor(g, f, p, W - 6, ry);
 		if (c.invhud) invhud(g, mc, p, W);
+		if (c.waypoint) waypoints(g, f, mc, p, W, Math.round(g.guiHeight() / (float) c.hudScale));
 		if (c.blockinfo) blockinfo(g, f, mc, W / 2, c.direction ? 44 : 6, now);
 		if (c.direction) {
 			int boss = ((dev.jun.nosclient.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
@@ -224,6 +226,14 @@ public final class Hud {
 				txt(g, f, s, xx - sw(f, s) / 2f + .5f, y + 4, T(Ui.alpha(di == 0 ? ACC : TEXT, Math.max(.2f, edge))));
 			} else g.fill(xx, y + h - 5, xx + 1, y + h - 3, T(Ui.alpha(0x80FFFFFF, edge)));
 		}
+		var mcw = Minecraft.getInstance();
+		if (SceneConfig.INSTANCE.waypoint) for (var wp : dev.jun.nosclient.feat.Waypoints.here(mcw)) {
+			double ang = (Math.toDegrees(Math.atan2(-(wp.x() + .5 - p.getX()), wp.z() + .5 - p.getZ())) + 180 + 360) % 360;
+			float dxw = (float) (((ang - yaw + 540) % 360) - 180) * 1.6f;
+			if (Math.abs(dxw) > w / 2f - 4) continue;
+			int xx = Math.round(cx + dxw);
+			g.fill(xx - 1, y + 1, xx + 2, y + 4, T(wp.color()));
+		}
 		g.fill(cx, y, cx + 1, y + h, T(0xFFFFFFFF));
 		String deg = Math.round(yaw) % 360 + "°";
 		int bw = sw(f, deg) + 2 * PAD;
@@ -243,6 +253,46 @@ public final class Hud {
 		key(g, f, 5, x + mw + gap, my, mw, s, "RMB " + right.count(now), o.keyUse, dt);
 		key(g, f, 6, x, my + s + gap, full, 10, "", o.keyJump, dt);
 		return my + s + gap + 10;
+	}
+
+	// ---------- waypoint ----------
+	/**
+	 * Chiếu waypoint lên màn hình bằng chính góc camera và FOV của khung vừa vẽ: viên kim cương màu + tên + khoảng cách.
+	 * Waypoint sau lưng thì ghim vào mép màn hình theo hướng của nó. Trên la bàn có chấm màu tương ứng.
+	 */
+	private void waypoints(GuiGraphics g, Font f, Minecraft mc, LocalPlayer p, int W, int Hs) {
+		var cam = mc.gameRenderer.getMainCamera();
+		var cp = cam.position();
+		double yaw = Math.toRadians(cam.yRot()), pitch = Math.toRadians(cam.xRot());
+		double tanY = Math.tan(Math.toRadians(dev.jun.nosclient.feat.Feats.lastFov) / 2), aspect = W / (double) Hs;
+		for (var w : dev.jun.nosclient.feat.Waypoints.here(mc)) {
+			double dx = w.x() + .5 - cp.x, dy = w.y() + 1.2 - cp.y, dz = w.z() + .5 - cp.z, dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			// về hệ toạ độ camera: xoay ngược yaw quanh Y rồi ngược pitch quanh X (Minecraft: yaw 0 = nhìn +Z)
+			double rx = dx * Math.cos(yaw) + dz * Math.sin(yaw), rz = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+			double ry = dy * Math.cos(pitch) + rz * Math.sin(pitch), fwd = -dy * Math.sin(pitch) + rz * Math.cos(pitch);
+			double sx, sy;
+			boolean on = fwd > .1;
+			if (on) {
+				sx = W / 2.0 - rx / fwd / (tanY * aspect) * W / 2.0;
+				sy = Hs / 2.0 - ry / fwd / tanY * Hs / 2.0;
+				on = sx > 8 && sx < W - 8 && sy > 8 && sy < Hs - 8;
+			} else {
+				sx = rx > 0 ? 10 : W - 10; // sau lưng: ghim mép theo phía của nó
+				sy = Hs / 2.0;
+			}
+			if (!on) {
+				sx = Math.max(10, Math.min(W - 10, sx));
+				sy = Math.max(10, Math.min(Hs - 30, sy));
+			}
+			int x = (int) Math.round(sx), y = (int) Math.round(sy);
+			// kim cương 7 px: 4 dải ngang
+			for (int k = 0; k < 4; k++) g.fill(x - k, y - 3 + k, x + k + 1, y - 2 + k, T(w.color()));
+			for (int k = 0; k < 3; k++) g.fill(x - 2 + k, y + 1 + k, x + 3 - k, y + 2 + k, T(w.color()));
+			String label = w.name() + "  " + Math.round(dist) + " m";
+			int lw = sw(f, label) + 2 * PAD;
+			bg(g, x - lw / 2, y + 6, lw, 13);
+			txt(g, f, label, x - sw(f, label) / 2f, y + 6 + (13 - 8 * TS) / 2, T(TEXT));
+		}
 	}
 
 	// ---------- thông tin khối & mob ----------

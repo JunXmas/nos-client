@@ -19,7 +19,9 @@ public abstract class GameRendererMixin {
 		double dt = nosclient$last == 0 ? 0 : Math.min(.05, (now - nosclient$last) / 1e9);
 		nosclient$last = now;
 		Feats.zoomNow += (Feats.zoomTarget - Feats.zoomNow) * (1 - Math.exp(-dt * 14));
-		if (Math.abs(Feats.zoomNow - 1) < 1e-3) return;
-		cir.setReturnValue((float) (cir.getReturnValue() / Feats.zoomNow));
+		float fov = cir.getReturnValue();
+		if (Math.abs(Feats.zoomNow - 1) >= 1e-3) fov = (float) (fov / Feats.zoomNow);
+		if (world) Feats.lastFov = fov; // để HUD chiếu waypoint đúng góc nhìn
+		if (fov != cir.getReturnValue()) cir.setReturnValue(fov);
 	}
 }
