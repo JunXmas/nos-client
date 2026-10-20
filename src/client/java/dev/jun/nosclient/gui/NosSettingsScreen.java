@@ -72,6 +72,8 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	private static final int SIDE = 128, GAP = 6;
+	/** 0 = thẻ mod, 1 = giao diện HUD. Tách tab để màn thấp không phải nhồi hai khu chồng lên nhau. */
+	private int tab;
 
 	/** Thẻ cao 44 (có mô tả); không đủ chỗ trong tấm kính thì 28 (chỉ tên + công tắc) để lưới không tràn. */
 	private int cardH() {
@@ -144,10 +146,125 @@ public final class NosSettingsScreen extends Screen {
 		int rx = x + SIDE + 16;
 		Ui.text(g, Ui.big(Component.translatable("nosclient.cat.hud")), rx, y + 14, Ui.TEXT);
 		Ui.text(g, Ui.small(Component.translatable("nosclient.cat.hud.sub")), rx, y + 34, Ui.MUTED);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 52 + 2 + Math.round((1 - in) * 10), Ui.FAINT);
-		int adv = cardPos((int) mods.stream().filter(m -> m.group.equals("basic")).count())[1];
-		Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, adv - 12 + Math.round((1 - in) * 10), Ui.FAINT);
-		for (int i = 0; i < mods.size(); i++) card(g, i, mx, my, dt, t, Math.round((1 - in) * 10));
+		int dy = Math.round((1 - in) * 10);
+		tabs(g, dy);
+		if (tab == 0) {
+			Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 52 + 2 + dy, Ui.FAINT);
+			int adv = cardPos((int) mods.stream().filter(m -> m.group.equals("basic")).count())[1];
+			Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, adv - 12 + dy, Ui.FAINT);
+			for (int i = 0; i < mods.size(); i++) card(g, i, mx, my, dt, t, dy);
+		} else look(g, dt, dy);
+	}
+
+	private static final String[] TABS = {"nosclient.tab.mods", "nosclient.tab.look"};
+
+	/** [x0, x1] của tab i, canh phải ngang hàng tiêu đề. */
+	private int[] tabBox(int i) {
+		int x1 = px() + pw() - 16;
+		for (int k = TABS.length - 1; k >= 0; k--) {
+			int w = Ui.width(Ui.bold(Component.translatable(TABS[k]))) + 16, x0 = x1 - w;
+			if (k == i) return new int[]{x0, x1};
+			x1 = x0 - 4;
+		}
+		return new int[]{0, 0};
+	}
+
+	private void tabs(GuiGraphics g, int dy) {
+		int y = py() + 16 + dy;
+		for (int i = 0; i < TABS.length; i++) {
+			int[] b = tabBox(i);
+			boolean sel = i == tab;
+			g.fill(b[0], y, b[1], y + 16, sel ? 0x665E3A8A : 0x14FFFFFF);
+			if (sel) g.fill(b[0], y + 15, b[1], y + 16, Ui.ACCENT);
+			Component c = Ui.bold(Component.translatable(TABS[i]));
+			Ui.text(g, c, b[0] + 8, y + 4, sel ? 0xFFEAD4FB : Ui.MUTED);
+		}
+	}
+
+	// ---------- khu "Giao diện HUD": kích thước, độ trong suốt nền, mờ khi đứng yên ----------
+	private int lookY() {
+		return py() + 58;
+	}
+
+	private int lookX0() {
+		return px() + SIDE + 16;
+	}
+
+	private int lookX1() {
+		return px() + pw() - 16;
+	}
+
+	private int dragging = -1;
+	private float fadeK = c.hudIdleFade ? 1 : 0;
+
+	private void look(GuiGraphics g, float dt, int dy) {
+		int y = lookY() + dy, x0 = lookX0(), x1 = lookX1();
+		double[] val = {c.hudScale - .5, c.hudBg};
+		String[] lab = {"nosclient.look.size", "nosclient.look.bg"};
+		String[] shown = {Math.round(c.hudScale * 100) + "%", Math.round(c.hudBg * 100) + "%"};
+		for (int i = 0; i < 2; i++) {
+			int ry = y + i * 34, tx0 = x0, tx1 = trackEnd();
+			Ui.text(g, Ui.ui(Component.translatable(lab[i])), tx0, ry, Ui.TEXT);
+			Component v = Ui.bold(Component.literal(shown[i]));
+			Ui.text(g, v, tx1 - Ui.width(v), ry, Ui.ACCENT_HI);
+			int ty = ry + 15, kx = (int) Math.round(tx0 + val[i] * (tx1 - tx0));
+			g.fill(tx0, ty, tx1, ty + 2, 0x24FFFFFF);
+			g.fill(tx0, ty, kx, ty + 2, Ui.ACC1);
+			g.fill(kx - 2, ty - 4, kx + 2, ty + 6, 0xFFFFFFFF);
+		}
+		fadeK = Ui.approach(fadeK, c.hudIdleFade ? 1 : 0, dt, 14);
+		int fy = y + 72;
+		Ui.toggle(g, x0, fy, Ui.ease(fadeK));
+		Ui.text(g, Ui.ui(Component.translatable("nosclient.look.fade")), x0 + 30, fy + 2, Ui.TEXT);
+		Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.look.fade.desc")), x1 - x0 - 30), x0 + 30, fy + 14, Ui.MUTED);
+		// xem trước: một viên HUD thật ở đúng cỡ và độ đậm nền đang chọn
+		int pvx = trackEnd() + 24, pvy = y;
+		if (pvx + 60 < x1) {
+			Ui.text(g, Ui.small(Component.translatable("nosclient.look.preview")), pvx, pvy, Ui.FAINT);
+			var f = Minecraft.getInstance().font;
+			// cỡ thật so với giao diện, nhưng không tràn khỏi khung xem trước
+			float k = Math.min((float) c.hudScale, (x1 - pvx) / (float) (f.width("XYZ 120 64 -35") + 8));
+			g.pose().pushMatrix();
+			g.pose().translate(pvx, pvy + 14);
+			g.pose().scale(k, k);
+			String[] rows = {"123 FPS", "XYZ 120 64 -35", "0 | 0 CPS"};
+			for (int r = 0; r < rows.length; r++) {
+				int w = f.width(rows[r]) + 8;
+				g.fill(0, r * 15, w, r * 15 + 13, (int) Math.round(c.hudBg * 255) << 24);
+				g.drawString(f, rows[r], 4, r * 15 + 3, 0xFFFFFFFF, false);
+			}
+			g.pose().popMatrix();
+		}
+	}
+
+	/** Thanh kéo chiếm nửa trái, nửa phải để xem trước. */
+	private int trackEnd() {
+		return lookX0() + Math.min(220, (lookX1() - lookX0()) * 55 / 100);
+	}
+
+	private void setTrack(int i, double mx) {
+		double k = Math.min(1, Math.max(0, (mx - lookX0()) / (double) (trackEnd() - lookX0())));
+		if (i == 0) c.hudScale = Math.round((.5 + k) * 20) / 20.0; // bước 5%
+		else c.hudBg = Math.round(k * 20) / 20.0;
+	}
+
+	@Override
+	public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+		if (dragging >= 0) {
+			setTrack(dragging, e.x());
+			return true;
+		}
+		return super.mouseDragged(e, dx, dy);
+	}
+
+	@Override
+	public boolean mouseReleased(MouseButtonEvent e) {
+		if (dragging >= 0) {
+			dragging = -1;
+			c.save();
+			return true;
+		}
+		return super.mouseReleased(e);
 	}
 
 	private int count() {
@@ -180,6 +297,32 @@ public final class NosSettingsScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
+		for (int i = 0; i < TABS.length; i++) {
+			int[] b = tabBox(i);
+			if (e.x() >= b[0] && e.x() < b[1] && e.y() >= py() + 16 && e.y() < py() + 32) {
+				tab = i;
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+				return true;
+			}
+		}
+		if (tab == 1) {
+			int ly = lookY();
+			for (int i = 0; i < 2; i++) {
+				int ry = ly + i * 34;
+				if (e.x() >= lookX0() - 4 && e.x() <= trackEnd() + 4 && e.y() >= ry + 8 && e.y() <= ry + 24) {
+					dragging = i;
+					setTrack(i, e.x());
+					return true;
+				}
+			}
+			if (e.x() >= lookX0() && e.x() < lookX1() && e.y() >= ly + 70 && e.y() < ly + 92) {
+				c.hudIdleFade = !c.hudIdleFade;
+				c.save();
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+				return true;
+			}
+			return super.mouseClicked(e, dbl);
+		}
 		for (int i = 0; i < mods.size(); i++) {
 			int[] p = cardPos(i);
 			if (e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {

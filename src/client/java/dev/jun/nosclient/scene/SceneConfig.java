@@ -20,6 +20,9 @@ public final class SceneConfig {
 	public double tod = 47;
 	/** HUD — mặc định theo spec: toạ độ, hướng, FPS bật; ngày, ping, CPS tắt; keystrokes (tính năng gốc) bật. */
 	public boolean coords = true, direction = true, day = false, fps = true, ping = false, cps = false, keys = true;
+	/** Cỡ HUD (0,5–1,5 × cỡ giao diện), độ đục nền ô (0–1), mờ khi đứng yên. */
+	public double hudScale = .8, hudBg = .45;
+	public boolean hudIdleFade = true;
 
 	private static Path file() {
 		return FabricLoader.getInstance().getConfigDir().resolve("nosclient.properties");
@@ -43,6 +46,9 @@ public final class SceneConfig {
 			c.ping = b(p, "hud.ping", c.ping);
 			c.cps = b(p, "hud.cps", c.cps);
 			c.keys = b(p, "hud.keys", c.keys);
+			c.hudScale = Math.min(1.5, Math.max(.5, Double.parseDouble(p.getProperty("hud.scale", String.valueOf(c.hudScale)))));
+			c.hudBg = Math.min(1, Math.max(0, Double.parseDouble(p.getProperty("hud.bg", String.valueOf(c.hudBg)))));
+			c.hudIdleFade = b(p, "hud.idleFade", c.hudIdleFade);
 		} catch (IOException | NumberFormatException e) {
 			LOG.warn("Không đọc được {}, dùng mặc định", f, e);
 		}
@@ -66,6 +72,9 @@ public final class SceneConfig {
 		p.setProperty("hud.ping", String.valueOf(ping));
 		p.setProperty("hud.cps", String.valueOf(cps));
 		p.setProperty("hud.keys", String.valueOf(keys));
+		p.setProperty("hud.scale", String.valueOf(hudScale));
+		p.setProperty("hud.bg", String.valueOf(hudBg));
+		p.setProperty("hud.idleFade", String.valueOf(hudIdleFade));
 		try (Writer w = Files.newBufferedWriter(file())) {
 			p.store(w, "Nos client - canh nen man chinh");
 		} catch (IOException e) {

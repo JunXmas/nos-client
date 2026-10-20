@@ -71,5 +71,12 @@
 	"nosclient.dir.full.s": "South",
 	"nosclient.dir.full.sw": "Southwest",
 	"nosclient.dir.full.w": "West",
-	"nosclient.dir.full.nw": "Northwest"
+	"nosclient.dir.full.nw": "Northwest",
+	"nosclient.look.size": "Size",
+	"nosclient.look.bg": "Background",
+	"nosclient.look.fade": "Fade when idle",
+	"nosclient.tab.mods": "Mods",
+	"nosclient.tab.look": "Look",
+	"nosclient.look.fade.desc": "HUD dims after 3 s idle, comes back when you move.",
+	"nosclient.look.preview": "PREVIEW"
 }

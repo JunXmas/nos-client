@@ -71,5 +71,12 @@
 	"nosclient.dir.full.s": "Nam",
 	"nosclient.dir.full.sw": "Tây Nam",
 	"nosclient.dir.full.w": "Tây",
-	"nosclient.dir.full.nw": "Tây Bắc"
+	"nosclient.dir.full.nw": "Tây Bắc",
+	"nosclient.look.size": "Kích thước",
+	"nosclient.look.bg": "Độ đậm nền",
+	"nosclient.look.fade": "Mờ khi đứng yên",
+	"nosclient.tab.mods": "Mod",
+	"nosclient.tab.look": "Giao diện",
+	"nosclient.look.fade.desc": "HUD mờ đi sau 3 giây đứng yên, rõ lại khi di chuyển.",
+	"nosclient.look.preview": "XEM TRƯỚC"
 }

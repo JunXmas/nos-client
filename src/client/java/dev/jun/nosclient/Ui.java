@@ -91,15 +91,12 @@ public final class Ui {
 	}
 
 	/**
-	 * Tấm kính phẳng: bóng 1 lớp lệch xuống, nền tối trong, vệt sáng chuyển màu dọc nửa trên, viền mảnh, gờ sáng mép trên.
-	 * Tổng 8 quad. tint = nền ARGB riêng (vd. tím cho nút chính), 0 = nền mặc định.
+	 * Tấm mica phẳng kiểu Lunar: nền tối trong suốt + viền sáng 1 px. Không bóng đổ, không vệt sáng, không gờ — 5 quad.
+	 * tint = nền ARGB riêng (vd. tím cho nút đang chọn), 0 = nền mặc định.
 	 */
 	public static void panel(GuiGraphics g, int x0, int y0, int x1, int y1, int tint) {
-		g.fill(x0 + 1, y1, x1 + 1, y1 + 2, 0x30000000);
-		g.fill(x0, y0, x1, y1, tint != 0 ? tint : 0xA6141821);
-		g.fillGradient(x0, y0, x1, y0 + Math.min((y1 - y0) / 2, 24), 0x14FFFFFF, 0x00FFFFFF);
-		frame(g, x0, y0, x1, y1, 0x1FFFFFFF);
-		g.fill(x0 + 1, y0, x1 - 1, y0 + 1, 0x40FFFFFF);
+		g.fill(x0, y0, x1, y1, tint != 0 ? tint : 0x99101218);
+		frame(g, x0, y0, x1, y1, 0x14FFFFFF);
 	}
 
 	public static int lerpCol(int a, int b, float k) {

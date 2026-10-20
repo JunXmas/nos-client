@@ -131,12 +131,13 @@ public final class NosTitleScreen extends Screen {
 	@Override
 	public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
 		renderPanorama(g, pt);
-		// tối dần sang trái để chữ menu nổi trên cảnh như .shade của preview
-		int w = width;
-		for (int i = 0; i < 8; i++) {
-			int x0 = i * w / 16, x1 = (i + 1) * w / 16;
-			g.fill(x0, 0, x1, height, ((int) (150 * (1 - i / 8.0) * (1 - i / 8.0))) << 24 | 0x07090D);
-		}
+		// một dải tối mềm sau cột menu cho chữ nổi trên cảnh (1 quad chuyển màu, xoay ngang bằng pose)
+		g.pose().pushMatrix();
+		g.pose().translate(width / 2f, 0);
+		g.pose().rotate((float) Math.toRadians(-90));
+		g.pose().translate(-height, -width / 2f);
+		g.fillGradient(0, 0, height, width / 2, 0x00000000, 0x8C07090D);
+		g.pose().popMatrix();
 	}
 
 	@Override
@@ -178,9 +179,8 @@ public final class NosTitleScreen extends Screen {
 			hover = Ui.approach(hover, isHoveredOrFocused() ? 1 : 0, 1 / 60f, 12);
 			float in = Ui.ease(Math.min(1, Math.max(0, (t - .08f * idx) / .5f)));
 			int dx = Math.round((1 - in) * -24 + hover * 3), x = getX() + dx, y = getY(), w = width, h = height;
-			int tint = it.primary ? Ui.lerpCol(0xD9734AA8, 0xE68A5BC4, hover) : Ui.lerpCol(0xA6141821, 0xBF262D3A, hover);
+			int tint = it.primary ? Ui.lerpCol(0xB3734AA8, 0xCC8A5BC4, hover) : Ui.lerpCol(0x99101218, 0xB3262D3A, hover);
 			Ui.panel(g, x, y, x + w, y + h, Ui.alpha(tint, in));
-			if (it.primary) Ui.frame(g, x, y, x + w, y + h, Ui.alpha(0x66D3A8F5, in));
 			if (hover > .02f) { // vạch tím bên trái như .mb:before của preview
 				int half = Math.round((h / 2f - 8) * Ui.ease(hover));
 				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));
