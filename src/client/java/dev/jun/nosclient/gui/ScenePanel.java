@@ -68,6 +68,7 @@ final class ScenePanel extends AbstractWidget {
 		g.pose().translate(x, y);
 		g.pose().scale(s, s);
 		g.pose().translate(-x, -y);
+		dev.jun.nosclient.Ui.hint = s;
 		try {
 			Ui.panel(g, x, y, x + W, y + H, 0);
 			Ui.text(g, Ui.small(Component.translatable("nosclient.scene.title")), x + 16, y + 13, Ui.MUTED);
@@ -108,6 +109,7 @@ final class ScenePanel extends AbstractWidget {
 				Ui.text(g, t, bx + (half - 4 - Ui.width(t)) / 2, sy + 6, sel ? 0xFFEAD4FB : Ui.MUTED);
 			}
 		} finally {
+			dev.jun.nosclient.Ui.hint = 1;
 			g.pose().popMatrix();
 		}
 	}

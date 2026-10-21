@@ -39,6 +39,8 @@ public final class NosTitleScreen extends Screen {
 	private final int splash = (int) (System.currentTimeMillis() / 4000 % 6);
 	private float t;
 	private PlayerSkin skin = DefaultPlayerSkin.getDefaultSkin();
+	private final Fx.Runes runes = new Fx.Runes();
+	private long lastFrame = System.nanoTime();
 
 	public NosTitleScreen() {
 		super(Component.translatable("narrator.screen.title"));
@@ -94,6 +96,16 @@ public final class NosTitleScreen extends Screen {
 		// logo: khối lá + "Nostalgia" (gia xanh) + LAUNCHER giãn chữ, trượt vào khi mở màn
 		float k = Ui.ease(Math.min(1, t / .6f));
 		int ly = logoY + Math.round((1 - k) * -12);
+		long now = System.nanoTime();
+		float dt = Math.min(.05f, (now - lastFrame) / 1e9f);
+		lastFrame = now;
+		// khối lá như vừa được phù phép: quầng thở chậm, rune Standard Galactic bay vòng vào như ở bàn phù phép
+		float breathe = .75f + .25f * (float) Math.sin(t * 1.6);
+		Fx.glow(g, x + 20, ly + 20, 140, 120, Ui.alpha(0x8C5AC54F, k * breathe));
+		Fx.glow(g, x + 20, ly + 20, 80, 70, Ui.alpha(0x73B06EE6, k));
+		runes.size = 1.4f;
+		if (t > .6f) runes.emit(x + 20, ly + 20, 60, 7, dt, 0xFFD9FFCC);
+		runes.render(g);
 		g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x, ly, 0, 0, 40, 40, 40, 40);
 		Component nos = Ui.logo("Nostal"), gia = Ui.logo("gia");
 		int tx = x + 48;
@@ -181,6 +193,9 @@ public final class NosTitleScreen extends Screen {
 			int dx = Math.round((1 - in) * -24 + hover * 3), x = getX() + dx, y = getY(), w = width, h = height;
 			int tint = it.primary ? Ui.lerpCol(0xB3734AA8, 0xCC8A5BC4, hover) : Ui.lerpCol(0x99101218, 0xB3262D3A, hover);
 			Ui.panel(g, x, y, x + w, y + h, Ui.alpha(tint, in));
+			// nút chính luôn được phù phép; nút khác lóe lên khi rê chuột
+			float ench = it.primary ? .55f + .45f * hover : hover;
+			if (ench > .02f) Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, Ui.alpha(0x66F0DBFF, ench * in));
 			if (hover > .02f) { // vạch tím bên trái như .mb:before của preview
 				int half = Math.round((h / 2f - 8) * Ui.ease(hover));
 				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));
@@ -188,6 +203,7 @@ public final class NosTitleScreen extends Screen {
 			}
 			// mọi toạ độ theo chiều cao thật của nút (24–32): màn thấp thì nút co, chữ không chồng
 			int ic = Math.min(22, h - 12), iy = y + (h - ic) / 2;
+			if (hover > .02f) Fx.glow(g, x + 10 + ic / 2f, iy + ic / 2f, ic * 2.6f, ic * 2.6f, Ui.alpha(0x66C99BFF, hover));
 			g.fill(x + 10, iy, x + 10 + ic, iy + ic, it.primary ? 0x33FFFFFF : 0x1FFFFFFF);
 			g.pose().pushMatrix();
 			g.pose().translate(x + 10 + ic / 2f, iy + ic / 2f);

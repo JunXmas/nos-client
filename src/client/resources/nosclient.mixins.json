@@ -13,7 +13,8 @@
 		"FramerateLimitTrackerMixin",
 		"AbstractContainerScreenAccessor",
 		"MultiPlayerGameModeAccessor",
-		"LevelRendererMixin"
+		"LevelRendererMixin",
+		"GlyphRenderStateMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

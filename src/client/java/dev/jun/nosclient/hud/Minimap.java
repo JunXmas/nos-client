@@ -76,6 +76,7 @@ public final class Minimap {
 	public static int render(GuiGraphics g, Minecraft mc, int xr, int y, float alpha) {
 		if (tex == null || cx == Integer.MIN_VALUE) return y;
 		int box = 72, x = xr - box;
+		Hud.mark(x - 2, y - 2, x + box + 2, y + box + 2);
 		g.fill(x - 2, y - 2, x + box + 2, y + box + 2, Math.round(alpha * 160) << 24);
 		BlockPos p = mc.player.blockPosition();
 		int r = (size - 1) / 2;

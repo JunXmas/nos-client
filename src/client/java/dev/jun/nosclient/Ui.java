@@ -19,38 +19,64 @@ public final class Ui {
 	public static final int TEXT = 0xFFEEF1F7, MUTED = 0xFF8D97AB, FAINT = 0x998D97AB, ACCENT = 0xFFB06EE6, ACCENT_HI = 0xFFD3A8F5, BRAND = 0xFF5AC54F;
 	public static final int ACC0 = 0xFF9A5BD6, ACC1 = 0xFFBF86EF;
 
-	private static final FontDescription UI = font("ui"), UI_BOLD = font("ui_bold"), SMALL = font("small"), BIG = font("big"), LOGO = font("logo"), NUM = font("num");
+	/*
+	 * Chữ TTF nét: game raster glyph một lần ở (cỡ × oversample) px. Oversample lệch tỉ lệ vẽ thật là glyph bị co/giãn
+	 * → vỡ nét. Nên mỗi font có 12 bản oversample 0,5…6 (font/<tên>_<2×oversample>.json), luôn chọn bản gần nhất với
+	 * (cỡ giao diện × hint); phần lệch còn lại do lấy mẫu tuyến tính (GlyphRenderStateMixin) làm mượt.
+	 */
+	private static final String[] NAMES = {"ui", "ui_bold", "small", "big", "logo", "num", "hud"};
+	private static final FontDescription[][] FONTS = new FontDescription[NAMES.length][12];
 
-	private static FontDescription font(String n) {
-		return new FontDescription.Resource(Identifier.fromNamespaceAndPath("nosclient", n));
+	static {
+		for (int i = 0; i < NAMES.length; i++) for (int k = 0; k < 12; k++) FONTS[i][k] = new FontDescription.Resource(Identifier.fromNamespaceAndPath("nosclient", NAMES[i] + "_" + (k + 1)));
 	}
 
+	/** Tỉ lệ pose mà chữ sắp tạo sẽ được vẽ (HUD co 0,68, intro phóng 3×…); bên gọi đặt rồi trả về 1. */
+	public static float hint = 1;
+
+	private static final Style[][] STYLES = new Style[NAMES.length][12];
+
+	/** Style cache theo (font, oversample) — mỗi khung HUD tạo vài chục chuỗi, không cấp phát Style mới. */
+	private static Style style(int i) {
+		int k2 = Math.max(1, Math.min(12, Math.round(Minecraft.getInstance().getWindow().getGuiScale() * hint * 2))) - 1;
+		Style st = STYLES[i][k2];
+		if (st == null) st = STYLES[i][k2] = Style.EMPTY.withFont(FONTS[i][k2]);
+		return st;
+	}
+
+	private static final int UI = 0, UI_BOLD = 1, SMALL = 2, BIG = 3, LOGO = 4, NUM = 5, HUD = 6;
+
 	public static MutableComponent ui(Component c) {
-		return c.copy().withStyle(Style.EMPTY.withFont(UI));
+		return c.copy().withStyle(style(UI));
 	}
 
 	public static MutableComponent ui(String s) {
-		return Component.literal(s).withStyle(Style.EMPTY.withFont(UI));
+		return Component.literal(s).withStyle(style(UI));
+	}
+
+	/** Chữ HUD: Inter nét ở mọi cỡ (font pixel của game co lẻ 0,68 là vỡ nét). */
+	public static MutableComponent hud(String s) {
+		return Component.literal(s).withStyle(style(HUD));
 	}
 
 	public static MutableComponent bold(Component c) {
-		return c.copy().withStyle(Style.EMPTY.withFont(UI_BOLD));
+		return c.copy().withStyle(style(UI_BOLD));
 	}
 
 	public static MutableComponent small(Component c) {
-		return c.copy().withStyle(Style.EMPTY.withFont(SMALL));
+		return c.copy().withStyle(style(SMALL));
 	}
 
 	public static MutableComponent big(Component c) {
-		return c.copy().withStyle(Style.EMPTY.withFont(BIG));
+		return c.copy().withStyle(style(BIG));
 	}
 
 	public static MutableComponent logo(String s) {
-		return Component.literal(s).withStyle(Style.EMPTY.withFont(LOGO));
+		return Component.literal(s).withStyle(style(LOGO));
 	}
 
 	public static MutableComponent num(String s) {
-		return Component.literal(s).withStyle(Style.EMPTY.withFont(NUM));
+		return Component.literal(s).withStyle(style(NUM));
 	}
 
 	public static MutableComponent tr(String key, Object... args) {
@@ -97,6 +123,8 @@ public final class Ui {
 	public static void panel(GuiGraphics g, int x0, int y0, int x1, int y1, int tint) {
 		g.fill(x0, y0, x1, y1, tint != 0 ? tint : 0x99101218);
 		frame(g, x0, y0, x1, y1, 0x14FFFFFF);
+		// gờ sáng mép trên như ánh trăng trên kính: sáng ở giữa, tan về hai đầu (2 quad)
+		dev.jun.nosclient.gui.Fx.hairline(g, x0 + 1, x1 - 1, y0, 0x40E9D5FF);
 	}
 
 	public static int lerpCol(int a, int b, float k) {
@@ -115,6 +143,11 @@ public final class Ui {
 		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, ACC0, k));
 		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, 0x66D3A8F5, k));
 		int kx = Math.round(x + 2 + k * (w - 12));
+		// bật = được phù phép: vệt sáng của game trôi qua rãnh, quầng tím quanh núm
+		if (k > .02f) {
+			dev.jun.nosclient.gui.Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, alpha(0xCCFFF0FF, k));
+			dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(0x99D9B3FF, k));
+		}
 		g.fill(kx, y + 2, kx + 8, y + h - 2, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
 	}
 

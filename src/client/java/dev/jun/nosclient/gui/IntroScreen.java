@@ -31,8 +31,14 @@ import org.joml.Matrix3x2f;
  * Toạ độ thiết kế 1920×1080 như preview, co theo màn hình bằng hệ số U.
  */
 public final class IntroScreen extends Screen {
-	/** Mỗi lần mở game chỉ chạy một lần. */
+	/** Mỗi lần mở game chỉ chạy một lần: played bật khi intro XONG (hết giờ hoặc bị bỏ qua), không phải lúc tạo. */
 	public static boolean played;
+	/**
+	 * Intro đang chạy. Mod bỏ màn tải (RRLS…) dựng lại màn chính sau khi tải xong; lúc đó phải trả về đúng intro này
+	 * (giữ nguyên đồng hồ) thay vì coi như đã chạy — đó là lỗi làm intro biến mất trên máy có 49 mod.
+	 */
+	public static IntroScreen active;
+	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("nosclient");
 
 	private static final float SZ = 48, COS30 = (float) Math.cos(Math.PI / 6), C45 = (float) Math.cos(Math.PI / 4);
 	private static final int TRUNK = Anim.TRUNK, GRASS = 0xFF91BD59, FOLIAGE = 0xFF77AB2F;
@@ -159,7 +165,7 @@ public final class IntroScreen extends Screen {
 	public IntroScreen(Screen next) {
 		super(Component.empty());
 		this.next = next;
-		played = true;
+		active = this;
 		build();
 	}
 
@@ -243,6 +249,9 @@ public final class IntroScreen extends Screen {
 
 	// ---------- vẽ ----------
 	private float A = 1; // độ đục chung (mờ dần cuối intro)
+	private float U = 1;
+	private final Fx.Runes runes = new Fx.Runes();
+	private long lastFrame = System.nanoTime();
 
 	private int col(int argb, float a) {
 		return Ui.alpha(argb, a * A);
@@ -331,7 +340,17 @@ public final class IntroScreen extends Screen {
 		makeTextures(mc);
 		long now = System.nanoTime();
 		// màn tải của game còn phủ thì chưa tính giờ, kẻo intro chạy mất sau màn tải
-		if (start < 0 || mc.getOverlay() != null) start = now;
+		// màn tải còn phủ, hoặc game chưa tải xong (mod bỏ màn tải vẫn đang nạp) thì chưa tính giờ
+		boolean ready = mc.getOverlay() == null && mc.isGameLoadFinished();
+		if (!ready) start = -1;
+		else if (start < 0) {
+			start = now;
+			LOG.info("Nos client intro: bắt đầu");
+		}
+		if (start < 0) { // đang chờ: nền tối, đúng khung đầu của intro
+			g.fill(0, 0, width, height, 0xFF05070A);
+			return;
+		}
 		float ms = FREEZE >= 0 ? FREEZE : (now - start) / 1e6f;
 		if (ms >= 7100) {
 			finish();
@@ -346,7 +365,7 @@ public final class IntroScreen extends Screen {
 			}
 			next.render(g, mouseX, mouseY, pt);
 		}
-		float U = Math.min(width / 1920f, height / 1080f);
+		U = Math.min(width / 1920f, height / 1080f);
 		g.pose().pushMatrix();
 		g.pose().translate(width / 2f, height / 2f);
 		g.pose().scale(U, U);
@@ -403,7 +422,9 @@ public final class IntroScreen extends Screen {
 		}
 		brand(g, ms);
 		// gợi ý bỏ qua
+		Ui.hint = U * 2.2f;
 		Component skip = Ui.small(Component.translatable("nosclient.intro.skip"));
+		Ui.hint = 1;
 		g.pose().pushMatrix();
 		g.pose().translate(0, H / 2 - 60);
 		g.pose().scale(2.2f, 2.2f);
@@ -463,6 +484,13 @@ public final class IntroScreen extends Screen {
 		soft(g, GLOW, 0x5AC54F, bx, by, 380 * ls, 380 * ls, .45f * Math.min(1, la));
 		float rs = lerp(ms, 4560, 700, OUT, .5f, 1.5f), ra = lerp(ms, 4560, 700, OUT, .9f, 0);
 		soft(g, RING, 0x7FD873, bx, by, 300 * rs, 300 * rs, .7f * ra);
+		// rune của bàn phù phép xoáy vào khối lá đúng lúc nó hoá logo
+		long now = System.nanoTime();
+		float dt = Math.min(.05f, (now - lastFrame) / 1e9f);
+		lastFrame = now;
+		if (ms < 6200) runes.emit(bx, by, 260, ms < 5000 ? 60 : 14, dt, col(0xFFC8F5BD, 1));
+		runes.size = 3.2f;
+		runes.render(g);
 		g.pose().pushMatrix();
 		g.pose().translate(bx, by);
 		g.pose().scale(ls * 220 / 256f, ls * 220 / 256f);
@@ -471,7 +499,11 @@ public final class IntroScreen extends Screen {
 		if (ms < 5050) return;
 		// chữ: font logo 30 px phóng lên 112 px thiết kế; lộ dần sau một khung cắt ngay mép phải logo
 		float fs = 112 / 30f;
-		Component nos = Ui.logo("Nostal"), gia = Ui.logo("gia"), sub = Ui.small(Component.literal("L A U N C H E R"));
+		Ui.hint = U * fs;
+		Component nos = Ui.logo("Nostal"), gia = Ui.logo("gia");
+		Ui.hint = U * 26 / 6f;
+		Component sub = Ui.small(Component.literal("L A U N C H E R"));
+		Ui.hint = 1;
 		float tw = Math.max(Ui.width(nos) + Ui.width(gia), Ui.width(sub) * 26 / 6f / fs) * fs;
 		float reveal = REVEAL.at(Math.min(1, (ms - 5050) / 720)), wx = bx + 150, wy = by - 74;
 		g.enableScissor((int) wx, (int) wy - 10, (int) (wx + tw + 60), (int) (wy + 190));
@@ -499,6 +531,8 @@ public final class IntroScreen extends Screen {
 	}
 
 	private void finish() {
+		played = true;
+		active = null;
 		Minecraft.getInstance().setScreen(next);
 	}
 

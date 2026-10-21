@@ -45,6 +45,7 @@ public final class Hud {
 
 	private Hud() {}
 
+
 	public void render(GuiGraphics g, DeltaTracker dt) {
 		if (!COUNT) {
 			draw(g);
@@ -80,15 +81,20 @@ public final class Hud {
 		if (mc.gui.getChat().isChatFocused() || mc.options.keyPlayerList.isDown()) return; // nhường chỗ cho chat / Tab
 		boolean busy = p.getDeltaMovement().horizontalDistanceSqr() > 1e-4 || left.count(now) + right.count(now) > 0 || p.hurtTime > 0;
 		if (busy) lastBusy = now;
-		fade = Ui.approach(fade, !c.hudIdleFade || now - lastBusy < 3_000_000_000L ? 1 : .5f, d, 3);
+		fade = Ui.approach(fade, editing || !c.hudIdleFade || now - lastBusy < 3_000_000_000L ? 1 : .5f, d, 3);
 		TA = fade;
 		BA = (float) c.hudBg * fade;
-		float S = (float) c.hudScale;
+		S = (float) c.hudScale;
+		W = Math.round(g.guiWidth() / S);
+		Hs = Math.round(g.guiHeight() / S);
 		g.pose().pushMatrix();
 		g.pose().scale(S, S);
+		Ui.hint = S * TS;
+		if (!editing) rects.clear();
 		try {
-			drawScaled(g, mc, p, mc.font, now, d, Math.round(g.guiWidth() / S));
+			drawScaled(g, mc, p, mc.font, now, d, W);
 		} finally {
+			Ui.hint = 1;
 			g.pose().popMatrix();
 		}
 	}
@@ -99,12 +105,81 @@ public final class Hud {
 
 	/** Một ô nền phẳng. */
 	private static void bg(GuiGraphics g, int x, int y, int w, int h) {
+		mark(x, y, x + w, y + h);
 		if (BA > .01f) g.fill(x, y, x + w, y + h, Math.round(BA * 255) << 24);
 	}
 
+	// ---------- bố cục kéo thả ----------
+	/** Khung (toạ độ cục bộ) của ô đang vẽ, gom từ mọi nền nó vẽ; dùng để canh neo khung sau và để bấm trúng khi sửa. */
+	private static float mx0, my0, mx1, my1;
+
+	public static void mark(float x0, float y0, float x1, float y1) {
+		mx0 = Math.min(mx0, x0);
+		my0 = Math.min(my0, y0);
+		mx1 = Math.max(mx1, x1);
+		my1 = Math.max(my1, y1);
+	}
+
+	/** Đang mở màn sửa bố cục: hiện ô giữ chỗ cho mục bật mà chưa có gì để vẽ, không mờ khi đứng yên. */
+	public boolean editing;
+	/** Khung khung trước của từng ô: cục bộ (để neo) và toạ độ giao diện (để màn sửa bấm trúng). */
+	private final java.util.Map<String, float[]> local = new java.util.HashMap<>();
+	public final java.util.Map<String, float[]> rects = new java.util.LinkedHashMap<>();
+	private float S = 1;
+	private int W, Hs;
+
+	/**
+	 * Vẽ một ô: chưa kéo thì ở chỗ tự xếp (fx, fy), đã kéo thì neo theo HudLayout (cỡ khung trước, nên canh phải/giữa
+	 * không giật). Cỡ và độ đục riêng của ô nhân vào cỡ/độ đục chung. @return đáy ô theo dòng tự xếp (ô đã kéo trả fy).
+	 */
+	private int place(GuiGraphics g, String id, int fx, int fy, java.util.function.IntBinaryOperator draw) {
+		var s = HudLayout.get(id);
+		float k = (float) s.scale, ox, oy;
+		float[] b = local.getOrDefault(id, ZERO);
+		if (s.auto()) {
+			ox = fx;
+			oy = fy;
+		} else {
+			ox = (float) (s.x * W) - (s.ax == 0 ? b[0] : s.ax == 1 ? (b[0] + b[2]) / 2 : b[2]) * k;
+			oy = (float) (s.y * Hs) - (s.ay == 0 ? b[1] : b[3]) * k;
+		}
+		float ta = TA, ba = BA;
+		TA *= (float) s.alpha;
+		BA *= (float) s.alpha;
+		mx0 = my0 = Float.MAX_VALUE;
+		mx1 = my1 = -Float.MAX_VALUE;
+		int bottom;
+		g.pose().pushMatrix();
+		g.pose().translate(ox, oy);
+		g.pose().scale(k, k);
+		Ui.hint = S * k * TS;
+		try {
+			bottom = draw.applyAsInt(0, 0);
+			if (editing && mx1 < mx0) { // bật mà chưa có gì để hiện (vd. chưa có hiệu ứng): ô giữ chỗ để kéo được
+				String n = Component.translatable("nosclient.mod." + id).getString();
+				bg(g, 0, 0, sw(Minecraft.getInstance().font, n) + 2 * PAD, H);
+				txt(g, Minecraft.getInstance().font, n, PAD, (H - 8 * TS) / 2, T(DIM));
+				bottom = H;
+			}
+		} finally {
+			g.pose().popMatrix();
+			TA = ta;
+			BA = ba;
+			Ui.hint = S * TS;
+		}
+		if (mx1 >= mx0) {
+			local.put(id, new float[]{mx0, my0, mx1, my1});
+			rects.put(id, new float[]{(ox + mx0 * k) * S, (oy + my0 * k) * S, (ox + mx1 * k) * S, (oy + my1 * k) * S});
+		} else rects.remove(id);
+		return s.auto() ? Math.round(oy + bottom * k) : fy;
+	}
+
+	private static final float[] ZERO = new float[4];
+
 	private void drawScaled(GuiGraphics g, Minecraft mc, LocalPlayer p, Font f, long now, float d, int W) {
 		int x = 6, y = 6;
-		if (c.fps) y = fps(g, f, x, y, mc.getFps(), low(now)) + GAP;
+		if (editing) rects.clear();
+		if (c.fps) y = place(g, "fps", x, y, (xx, yy) -> fps(g, f, xx, yy, mc.getFps(), low(now))) + GAP;
 		if (c.coords) {
 			BlockPos b = p.blockPosition();
 			String k = mc.level.getBiome(b).unwrapKey().map(r -> r.identifier().getPath()).orElse("");
@@ -113,8 +188,10 @@ public final class Hud {
 				biomeName = Component.translatable("biome.minecraft." + k).getString();
 			}
 			String xyz = c.coordsDecimal ? String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f", p.getX(), p.getY(), p.getZ()) : b.getX() + " " + b.getY() + " " + b.getZ();
-			y = row(g, f, x, y, "XYZ", xyz, null) + GAP;
-			if (c.coordsBiome) y = row(g, f, x, y, null, biomeName, null) + GAP;
+			y = place(g, "coords", x, y, (xx, yy) -> {
+				int by = row(g, f, xx, yy, "XYZ", xyz, null);
+				return c.coordsBiome ? row(g, f, xx, by + GAP, null, biomeName, null) : by;
+			}) + GAP;
 		}
 		if (c.day) {
 			if (now - lastDay > 2_000_000_000L || dayText.isEmpty()) {
@@ -123,26 +200,27 @@ public final class Hud {
 				dayText = Component.translatable("nosclient.hud.day.label").getString() + " " + (t / 24000 + 1) + (c.dayTime ? "  " + (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m : "");
 				lastDay = now;
 			}
-			y = row(g, f, x, y, null, dayText, null) + GAP;
+			y = place(g, "day", x, y, (xx, yy) -> row(g, f, xx, yy, null, dayText, null)) + GAP;
 		}
-		if (c.cps) y = row(g, f, x, y, null, c.cpsRight ? left.count(now) + " | " + right.count(now) : String.valueOf(left.count(now)), "CPS") + GAP;
+		if (c.cps) y = place(g, "cps", x, y, (xx, yy) -> row(g, f, xx, yy, null, c.cpsRight ? left.count(now) + " | " + right.count(now) : String.valueOf(left.count(now)), "CPS")) + GAP;
 		if (c.ping && mc.getConnection() != null) {
 			PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
-			y = row(g, f, x, y, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms") + GAP;
+			y = place(g, "ping", x, y, (xx, yy) -> row(g, f, xx, yy, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms")) + GAP;
 		}
-		if (c.keys) y = keys(g, f, mc, x, y + GAP, now, d) + GAP;
-		if (c.sprint && c.sprintShow && dev.jun.nosclient.feat.Feats.sprintOn) y = row(g, f, x, y, null, Component.translatable("nosclient.hud.sprint").getString(), null) + GAP;
+		if (c.keys) y = place(g, "keys", x, y + GAP, (xx, yy) -> keys(g, f, mc, xx, yy, now, d)) + GAP;
+		if (c.sprint && c.sprintShow && (dev.jun.nosclient.feat.Feats.sprintOn || editing))
+			y = place(g, "sprint", x, y, (xx, yy) -> row(g, f, xx, yy, null, Component.translatable("nosclient.hud.sprint").getString(), null)) + GAP;
 		// cột phải bắt đầu ở 30% chiều cao: góc phải trên là chỗ toast (thành tựu, hướng dẫn) của game
-		int ry = Math.round(g.guiHeight() / (float) c.hudScale * .3f);
-		if (c.minimap) ry = Minimap.render(g, mc, W - 6, ry, Math.max(BA, .4f));
-		if (c.effects) ry = effects(g, f, p, W - 6, ry) + GAP * 2;
-		if (c.armor) ry = armor(g, f, p, W - 6, ry);
-		if (c.invhud) invhud(g, mc, p, W);
-		if (c.waypoint) waypoints(g, f, mc, p, W, Math.round(g.guiHeight() / (float) c.hudScale));
-		if (c.blockinfo) blockinfo(g, f, mc, W / 2, c.direction ? 44 : 6, now);
+		int ry = Math.round(Hs * .3f);
+		if (c.minimap) ry = place(g, "minimap", W - 6, ry, (xx, yy) -> Minimap.render(g, mc, xx, yy, Math.max(BA, .4f)));
+		if (c.effects) ry = place(g, "effects", W - 6, ry, (xx, yy) -> effects(g, f, p, xx, yy)) + GAP * 2;
+		if (c.armor) ry = place(g, "armor", W - 6, ry, (xx, yy) -> armor(g, f, p, xx, yy));
+		if (c.invhud) place(g, "invhud", W / 2 - INV_W / 2, Hs - 22 - 40 - INV_H, (xx, yy) -> invhud(g, mc, p, xx, yy));
+		if (c.waypoint) waypoints(g, f, mc, p, W, Hs);
+		if (c.blockinfo) place(g, "blockinfo", W / 2, c.direction ? 44 : 6, (xx, yy) -> blockinfo(g, f, mc, xx, yy, now));
 		if (c.direction) {
 			int boss = ((dev.jun.nosclient.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
-			compass(g, f, p, W / 2, boss > 0 ? 6 + boss * 19 : 6);
+			place(g, "direction", W / 2, boss > 0 ? 6 + boss * 19 : 6, (xx, yy) -> compass(g, f, p, xx, yy));
 		}
 	}
 
@@ -170,16 +248,16 @@ public final class Hud {
 		return y + H;
 	}
 
-	/** Bề rộng chữ ở cỡ TS. */
+	/** Bề rộng chữ ở cỡ TS (chữ Inter nét: Ui.hud chọn oversample theo đúng tỉ lệ vẽ, nên co giãn HUD không vỡ nét). */
 	private static int sw(Font f, String s) {
-		return Math.round(f.width(s) * TS);
+		return Math.round(f.width(Ui.hud(s)) * TS);
 	}
 
 	private static void txt(GuiGraphics g, Font f, String s, float x, float y, int col) {
 		g.pose().pushMatrix();
 		g.pose().translate(x, y);
 		g.pose().scale(TS, TS);
-		g.drawString(f, s, 0, 0, col, false);
+		g.drawString(f, Ui.hud(s), 0, 0, col, false);
 		g.pose().popMatrix();
 	}
 
@@ -213,7 +291,7 @@ public final class Hud {
 	private static final String[] DIRS = {"n", "ne", "e", "se", "s", "sw", "w", "nw"};
 
 	/** La bàn dải: vạch mỗi 15°, chữ mỗi 45°, kim giữa. Không scissor (cắt bằng điều kiện) để không bẻ lô vẽ. */
-	private static void compass(GuiGraphics g, Font f, LocalPlayer p, int cx, int y) {
+	private static int compass(GuiGraphics g, Font f, LocalPlayer p, int cx, int y) {
 		float yaw = ((p.getYRot() % 360) + 360 + 180) % 360;
 		int w = 180, h = 17, x0 = cx - w / 2;
 		bg(g, x0, y, w, h);
@@ -237,11 +315,12 @@ public final class Hud {
 			g.fill(xx - 1, y + 1, xx + 2, y + 4, T(wp.color()));
 		}
 		g.fill(cx, y, cx + 1, y + h, T(0xFFFFFFFF));
-		if (!SceneConfig.INSTANCE.directionDeg) return;
+		if (!SceneConfig.INSTANCE.directionDeg) return y + h;
 		String deg = Math.round(yaw) % 360 + "°";
 		int bw = sw(f, deg) + 2 * PAD;
 		bg(g, cx - bw / 2, y + h + GAP, bw, 15);
 		txt(g, f, deg, cx - sw(f, deg) / 2f + .5f, y + h + GAP + (15 - 8 * TS) / 2, T(TEXT));
+		return y + h + GAP + 15;
 	}
 
 	private int keys(GuiGraphics g, Font f, Minecraft mc, int x, int y, long now, float dt) {
@@ -310,12 +389,12 @@ public final class Hud {
 	private boolean lookHas;
 	private float lookHp = -1;
 
-	private void blockinfo(GuiGraphics g, Font f, Minecraft mc, int cx, int y, long now) {
+	private int blockinfo(GuiGraphics g, Font f, Minecraft mc, int cx, int y, long now) {
 		if (now - lastLook > 500_000_000L) {
 			lastLook = now;
 			readLook(mc);
 		}
-		if (!lookHas) return;
+		if (!lookHas) return y;
 		int iw = lookIcon.isEmpty() ? 0 : 20, w = Math.max(sw(f, lookName), sw(f, lookSub) + (lookTool.isEmpty() ? 0 : 14)) + iw + 2 * PAD;
 		int h = lookSub.isEmpty() && lookTool.isEmpty() ? 18 : 28, x = cx - w / 2;
 		bg(g, x, y, w, h);
@@ -333,6 +412,7 @@ public final class Hud {
 		// thanh dưới đáy: tiến độ đập khối, hoặc máu của mob
 		float bar = lookHp >= 0 ? lookHp : ((dev.jun.nosclient.mixin.MultiPlayerGameModeAccessor) mc.gameMode).nosclient$progress();
 		if (bar > 0) g.fill(x, y + h - 2, x + Math.round(w * Math.min(1, bar)), y + h, T(lookHp >= 0 ? 0xFFF2555A : ACC));
+		return y + h;
 	}
 
 	private static final net.minecraft.world.item.ItemStack[] TOOLS = {new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE),
@@ -439,7 +519,9 @@ public final class Hud {
 	private int invStamp = -1;
 	private boolean invEmpty = true;
 
-	private void invhud(GuiGraphics g, Minecraft mc, LocalPlayer p, int W) {
+	private static final int INV_W = 9 * 17 + 4, INV_H = 3 * 17 + 4;
+
+	private int invhud(GuiGraphics g, Minecraft mc, LocalPlayer p, int x, int y) {
 		var pi = p.getInventory();
 		int stamp = pi.getTimesChanged() + (p.isDeadOrDying() ? 1 << 30 : 0);
 		if (stamp != invStamp) {
@@ -450,9 +532,9 @@ public final class Hud {
 			}
 			invStamp = stamp;
 		}
-		if (invEmpty) return; // túi trống: không vẽ ô tối vô nghĩa
-		int cell = 17, cols = 9, w = cols * cell + 4, h = 3 * cell + 4, x = W / 2 - w / 2;
-		int y = Math.round(g.guiHeight() / (float) c.hudScale) - 22 - 40 - h; // trên hotbar + thanh máu
+		if (invEmpty) return y; // túi trống: không vẽ ô tối vô nghĩa
+		int cell = 17, cols = 9, w = INV_W, h = INV_H;
+		mark(x, y, x + w, y + h);
 		if (c.invhudBg) bg(g, x, y, w, h);
 		for (int i = 0; i < 27; i++) {
 			if (inv[i].isEmpty()) continue;
@@ -460,10 +542,12 @@ public final class Hud {
 			g.renderItem(inv[i], cx, cy);
 			g.renderItemDecorations(mc.font, inv[i], cx, cy);
 		}
+		return y + h;
 	}
 
 	/** Phím kiểu Lunar: ô tối trong suốt, bấm thì nền trắng chữ đen. */
 	private void key(GuiGraphics g, Font f, int i, int x, int y, int w, int h, String label, KeyMapping k, float dt) {
+		mark(x, y, x + w, y + h);
 		keyGlow[i] = Ui.approach(keyGlow[i], k.isDown() ? 1 : 0, dt, 24);
 		float e = keyGlow[i];
 		int a = Math.round((BA + (Math.max(BA, .85f) - BA) * e) * 255);

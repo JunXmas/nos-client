@@ -229,5 +229,15 @@
 	"nosclient.opt.dfps.afk": "Hạ FPS khi AFK 5 phút",
 	"nosclient.opt.mp.offline": "Cho tài khoản offline vào",
 	"nosclient.opt.mp.pvp": "Bật PvP",
-	"nosclient.intro.opt.desc": "Cây mọc thành logo, mỗi lần mở game một lần. Bấm phím bất kỳ để bỏ qua."
+	"nosclient.intro.opt.desc": "Cây mọc thành logo, mỗi lần mở game một lần. Bấm phím bất kỳ để bỏ qua.",
+	"nosclient.settings.edit": "◆ Sửa bố cục HUD",
+	"nosclient.edit.title": "Sửa bố cục HUD",
+	"nosclient.edit.noworld": "Vào thế giới để sửa bố cục HUD.",
+	"nosclient.edit.hint": "Kéo để di chuyển · lăn chuột để đổi cỡ · Shift tắt hít lưới",
+	"nosclient.edit.hint.sel": "Del: về chỗ cũ",
+	"nosclient.edit.size": "Cỡ",
+	"nosclient.edit.alpha": "Độ đục",
+	"nosclient.edit.reset": "↺ Đặt lại ô này",
+	"nosclient.edit.resetAll": "↺ Đặt lại",
+	"nosclient.edit.done": "Xong"
 }

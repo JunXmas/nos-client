@@ -41,7 +41,9 @@ public final class NosClient implements ClientModInitializer {
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
 			if (!(screen instanceof TitleScreen)) return;
 			// lần đầu tới màn chính trong phiên: chạy intro trước (tắt được trong cài đặt)
-			if (dev.jun.nosclient.scene.SceneConfig.INSTANCE.intro && !dev.jun.nosclient.gui.IntroScreen.played) mc.setScreen(new dev.jun.nosclient.gui.IntroScreen(new NosTitleScreen()));
+			var intro = dev.jun.nosclient.gui.IntroScreen.active;
+			if (intro != null) mc.setScreen(intro); // màn chính bị dựng lại giữa intro (mod bỏ màn tải): quay về intro đang chạy
+			else if (dev.jun.nosclient.scene.SceneConfig.INSTANCE.intro && !dev.jun.nosclient.gui.IntroScreen.played) mc.setScreen(new dev.jun.nosclient.gui.IntroScreen(new NosTitleScreen()));
 			else mc.setScreen(new NosTitleScreen());
 		});
 

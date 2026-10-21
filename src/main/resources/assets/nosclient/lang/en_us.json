@@ -229,5 +229,15 @@
 	"nosclient.opt.dfps.afk": "Lower FPS after 5 min AFK",
 	"nosclient.opt.mp.offline": "Allow offline accounts",
 	"nosclient.opt.mp.pvp": "Enable PvP",
-	"nosclient.intro.opt.desc": "A tree grows into the logo, once per game start. Press any key to skip."
+	"nosclient.intro.opt.desc": "A tree grows into the logo, once per game start. Press any key to skip.",
+	"nosclient.settings.edit": "◆ Edit HUD layout",
+	"nosclient.edit.title": "Edit HUD layout",
+	"nosclient.edit.noworld": "Join a world to edit the HUD layout.",
+	"nosclient.edit.hint": "Drag to move · scroll to resize · Shift to skip snapping",
+	"nosclient.edit.hint.sel": "Del: back to default",
+	"nosclient.edit.size": "Size",
+	"nosclient.edit.alpha": "Opacity",
+	"nosclient.edit.reset": "↺ Reset this",
+	"nosclient.edit.resetAll": "↺ Reset",
+	"nosclient.edit.done": "Done"
 }

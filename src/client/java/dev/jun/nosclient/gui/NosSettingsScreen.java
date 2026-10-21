@@ -64,6 +64,8 @@ public final class NosSettingsScreen extends Screen {
 	private double scrollTarget, dTarget;
 	private int maxScroll, dMax;
 	private final Map<String, Float> anim = new HashMap<>();
+	private final Fx.Runes runes = new Fx.Runes();
+	private final Fx.Sparks sparks = new Fx.Sparks();
 
 	private record Hit(int x0, int y0, int x1, int y1, Runnable run) {}
 
@@ -168,8 +170,14 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	private void flip(Mods.Mod m) {
-		m.set().accept(!on(m));
+		boolean v = !on(m);
+		m.set().accept(v);
 		c.save();
+		// bật = phù phép: tia lấp lánh bung ở chỗ bấm + tiếng ngân thạch anh
+		if (v) {
+			sparks.burst(mx, my, 12, 0xFFE2C6FF);
+			mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_CHIME, 1.6f, .9f));
+		}
 	}
 
 	private int lines(GuiGraphics g, Component text, int x, int y, int w, int col) {
@@ -222,7 +230,11 @@ public final class NosSettingsScreen extends Screen {
 		hits.clear();
 		float in = Ui.ease(Math.min(1, t / .35f));
 		int x = px(), y = py() + Math.round((1 - in) * 10), w = pw(), h = ph();
+		// hai quầng sáng sau kính: tím phù phép góc trên, xanh lá Nostalgia góc dưới — cả màn chỉ thêm 2 quad
 		Ui.panel(g, x, y, x + w, y + h, Ui.alpha(0xB8141821, in));
+		// hai quầng sáng trong kính: tím phù phép góc trên, xanh lá Nostalgia góc dưới — cả màn chỉ thêm 2 quad
+		Fx.glow(g, x + side() + (w - side()) * .32f, y + 20, (w - side()) * 1.1f, h * .95f, Ui.alpha(0x3DA770F0, in));
+		Fx.glow(g, x + w - 30, y + h - 10, w * .6f, h * .75f, Ui.alpha(0x245AC54F, in));
 		left(g, x, y, h);
 
 		boolean showDetail = detail != null;
@@ -248,12 +260,15 @@ public final class NosSettingsScreen extends Screen {
 			}
 		}
 		if (showDetail) Mods.ALL.stream().filter(m -> m.id().equals(detail)).findFirst().ifPresent(m -> detailPanel(g, m, x + w - dw(), y + 54, x + w - 1, y + h - 1));
+		runes.render(g);
+		sparks.render(g);
 	}
 
 	private void left(GuiGraphics g, int x, int y, int h) {
 		int s = side();
 		g.fill(x + s, y + 1, x + s + 1, y + h - 1, 0x14FFFFFF);
 		g.fill(x + 1, y + 1, x + s, y + h - 1, 0x1A000000);
+		Fx.glow(g, x + 27, y + 27, 54, 46, 0x405AC54F);
 		g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 16, y + 16, 0, 0, 22, 22, 22, 22);
 		Ui.text(g, Ui.bold(Component.literal("Nos client")), x + 46, y + 18, Ui.TEXT);
 		Ui.text(g, Ui.small(Component.literal("NOSTALGIA · R-SHIFT")), x + 46, y + 29, Ui.FAINT);
@@ -280,7 +295,11 @@ public final class NosSettingsScreen extends Screen {
 			int cy = y + 84 + (i + 1) * step, ch = step - 4;
 			boolean sel = i == cat && !searching(), hv = hov(x + 8, cy, x + s - 8, cy + ch);
 			if (sel || hv) g.fill(x + 8, cy, x + s - 8, cy + ch, sel ? 0x405E3A8A : 0x0FFFFFFF);
-			if (sel) g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, Ui.ACCENT);
+			if (sel) {
+				g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, Ui.ACCENT);
+				Fx.glint(g, x + 8, cy, x + s - 8, cy + ch, 0x59F0DBFF);
+				Fx.glow(g, x + 4, cy + ch / 2f, 18, ch * 1.6f, 0x80B06EE6);
+			}
 			if (i < 0) g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 18, cy + ch / 2 - 6, 0, 0, 12, 12, 12, 12);
 			else icon(g, CAT_ICON[i], x + 24, cy + ch / 2, .75f);
 			Ui.text(g, Ui.fit(Ui.ui(tr("nosclient.cat." + (i < 0 ? "all" : CATS[i]))), s - 80), x + 38, cy + ch / 2 - 3, Ui.TEXT);
@@ -334,6 +353,10 @@ public final class NosSettingsScreen extends Screen {
 			Component rl = Ui.bold(tr("nosclient.settings.reset"));
 			bx -= Ui.width(rl) + 16;
 			button(g, rl, bx, y + 18, 18, true, this::askReset);
+			// sửa bố cục cần HUD thật để kéo, nên chỉ bật khi đang ở trong thế giới
+			Component el = Ui.bold(tr("nosclient.settings.edit"));
+			bx -= Ui.width(el) + 16 + 6;
+			button(g, el, bx, y + 18, 18, mc.player != null, () -> mc.setScreen(new HudEditScreen(this)));
 			if (cat == 0) for (int i = 1; i >= 0; i--) {
 				Component tl = Ui.bold(tr(i == 0 ? "nosclient.tab.mods" : "nosclient.tab.look"));
 				int tw = Ui.width(tl) + 20, tx = bx - 6 - tw;
@@ -433,7 +456,9 @@ public final class NosSettingsScreen extends Screen {
 		float k = k(Opt.field(m), on), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
 		int bg = Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, hv ? 0x408A5BC4 : 0x2E8A5BC4, k);
 		g.fill(x, y, x + w, y + h, Ui.alpha(bg, in));
+		if (k > .02f) Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, Ui.alpha(0x3DF0DBFF, k * in));
 		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(sel ? 0xCCD3A8F5 : Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
+		if (k > .02f) Fx.hairline(g, x + 1, x + w - 1, y, Ui.alpha(0x99E9D5FF, k * in));
 		g.fill(x + 10, y + 9, x + 28, y + 27, Ui.alpha(0x1FFFFFFF, in));
 		icon(g, m.icon(), x + 19, y + 18, .9f);
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), w - 34 - 40), x + 34, y + 14, Ui.alpha(Ui.TEXT, in));
@@ -462,7 +487,13 @@ public final class NosSettingsScreen extends Screen {
 		dScroll = Ui.approach(dScroll, (float) dTarget, dt, 16);
 		clipOn(g, x0 + 1, y0, x1, y1);
 		int px = x0 + 12, pw = x1 - x0 - 24, y = y0 + 12 - (int) dScroll;
+		boolean lit = on(m);
+		if (lit) {
+			Fx.glow(g, px + 13, y + 13, 70, 70, 0x8CB06EE6);
+			runes.emit(px + 13, y + 13, 46, 7, dt, 0xFFD8B8FF);
+		}
 		g.fill(px, y, px + 26, y + 26, 0x1FFFFFFF);
+		if (lit) Fx.glint(g, px, y, px + 26, y + 26, 0x80F0DBFF);
 		icon(g, m.icon(), px + 13, y + 13, 1.1f);
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), pw - 34 - 14), px + 34, y + 3, Ui.TEXT);
 		boolean def = Opt.defOn(Opt.field(m));
@@ -757,6 +788,7 @@ public final class NosSettingsScreen extends Screen {
 			if (e.x() >= h.x0 && e.x() < h.x1 && e.y() >= h.y0 && e.y() < h.y1) {
 				h.run.run();
 				click();
+				setDragging(drag != null || dragLook >= 0); // để thanh trượt nhận mouseDragged
 				return true;
 			}
 		}

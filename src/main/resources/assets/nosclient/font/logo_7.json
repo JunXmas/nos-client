@@ -1,0 +1,14 @@
+{
+ "providers": [
+  {
+   "type": "ttf",
+   "file": "nosclient:manrope-bold.ttf",
+   "size": 30,
+   "oversample": 3.5,
+   "shift": [
+    0,
+    19
+   ]
+  }
+ ]
+}
