@@ -48,7 +48,18 @@ public final class Mods {
 		m("dfps", "sys", "", Items.REPEATER, () -> c.dfps, v -> c.dfps = v),
 		m("mp", "sys", "", Items.ENDER_EYE, () -> c.mp, v -> c.mp = v));
 
+	/**
+	 * Màu phe của từng danh mục, cùng thứ tự với CATS — teal thông tin, tím vật phẩm, xanh lá thế giới, cam PvP,
+	 * xanh dương hệ thống. Dùng để tô công tắc, viền thẻ và quầng sáng cho "bật" luôn ra đúng màu phe, không chỉ một
+	 * màu tím chung chung cho mọi thứ.
+	 */
 	public static final String[] CATS = {"hud", "inv", "world", "pvp", "sys"};
+	private static final int[] CAT_COLOR = {0xFF4DD9C4, 0xFFB06EE6, 0xFF5AC54F, 0xFFF2824D, 0xFF5BA8F2};
+
+	public static int catColor(String cat) {
+		for (int i = 0; i < CATS.length; i++) if (CATS[i].equals(cat)) return CAT_COLOR[i];
+		return 0xFFB06EE6;
+	}
 
 	public static List<Mod> of(String cat) {
 		return ALL.stream().filter(x -> x.cat.equals(cat)).toList();

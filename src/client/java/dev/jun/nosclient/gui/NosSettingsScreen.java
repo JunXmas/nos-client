@@ -235,6 +235,7 @@ public final class NosSettingsScreen extends Screen {
 		// hai quầng sáng trong kính: tím phù phép góc trên, xanh lá Nostalgia góc dưới — cả màn chỉ thêm 2 quad
 		Fx.glow(g, x + side() + (w - side()) * .32f, y + 20, (w - side()) * 1.1f, h * .95f, Ui.alpha(0x3DA770F0, in));
 		Fx.glow(g, x + w - 30, y + h - 10, w * .6f, h * .75f, Ui.alpha(0x245AC54F, in));
+		Ui.brackets(g, x, y, x + w, y + h, 11, Ui.alpha(0xFFFFFFFF, .16f * in));
 		left(g, x, y, h);
 
 		boolean showDetail = detail != null;
@@ -293,12 +294,13 @@ public final class NosSettingsScreen extends Screen {
 		int step = h >= 320 ? 24 : 20;
 		for (int i = -1; i < CATS.length; i++) {
 			int cy = y + 84 + (i + 1) * step, ch = step - 4;
+			int accent = i < 0 ? Ui.BRAND : Mods.catColor(CATS[i]);
 			boolean sel = i == cat && !searching(), hv = hov(x + 8, cy, x + s - 8, cy + ch);
-			if (sel || hv) g.fill(x + 8, cy, x + s - 8, cy + ch, sel ? 0x405E3A8A : 0x0FFFFFFF);
+			if (sel || hv) g.fill(x + 8, cy, x + s - 8, cy + ch, sel ? Ui.alpha(accent, .22f) : 0x0FFFFFFF);
 			if (sel) {
-				g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, Ui.ACCENT);
-				Fx.glint(g, x + 8, cy, x + s - 8, cy + ch, 0x59F0DBFF);
-				Fx.glow(g, x + 4, cy + ch / 2f, 18, ch * 1.6f, 0x80B06EE6);
+				g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, accent);
+				Fx.glint(g, x + 8, cy, x + s - 8, cy + ch, Ui.alpha(0xFFFFF0FF, .35f));
+				Fx.glow(g, x + 4, cy + ch / 2f, 18, ch * 1.6f, Ui.alpha(accent, .5f));
 			}
 			if (i < 0) g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 18, cy + ch / 2 - 6, 0, 0, 12, 12, 12, 12);
 			else icon(g, CAT_ICON[i], x + 24, cy + ch / 2, .75f);
@@ -307,8 +309,8 @@ public final class NosSettingsScreen extends Screen {
 			int total = i < 0 ? Mods.ALL.size() : Mods.of(CATS[i]).size();
 			Component badge = Ui.small(Component.literal(n + "/" + total));
 			int bw = Ui.width(badge) + 10;
-			g.fill(x + s - 14 - bw, cy + ch / 2 - 6, x + s - 14, cy + ch / 2 + 6, sel ? 0x40B06EE6 : 0x14FFFFFF);
-			Ui.text(g, badge, x + s - 14 - bw + 5, cy + ch / 2 - 3, sel ? 0xFFEAD4FB : Ui.FAINT);
+			g.fill(x + s - 14 - bw, cy + ch / 2 - 6, x + s - 14, cy + ch / 2 + 6, sel ? Ui.alpha(accent, .4f) : 0x14FFFFFF);
+			Ui.text(g, badge, x + s - 14 - bw + 5, cy + ch / 2 - 3, sel ? 0xFFF4F7FF : Ui.FAINT);
 			int ci = i;
 			hit(x + 8, cy, x + s - 8, cy + ch, () -> openCat(ci));
 		}
@@ -358,12 +360,13 @@ public final class NosSettingsScreen extends Screen {
 			bx -= Ui.width(el) + 16 + 6;
 			button(g, el, bx, y + 18, 18, mc.player != null, () -> mc.setScreen(new HudEditScreen(this)));
 			if (cat == 0) for (int i = 1; i >= 0; i--) {
+				int hudAccentTab = Mods.catColor("hud");
 				Component tl = Ui.bold(tr(i == 0 ? "nosclient.tab.mods" : "nosclient.tab.look"));
 				int tw = Ui.width(tl) + 20, tx = bx - 6 - tw;
 				boolean sel = tab == i;
-				g.fill(tx, y + 18, tx + tw, y + 36, sel ? 0x665E3A8A : 0x14FFFFFF);
-				if (sel) g.fill(tx, y + 35, tx + tw, y + 36, Ui.ACCENT);
-				Ui.text(g, tl, tx + 10, y + 24, sel ? 0xFFEAD4FB : Ui.MUTED);
+				g.fill(tx, y + 18, tx + tw, y + 36, sel ? Ui.alpha(hudAccentTab, .4f) : 0x14FFFFFF);
+				if (sel) g.fill(tx, y + 35, tx + tw, y + 36, hudAccentTab);
+				Ui.text(g, tl, tx + 10, y + 24, sel ? 0xFFF4F7FF : Ui.MUTED);
 				int ti = i;
 				hit(tx, y + 18, tx + tw, y + 36, () -> {
 					tab = ti;
@@ -373,6 +376,8 @@ public final class NosSettingsScreen extends Screen {
 				bx = tx + 2;
 			}
 		}
+		int catAccent = searching() || cat < 0 ? Ui.BRAND : Mods.catColor(CATS[cat]);
+		g.fill(rx - 10, y + 17, rx - 7, y + 29, catAccent);
 		Ui.text(g, Ui.fit(Ui.big(title), bx - 8 - rx), rx, y + 18, Ui.TEXT);
 		Ui.text(g, Ui.fit(Ui.small(sub), right - rx), rx, y + 40, Ui.MUTED);
 	}
@@ -381,29 +386,35 @@ public final class NosSettingsScreen extends Screen {
 	private int overview(GuiGraphics g, int x0, int x1, int y) {
 		int n = CATS.length, gap = 6, W = x1 - x0, cw = (W - gap * (n - 1)) / n, ch = 46;
 		for (int i = 0; i < n; i++) {
-			int cx = x0 + i * (cw + gap);
+			int cx = x0 + i * (cw + gap), accent = Mods.catColor(CATS[i]);
 			boolean hv = hov(cx, y, cx + cw, y + ch);
-			g.fill(cx, y, cx + cw, y + ch, hv ? 0x1AFFFFFF : 0x0FFFFFFF);
-			Ui.frame(g, cx, y, cx + cw, y + ch, hv ? 0x40D3A8F5 : 0x14FFFFFF);
-			icon(g, CAT_ICON[i], cx + 14, y + 13, .75f);
-			Ui.text(g, Ui.fit(Ui.small(tr("nosclient.cat." + CATS[i])), cw - 30), cx + 26, y + 10, Ui.TEXT);
+			g.fill(cx, y, cx + cw, y + ch, hv ? Ui.alpha(accent, .12f) : 0x0CFFFFFF);
+			Ui.frame(g, cx, y, cx + cw, y + ch, Ui.alpha(accent, hv ? .65f : .3f));
+			g.fill(cx, y, cx + 3, y + ch, Ui.alpha(accent, .9f)); // vạch nhận diện phe bên trái
+			if (hv) Ui.brackets(g, cx, y, cx + cw, y + ch, 7, Ui.alpha(accent, .9f));
+			icon(g, CAT_ICON[i], cx + 16, y + 13, .75f);
+			Component lbl = Ui.fit(Ui.small(tr("nosclient.cat." + CATS[i])), cw - 32);
+			Ui.text(g, lbl, cx + 28, y + 10, Ui.TEXT);
+			g.fill(cx + 28, y + 19, cx + 28 + Ui.width(lbl), y + 20, Ui.alpha(accent, .8f));
 			long on = Mods.on(CATS[i]);
 			int total = Mods.of(CATS[i]).size();
 			Component num = Ui.bold(Component.literal(on + "/" + total));
 			Ui.text(g, num, cx + 8, y + 25, Ui.TEXT);
 			Ui.text(g, Ui.fit(Ui.small(tr("nosclient.settings.enabled")), cw - 20 - Ui.width(num)), cx + 12 + Ui.width(num), y + 26, Ui.MUTED);
 			g.fill(cx + 8, y + ch - 8, cx + cw - 8, y + ch - 6, 0x1FFFFFFF);
-			g.fill(cx + 8, y + ch - 8, cx + 8 + Math.round((cw - 16) * on / (float) total), y + ch - 6, Ui.ACC1);
+			g.fill(cx + 8, y + ch - 8, cx + 8 + Math.round((cw - 16) * on / (float) total), y + ch - 6, accent);
 			int ci = i;
 			hit(cx, y, cx + cw, y + ch, () -> openCat(ci));
 		}
 		y += ch + 14;
 		int cols = W >= 520 ? 4 : W >= 330 ? 3 : 2, rw = (W - (cols - 1) * gap) / cols, rh = 18;
 		for (int i = 0; i < n; i++) {
-			Ui.text(g, Ui.small(Component.literal(I18n.get("nosclient.cat." + CATS[i]).toUpperCase(Locale.ROOT))), x0 + 2, y, Ui.FAINT);
+			int accent = Mods.catColor(CATS[i]);
+			g.fill(x0 + 2, y + 2, x0 + 6, y + 6, accent);
+			Ui.text(g, Ui.small(Component.literal(I18n.get("nosclient.cat." + CATS[i]).toUpperCase(Locale.ROOT))), x0 + 11, y, Ui.FAINT);
 			Component open = Ui.small(tr("nosclient.settings.open"));
 			int ow = Ui.width(open);
-			Ui.text(g, open, x1 - ow, y, hov(x1 - ow - 4, y - 3, x1, y + 9) ? Ui.TEXT : Ui.ACCENT_HI);
+			Ui.text(g, open, x1 - ow, y, hov(x1 - ow - 4, y - 3, x1, y + 9) ? Ui.TEXT : Ui.lerpCol(accent, 0xFFFFFFFF, .3f));
 			int ci = i;
 			hit(x1 - ow - 4, y - 3, x1, y + 9, () -> openCat(ci));
 			y += 12;
@@ -413,11 +424,11 @@ public final class NosSettingsScreen extends Screen {
 				int rx0 = x0 + (j % cols) * (rw + gap), ry0 = y + (j / cols) * (rh + 4);
 				float k = k(Opt.field(m), on(m));
 				boolean hv = hov(rx0, ry0, rx0 + rw, ry0 + rh);
-				g.fill(rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, hv ? 0x408A5BC4 : 0x2E8A5BC4, k));
-				Ui.frame(g, rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(0x14FFFFFF, 0x4DD3A8F5, k));
+				g.fill(rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, Ui.alpha(accent, hv ? .3f : .2f), k));
+				Ui.frame(g, rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(0x14FFFFFF, Ui.alpha(accent, .4f), k));
 				icon(g, m.icon(), rx0 + 10, ry0 + rh / 2, .65f);
 				Ui.text(g, Ui.fit(Ui.ui(name(m)), rw - 20 - 32), rx0 + 20, ry0 + 6, Ui.TEXT);
-				Ui.toggle(g, rx0 + rw - 28, ry0 + 3, k);
+				Ui.toggle(g, rx0 + rw - 28, ry0 + 3, k, accent);
 				hit(rx0, ry0, rx0 + rw, ry0 + rh, () -> flip(m));
 			}
 			y += (ms.size() + cols - 1) / cols * (rh + 4) + 8;
@@ -453,16 +464,18 @@ public final class NosSettingsScreen extends Screen {
 
 	private void card(GuiGraphics g, Mods.Mod m, int x, int y, int w, int h, int i) {
 		boolean on = on(m), sel = m.id().equals(detail), hv = hov(x, y, x + w, y + h);
+		int accent = Mods.catColor(m.cat());
 		float k = k(Opt.field(m), on), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
-		int bg = Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, hv ? 0x408A5BC4 : 0x2E8A5BC4, k);
+		int bg = Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, Ui.alpha(accent, hv ? .3f : .18f), k);
 		g.fill(x, y, x + w, y + h, Ui.alpha(bg, in));
 		if (k > .02f) Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, Ui.alpha(0x3DF0DBFF, k * in));
-		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(sel ? 0xCCD3A8F5 : Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
+		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(sel ? 0xCCD3A8F5 : Ui.lerpCol(0x14FFFFFF, Ui.alpha(accent, .4f), k), in));
 		if (k > .02f) Fx.hairline(g, x + 1, x + w - 1, y, Ui.alpha(0x99E9D5FF, k * in));
-		g.fill(x + 10, y + 9, x + 28, y + 27, Ui.alpha(0x1FFFFFFF, in));
+		if (sel || hv) Ui.brackets(g, x, y, x + w, y + h, 6, Ui.alpha(sel ? 0xFFF4F7FF : accent, in * (sel ? 1 : .8f)));
+		g.fill(x + 10, y + 9, x + 28, y + 27, Ui.alpha(Ui.lerpCol(0x1FFFFFFF, Ui.alpha(accent, .3f), k), in));
 		icon(g, m.icon(), x + 19, y + 18, .9f);
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), w - 34 - 40), x + 34, y + 14, Ui.alpha(Ui.TEXT, in));
-		Ui.toggle(g, x + w - 34, y + 12, k);
+		Ui.toggle(g, x + w - 34, y + 12, k, accent);
 		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.mod." + m.id() + ".desc")), w - 20), x + 10, y + 33, Ui.alpha(Ui.MUTED, in));
 		if (I18n.exists("nosclient.warn." + m.id())) {
 			Component wl = Ui.small(tr("nosclient.warn.short"));
@@ -482,18 +495,20 @@ public final class NosSettingsScreen extends Screen {
 
 	// ---------- bảng chi tiết ----------
 	private void detailPanel(GuiGraphics g, Mods.Mod m, int x0, int y0, int x1, int y1) {
+		int accent = Mods.catColor(m.cat());
 		g.fill(x0, y0, x1, y1, 0xF0161A23);
 		g.fill(x0, y0, x0 + 1, y1, 0x1FFFFFFF);
+		g.fill(x0, y0, x0 + 3, y1, Ui.alpha(accent, .55f)); // vạch màu phe bên trái toàn bảng
 		dScroll = Ui.approach(dScroll, (float) dTarget, dt, 16);
 		clipOn(g, x0 + 1, y0, x1, y1);
 		int px = x0 + 12, pw = x1 - x0 - 24, y = y0 + 12 - (int) dScroll;
 		boolean lit = on(m);
 		if (lit) {
-			Fx.glow(g, px + 13, y + 13, 70, 70, 0x8CB06EE6);
-			runes.emit(px + 13, y + 13, 46, 7, dt, 0xFFD8B8FF);
+			Fx.glow(g, px + 13, y + 13, 70, 70, Ui.alpha(accent, .55f));
+			runes.emit(px + 13, y + 13, 46, 7, dt, Ui.lerpCol(0xFFFFFFFF, accent, .5f));
 		}
 		g.fill(px, y, px + 26, y + 26, 0x1FFFFFFF);
-		if (lit) Fx.glint(g, px, y, px + 26, y + 26, 0x80F0DBFF);
+		if (lit) Fx.glint(g, px, y, px + 26, y + 26, Ui.alpha(accent, .5f));
 		icon(g, m.icon(), px + 13, y + 13, 1.1f);
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), pw - 34 - 14), px + 34, y + 3, Ui.TEXT);
 		boolean def = Opt.defOn(Opt.field(m));
@@ -520,7 +535,7 @@ public final class NosSettingsScreen extends Screen {
 		Ui.frame(g, px, y, px + pw, y + 30, 0x14FFFFFF);
 		Ui.text(g, Ui.bold(tr(on ? "nosclient.detail.on" : "nosclient.detail.off")), px + 8, y + 6, Ui.TEXT);
 		Ui.text(g, Ui.fit(Ui.small(tr(on ? "nosclient.detail.on.sub" : "nosclient.detail.off.sub")), pw - 46), px + 8, y + 18, Ui.MUTED);
-		Ui.toggle(g, px + pw - 32, y + 9, k(Opt.field(m), on));
+		Ui.toggle(g, px + pw - 32, y + 9, k(Opt.field(m), on), accent);
 		hit(px, y, px + pw, y + 30, () -> flip(m));
 		y += 40;
 		List<Opt> opts = Opt.BY_MOD.getOrDefault(m.id(), List.of());
@@ -531,7 +546,7 @@ public final class NosSettingsScreen extends Screen {
 			int top = y;
 			for (int i = 0; i < opts.size(); i++) {
 				if (i > 0) g.fill(px + 8, y, px + pw - 8, y + 1, 0x0FFFFFFF);
-				y = option(g, opts.get(i), px, y, pw);
+				y = option(g, opts.get(i), px, y, pw, accent);
 			}
 			if (!opts.isEmpty()) Ui.frame(g, px, top, px + pw, y, 0x14FFFFFF);
 			y = extras(g, m, px, y + 6, pw);
@@ -558,13 +573,13 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	/** Một hàng tuỳ chọn; trả y kế tiếp. */
-	private int option(GuiGraphics g, Opt o, int x, int y, int w) {
+	private int option(GuiGraphics g, Opt o, int x, int y, int w, int accent) {
 		Component label = Ui.ui(optLabel(o.label()));
 		switch (o.type()) {
 			case "chk" -> {
 				boolean v = o.bool();
 				Ui.text(g, Ui.fit(label, w - 48), x + 8, y + 7, Ui.TEXT);
-				Ui.toggle(g, x + w - 32, y + 5, k(o.field(), v));
+				Ui.toggle(g, x + w - 32, y + 5, k(o.field(), v), accent);
 				hit(x, y, x + w, y + 22, () -> {
 					o.set(v ? 0 : 1);
 					c.save();
@@ -581,8 +596,8 @@ public final class NosSettingsScreen extends Screen {
 				g.fill(sx, sy, sx + segW, sy + 14, 0x14FFFFFF);
 				for (int i = 0; i < ls.length; i++) {
 					int bw = Ui.width(ls[i]) + 12;
-					if (i == sel) g.fill(sx + 1, sy + 1, sx + bw - 1, sy + 13, 0x665E3A8A);
-					Ui.text(g, ls[i], sx + 6, sy + 4, i == sel ? 0xFFEAD4FB : Ui.MUTED);
+					if (i == sel) g.fill(sx + 1, sy + 1, sx + bw - 1, sy + 13, Ui.alpha(accent, .4f));
+					Ui.text(g, ls[i], sx + 6, sy + 4, i == sel ? 0xFFF4F7FF : Ui.MUTED);
 					int ci = i;
 					hit(sx, sy, sx + bw, sy + 14, () -> {
 						o.setSeg(ci);
@@ -598,12 +613,12 @@ public final class NosSettingsScreen extends Screen {
 					: (int) Math.round(v) + o.unit();
 				Component val = Ui.bold(Component.literal(shown));
 				Ui.text(g, Ui.fit(label, w - 24 - Ui.width(val)), x + 8, y + 7, Ui.TEXT);
-				Ui.text(g, val, x + w - 8 - Ui.width(val), y + 7, Ui.ACCENT_HI);
+				Ui.text(g, val, x + w - 8 - Ui.width(val), y + 7, Ui.lerpCol(accent, 0xFFFFFFFF, .35f));
 				int tx0 = x + 10, tx1 = x + w - 10, ty = y + 24;
 				double f = v < 0 ? (.5 - o.min()) / (o.max() - o.min()) : (v - o.min()) / (o.max() - o.min());
 				int kx = (int) Math.round(tx0 + Math.min(1, Math.max(0, f)) * (tx1 - tx0));
 				g.fill(tx0, ty, tx1, ty + 2, 0x24FFFFFF);
-				g.fill(tx0, ty, kx, ty + 2, Ui.ACC1);
+				g.fill(tx0, ty, kx, ty + 2, accent);
 				g.fill(kx - 2, ty - 4, kx + 2, ty + 6, 0xFFFFFFFF);
 				hit(tx0 - 4, ty - 7, tx1 + 4, ty + 9, () -> {
 					drag = o;
@@ -664,6 +679,7 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	private int look(GuiGraphics g, int x0, int x1, int y) {
+		int hudAccent = Mods.catColor("hud");
 		y += 10;
 		double[] val = {c.hudScale - .5, c.hudBg};
 		String[] lab = {"nosclient.look.size", "nosclient.look.bg"};
@@ -673,10 +689,10 @@ public final class NosSettingsScreen extends Screen {
 			int ry = y + i * 34;
 			Ui.text(g, Ui.ui(tr(lab[i])), x0, ry, Ui.TEXT);
 			Component v = Ui.bold(Component.literal(shown[i]));
-			Ui.text(g, v, te - Ui.width(v), ry, Ui.ACCENT_HI);
+			Ui.text(g, v, te - Ui.width(v), ry, Ui.lerpCol(hudAccent, 0xFFFFFFFF, .35f));
 			int ty = ry + 15, kx = (int) Math.round(x0 + val[i] * (te - x0));
 			g.fill(x0, ty, te, ty + 2, 0x24FFFFFF);
-			g.fill(x0, ty, kx, ty + 2, Ui.ACC1);
+			g.fill(x0, ty, kx, ty + 2, hudAccent);
 			g.fill(kx - 2, ty - 4, kx + 2, ty + 6, 0xFFFFFFFF);
 			int li = i;
 			hit(x0 - 4, ry + 8, te + 4, ry + 24, () -> {
@@ -687,7 +703,7 @@ public final class NosSettingsScreen extends Screen {
 			});
 		}
 		int fy = y + 72;
-		Ui.toggle(g, x0, fy, k("hudIdleFade", c.hudIdleFade));
+		Ui.toggle(g, x0, fy, k("hudIdleFade", c.hudIdleFade), hudAccent);
 		Ui.text(g, Ui.ui(tr("nosclient.look.fade")), x0 + 30, fy + 2, Ui.TEXT);
 		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.look.fade.desc")), x1 - x0 - 30), x0 + 30, fy + 14, Ui.MUTED);
 		hit(x0, fy - 2, x1, fy + 22, () -> {
@@ -695,7 +711,7 @@ public final class NosSettingsScreen extends Screen {
 			c.save();
 		});
 		int iy = fy + 32;
-		Ui.toggle(g, x0, iy, k("intro", c.intro));
+		Ui.toggle(g, x0, iy, k("intro", c.intro), hudAccent);
 		Ui.text(g, Ui.ui(tr("nosclient.intro.opt")), x0 + 30, iy + 2, Ui.TEXT);
 		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.intro.opt.desc")), x1 - x0 - 30), x0 + 30, iy + 14, Ui.MUTED);
 		hit(x0, iy - 2, x1, iy + 22, () -> {

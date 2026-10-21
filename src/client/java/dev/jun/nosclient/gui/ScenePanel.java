@@ -1,5 +1,6 @@
 package dev.jun.nosclient.gui;
 
+import dev.jun.nosclient.Mods;
 import dev.jun.nosclient.Ui;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.scene.SceneRenderer;
@@ -21,6 +22,8 @@ final class ScenePanel extends AbstractWidget {
 	private static final String[] LABEL = {"nosclient.scene.blossom", "nosclient.scene.cane", "nosclient.scene.shader"};
 
 	private final SceneConfig c = SceneConfig.INSTANCE;
+	/** Bảng cảnh = "Thế giới" nên nhuốm xanh lá phe World thay vì tím mặc định — đổi màu 2 công tắc, thanh giờ, chọn nhanh. */
+	private static final int ACC = Mods.catColor("world");
 	private final float s;
 	private final float[] knob = new float[3];
 	private float todShown;
@@ -82,7 +85,7 @@ final class ScenePanel extends AbstractWidget {
 				g.pose().popMatrix();
 				Ui.text(g, Ui.ui(Component.translatable(LABEL[i])), x + 36, ry + 3, Ui.TEXT);
 				knob[i] = Ui.approach(knob[i], on(i) ? 1 : 0, dt, 14);
-				Ui.toggle(g, x + W - 16 - 24, ry + 1, Ui.ease(knob[i]));
+				Ui.toggle(g, x + W - 16 - 24, ry + 1, Ui.ease(knob[i]), ACC);
 			}
 			todShown = Ui.approach(todShown, (float) c.tod, dt, 12);
 			int ty = trackY(), a = tx0(), b = tx1();
@@ -93,10 +96,10 @@ final class ScenePanel extends AbstractWidget {
 			g.fill(a, ty, b, ty + 4, 0x1FFFFFFF);
 			int px = Math.round(a + p * (b - a));
 			if (px > a + 2) {
-				g.fill(a, ty, px + 2, ty + 4, Ui.ACC0);
-				g.fill(a + 2, ty, px, ty + 4, Ui.ACC1);
+				g.fill(a, ty, px + 2, ty + 4, ACC);
+				g.fill(a + 2, ty, px, ty + 4, Ui.lerpCol(ACC, 0xFFFFFFFF, .4f));
 			}
-			g.fill(px - 7, ty - 5, px + 7, ty + 9, 0x40B06EE6);
+			g.fill(px - 7, ty - 5, px + 7, ty + 9, Ui.alpha(ACC, .4f));
 			g.fill(px - 5, ty - 3, px + 5, ty + 7, 0xFFFFFFFF);
 			int sy = segY(), half = (W - 32) / 2;
 			g.fill(x + 16, sy, x + W - 16, sy + 20, 0x38000000);
@@ -104,7 +107,7 @@ final class ScenePanel extends AbstractWidget {
 			for (int i = 0; i < 2; i++) {
 				int bx = x + 18 + i * half;
 				boolean sel = i == 0 ? c.tod < 62 : c.tod >= 80;
-				if (sel) g.fill(bx, sy + 2, bx + half - 4, sy + 18, 0xA65E3A8A);
+				if (sel) g.fill(bx, sy + 2, bx + half - 4, sy + 18, Ui.alpha(ACC, .65f));
 				Component t = Ui.bold(Component.translatable(i == 0 ? "nosclient.scene.sunset" : "nosclient.scene.night"));
 				Ui.text(g, t, bx + (half - 4 - Ui.width(t)) / 2, sy + 6, sel ? 0xFFEAD4FB : Ui.MUTED);
 			}

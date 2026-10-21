@@ -137,18 +137,43 @@ public final class Ui {
 		return Math.round(((col >>> 24) & 255) * a) << 24 | col & 0xFFFFFF;
 	}
 
-	/** Công tắc phẳng: rãnh + núm vuông, 4 quad; k = 0 tắt … 1 bật (đã làm mượt bên gọi). */
-	public static void toggle(GuiGraphics g, int x, int y, float k) {
+	/**
+	 * Công tắc phẳng: rãnh + núm vuông; k = 0 tắt … 1 bật (đã làm mượt bên gọi), accent = màu danh mục của mục đang
+	 * bật — mỗi mục "bật" sáng đúng màu phe của nó (teal HUD, tím Túi đồ, xanh lá Thế giới, cam PvP, xanh dương Hệ
+	 * thống), nên chỉ liếc màu là biết mục đó thuộc nhóm nào, không cần đọc nhãn.
+	 */
+	public static void toggle(GuiGraphics g, int x, int y, float k, int accent) {
 		int w = 24, h = 12;
-		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, ACC0, k));
-		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, 0x66D3A8F5, k));
+		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, accent, k));
+		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, (accent & 0xFFFFFF) | 0xCC000000, k));
 		int kx = Math.round(x + 2 + k * (w - 12));
-		// bật = được phù phép: vệt sáng của game trôi qua rãnh, quầng tím quanh núm
+		// bật = được phù phép: vệt sáng của game trôi qua rãnh, quầng màu phe quanh núm
 		if (k > .02f) {
 			dev.jun.nosclient.gui.Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, alpha(0xCCFFF0FF, k));
-			dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(0x99D9B3FF, k));
+			dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(accent, .62f * k));
 		}
 		g.fill(kx, y + 2, kx + 8, y + h - 2, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
+	}
+
+	/** Công tắc không gắn danh mục (tuỳ chọn giao diện chung): màu tím trung tính mặc định. */
+	public static void toggle(GuiGraphics g, int x, int y, float k) {
+		toggle(g, x, y, k, ACC0);
+	}
+
+	/**
+	 * Bốn góc kiểu bảng điều khiển phi thuyền: mỗi góc một cặp vạch ngắn (8 quad cả khung). Dùng thay viền đều khi
+	 * muốn nhấn một khối đang chọn/rê chuột mà không vẽ thêm khung — rẻ hơn frame() và là chữ ký thị giác của Nos
+	 * client (không bo góc được vì tốn FPS, nên "góc" trở thành một hoạ tiết riêng thay vì một thứ bị thiếu).
+	 */
+	public static void brackets(GuiGraphics g, int x0, int y0, int x1, int y1, int len, int col) {
+		g.fill(x0, y0, x0 + len, y0 + 1, col);
+		g.fill(x0, y0, x0 + 1, y0 + len, col);
+		g.fill(x1 - len, y0, x1, y0 + 1, col);
+		g.fill(x1 - 1, y0, x1, y0 + len, col);
+		g.fill(x0, y1 - 1, x0 + len, y1, col);
+		g.fill(x0, y1 - len, x0 + 1, y1, col);
+		g.fill(x1 - len, y1 - 1, x1, y1, col);
+		g.fill(x1 - 1, y1 - len, x1, y1, col);
 	}
 
 	public static float ease(float x) {

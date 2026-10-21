@@ -200,6 +200,7 @@ public final class NosTitleScreen extends Screen {
 				int half = Math.round((h / 2f - 8) * Ui.ease(hover));
 				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));
 				g.fill(x, y + h / 2 - half, x + 2, y + h / 2 + half, Ui.ACCENT);
+				Ui.brackets(g, x, y, x + w, y + h, 6, Ui.alpha(0xFFF4F7FF, hover * .6f));
 			}
 			// mọi toạ độ theo chiều cao thật của nút (24–32): màn thấp thì nút co, chữ không chồng
 			int ic = Math.min(22, h - 12), iy = y + (h - ic) / 2;
