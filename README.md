@@ -25,3 +25,8 @@ Giao diện theo preview, font Inter/Manrope đóng gói trong mod (SIL OFL 1.1,
     ./gradlew build        # ra build/libs/nosclient-<version>.jar
 
 Cần JDK 21. Thả jar cùng Fabric API vào thư mục `mods/`.
+
+## Giấy phép
+
+Mã nguồn công khai để xem, KHÔNG phải để sao chép/phân phối lại — xem [LICENSE](LICENSE).
+Người chơi dùng mod qua bản .jar phát hành sẵn ở Nostalgia Launcher hoặc GitHub Releases.

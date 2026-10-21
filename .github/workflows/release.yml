@@ -1,0 +1,45 @@
+name: Release
+
+# Chạy khi đẩy tag `vX.Y.Z`: build bằng Gradle, đổi tên jar sang `nos-client-X.Y.Z.jar` (đúng
+# tiền tố mà nos_client/manager.py của Nostalgia Launcher nhận ra), rồi đính vào GitHub Release
+# DRAFT. Launcher tự hỏi `releases/latest` lúc chơi — mỗi bản chơi luôn lấy đúng bản mod mới
+# nhất, bất kể launcher đang chạy phiên bản nào (không bắt người chơi tự cập nhật launcher).
+#
+# Release DRAFT, không `--draft=false` tự động: chủ dự án publish tay sau khi kiểm bản build.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Tag phải khớp phiên bản trong gradle.properties
+        run: |
+          expected="v$(grep '^version=' gradle.properties | cut -d= -f2)"
+          test "${GITHUB_REF_NAME}" = "${expected}" || { echo "tag ${GITHUB_REF_NAME} khác ${expected}"; exit 1; }
+      - run: ./gradlew build --no-daemon
+      - name: Đổi tên jar cho đúng tiền tố launcher nhận diện
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          src="build/libs/nosclient-${version}.jar"
+          test -f "$src" || { echo "không thấy $src"; ls build/libs; exit 1; }
+          cp "$src" "nos-client-${version}.jar"
+          sha256sum "nos-client-${version}.jar" > SHA256SUMS
+      - name: Phát hành bản nháp
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "nos-client-${GITHUB_REF_NAME#v}.jar" SHA256SUMS \
+            --repo "${GITHUB_REPOSITORY}" --draft --title "Nos client ${GITHUB_REF_NAME}" \
+            --notes "Xem LICENSE — mã nguồn công khai để xem, không phải để sao chép/phân phối lại."

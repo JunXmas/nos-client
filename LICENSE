@@ -1,0 +1,39 @@
+Bản quyền © 2026 Nguyễn Nhật Minh (JunXmas). Giữ mọi quyền.
+
+Mã nguồn trong kho này được công khai để ai cũng xem được, KHÔNG phải để sao chép, phân
+phối lại, sửa đổi, dịch ngược thành bản khác, hay dùng làm nền cho một mod/launcher khác —
+kể cả khi không thu phí, kể cả khi làm vì mục đích cộng đồng. Không có giấy phép mã nguồn
+mở nào (MIT, GPL, Apache…) áp dụng cho kho này.
+
+Được phép, không cần xin phép:
+- Tải và dùng file .jar đã biên dịch sẵn do chính tác giả phát hành (GitHub Releases của
+  kho này, hoặc qua Nostalgia Launcher).
+- Đọc mã nguồn để tham khảo, học hỏi.
+- Báo lỗi, đề xuất qua Issues/Pull Request của kho này (đóng góp coi như đồng ý cấp quyền
+  sử dụng lại cho tác giả, không phải cấp quyền công khai cho người khác sao chép).
+
+Không được phép, trừ khi có sự đồng ý bằng văn bản của tác giả:
+- Chép một phần hay toàn bộ mã nguồn sang kho/dự án khác.
+- Build và phát hành bản phân phối (.jar) ngoài kênh chính thức của kho này.
+- Gỡ bỏ hoặc che giấu thông báo bản quyền này khi phân phối lại dưới bất kỳ hình thức nào.
+
+---
+
+Copyright © 2026 Nguyễn Nhật Minh (JunXmas). All rights reserved.
+
+This repository's source code is public so anyone can read it — NOT so it can be copied,
+redistributed, modified, reverse-derived into another mod/launcher, or used as a base for
+another project, even non-commercially, even for community purposes. No open-source license
+(MIT, GPL, Apache, etc.) applies to this repository.
+
+Permitted without asking:
+- Downloading and using the compiled .jar the author publishes (this repo's GitHub Releases,
+  or via Nostalgia Launcher).
+- Reading the source for reference or learning.
+- Filing issues/pull requests against this repo (contributions are considered granted back
+  to the author for reuse, not a public grant for others to copy).
+
+Not permitted without the author's written consent:
+- Copying any part of the source into another repository/project.
+- Building and distributing a .jar outside this repository's official channel.
+- Removing or hiding this notice when redistributing in any form.
