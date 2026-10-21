@@ -147,11 +147,8 @@ public final class Ui {
 		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, accent, k));
 		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, (accent & 0xFFFFFF) | 0xCC000000, k));
 		int kx = Math.round(x + 2 + k * (w - 12));
-		// bật = được phù phép: vệt sáng của game trôi qua rãnh, quầng màu phe quanh núm
-		if (k > .02f) {
-			dev.jun.nosclient.gui.Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, alpha(0xCCFFF0FF, k));
-			dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(accent, .62f * k));
-		}
+		// bật = được phù phép: quầng màu phe quanh núm (bỏ vệt sáng trôi qua rãnh theo yêu cầu, rối mắt khi nhiều ô)
+		if (k > .02f) dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(accent, .62f * k));
 		g.fill(kx, y + 2, kx + 8, y + h - 2, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
 	}
 

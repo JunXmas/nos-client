@@ -193,9 +193,6 @@ public final class NosTitleScreen extends Screen {
 			int dx = Math.round((1 - in) * -24 + hover * 3), x = getX() + dx, y = getY(), w = width, h = height;
 			int tint = it.primary ? Ui.lerpCol(0xB3734AA8, 0xCC8A5BC4, hover) : Ui.lerpCol(0x99101218, 0xB3262D3A, hover);
 			Ui.panel(g, x, y, x + w, y + h, Ui.alpha(tint, in));
-			// nút chính luôn được phù phép; nút khác lóe lên khi rê chuột
-			float ench = it.primary ? .55f + .45f * hover : hover;
-			if (ench > .02f) Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, Ui.alpha(0x66F0DBFF, ench * in));
 			if (hover > .02f) { // vạch tím bên trái như .mb:before của preview
 				int half = Math.round((h / 2f - 8) * Ui.ease(hover));
 				g.fill(x - 1, y + h / 2 - half - 1, x + 4, y + h / 2 + half + 1, Ui.alpha(0x59B06EE6, hover));

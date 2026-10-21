@@ -299,7 +299,6 @@ public final class NosSettingsScreen extends Screen {
 			if (sel || hv) g.fill(x + 8, cy, x + s - 8, cy + ch, sel ? Ui.alpha(accent, .22f) : 0x0FFFFFFF);
 			if (sel) {
 				g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, accent);
-				Fx.glint(g, x + 8, cy, x + s - 8, cy + ch, Ui.alpha(0xFFFFF0FF, .35f));
 				Fx.glow(g, x + 4, cy + ch / 2f, 18, ch * 1.6f, Ui.alpha(accent, .5f));
 			}
 			if (i < 0) g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 18, cy + ch / 2 - 6, 0, 0, 12, 12, 12, 12);
@@ -468,7 +467,6 @@ public final class NosSettingsScreen extends Screen {
 		float k = k(Opt.field(m), on), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
 		int bg = Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, Ui.alpha(accent, hv ? .3f : .18f), k);
 		g.fill(x, y, x + w, y + h, Ui.alpha(bg, in));
-		if (k > .02f) Fx.glint(g, x + 1, y + 1, x + w - 1, y + h - 1, Ui.alpha(0x3DF0DBFF, k * in));
 		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(sel ? 0xCCD3A8F5 : Ui.lerpCol(0x14FFFFFF, Ui.alpha(accent, .4f), k), in));
 		if (k > .02f) Fx.hairline(g, x + 1, x + w - 1, y, Ui.alpha(0x99E9D5FF, k * in));
 		if (sel || hv) Ui.brackets(g, x, y, x + w, y + h, 6, Ui.alpha(sel ? 0xFFF4F7FF : accent, in * (sel ? 1 : .8f)));
@@ -508,7 +506,6 @@ public final class NosSettingsScreen extends Screen {
 			runes.emit(px + 13, y + 13, 46, 7, dt, Ui.lerpCol(0xFFFFFFFF, accent, .5f));
 		}
 		g.fill(px, y, px + 26, y + 26, 0x1FFFFFFF);
-		if (lit) Fx.glint(g, px, y, px + 26, y + 26, Ui.alpha(accent, .5f));
 		icon(g, m.icon(), px + 13, y + 13, 1.1f);
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), pw - 34 - 14), px + 34, y + 3, Ui.TEXT);
 		boolean def = Opt.defOn(Opt.field(m));

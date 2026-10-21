@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Ngôn ngữ "bàn phù phép" của Nos client — mọi hiệu ứng menu dùng chung ở đây, mỗi cái 1 đến vài quad:
- * - glint: vệt sáng phù phép thật của game (enchanted_glint_item) đổi thành alpha, lướt chéo trên điểm nhấn;
  * - glow: quầng sáng tròn mềm (texture sinh sẵn, lọc tuyến tính) cho nền và mục đang chọn;
  * - Runes: chữ Standard Galactic bay vòng vào đích như chữ bay vào sách ở bàn phù phép;
  * - Sparks: tia enchanted_hit bung ra khi bật một mod.
@@ -25,10 +24,9 @@ import org.slf4j.LoggerFactory;
 public final class Fx {
 	private Fx() {}
 
-	private static final Identifier GLINT = Identifier.fromNamespaceAndPath("nosclient", "fx/glint"), GLOW = Identifier.fromNamespaceAndPath("nosclient", "fx/glow"),
-		HIT = Identifier.withDefaultNamespace("textures/particle/enchanted_hit.png");
+	private static final Identifier GLOW = Identifier.fromNamespaceAndPath("nosclient", "fx/glow"), HIT = Identifier.withDefaultNamespace("textures/particle/enchanted_hit.png");
 	private static final Style RUNE = Style.EMPTY.withFont(new FontDescription.Resource(Identifier.withDefaultNamespace("alt")));
-	private static boolean made, glintOk;
+	private static boolean made;
 
 	public static float time() {
 		return (System.nanoTime() % 1_000_000_000_000L) / 1e9f;
@@ -38,21 +36,6 @@ public final class Fx {
 		if (made) return;
 		made = true;
 		Minecraft mc = Minecraft.getInstance();
-		// glint của game là ảnh RGB trên nền đen; đổi độ sáng thành alpha để phủ lên được mọi nền (không làm tối)
-		try (var in = mc.getResourceManager().open(Identifier.withDefaultNamespace("textures/misc/enchanted_glint_item.png"))) {
-			NativeImage src = NativeImage.read(in), img = new NativeImage(src.getWidth(), src.getHeight(), false);
-			for (int y = 0; y < src.getHeight(); y++) for (int x = 0; x < src.getWidth(); x++) {
-				int p = src.getPixel(x, y), l = Math.max((p >> 16) & 255, Math.max((p >> 8) & 255, p & 255));
-				// glint gốc tối nhất ~1/3 sáng: kéo về 0 để nền vẫn trong, chỉ còn vệt sáng
-				double v = Math.max(0, (l / 255.0 - .3) / .7);
-				img.setPixel(x, y, (int) Math.round(Math.min(1, v * 1.25) * 255) << 24 | 0xFFFFFF);
-			}
-			src.close();
-			register(mc, GLINT, img, true);
-			glintOk = true;
-		} catch (Exception e) {
-			LoggerFactory.getLogger("nosclient").warn("Nos client: không nạp được glint, bỏ hiệu ứng vệt sáng", e);
-		}
 		int n = 128;
 		NativeImage g = new NativeImage(n, n, false);
 		for (int y = 0; y < n; y++) for (int x = 0; x < n; x++) {
@@ -70,15 +53,6 @@ public final class Fx {
 		};
 		t.upload();
 		mc.getTextureManager().register(id, t);
-	}
-
-	/** Vệt sáng phù phép trôi chéo trong khung (x0,y0)–(x1,y1); argb = màu và độ đậm. Một quad. */
-	public static void glint(GuiGraphics g, int x0, int y0, int x1, int y1, int argb) {
-		make();
-		if (!glintOk || x1 <= x0 || y1 <= y0 || (argb >>> 24) == 0) return;
-		float t = time();
-		// vùng texture lấy theo kích thước khung (2 px màn = 1 px glint) và trôi theo thời gian, vì texture lặp nên trôi mãi không đứt
-		g.blit(RenderPipelines.GUI_TEXTURED, GLINT, x0, y0, (t * 22) % 128, (t * 9) % 128, x1 - x0, y1 - y0, (x1 - x0) / 2, (y1 - y0) / 2, 128, 128, argb);
 	}
 
 	/** Quầng sáng tròn mềm tâm (cx,cy). */
