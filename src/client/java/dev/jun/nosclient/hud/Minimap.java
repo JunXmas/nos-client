@@ -80,15 +80,23 @@ public final class Minimap {
 		BlockPos p = mc.player.blockPosition();
 		int r = (size - 1) / 2;
 		// lệch ảnh theo phần người chơi đã đi khỏi tâm ảnh
-		float scale = box / (float) size, ox = (p.getX() - cx) * scale, oz = (p.getZ() - cz) * scale;
-		g.enableScissor(x, y, x + box, y + box);
-		g.blit(RenderPipelines.GUI_TEXTURED, TEX, Math.round(x - ox), Math.round(y - oz), 0, 0, box, box, size, size, size, size);
-		g.disableScissor();
+		// xoay theo hướng nhìn: phóng ảnh √2 lần để góc khung không bị hở khi xoay
+		boolean rot = SceneConfig.INSTANCE.minimapRotate;
+		int d = rot ? Math.round(box * 1.42f) : box;
+		float scale = d / (float) size, ox = (p.getX() - cx) * scale, oz = (p.getZ() - cz) * scale;
 		int mx = x + box / 2, my = y + box / 2;
+		double yaw = Math.toRadians(mc.player.getYRot());
+		g.enableScissor(x, y, x + box, y + box);
+		g.pose().pushMatrix();
+		g.pose().translate(mx, my);
+		// hướng nhìn (-sin, cos) trên ảnh phải chỉ lên trên
+		if (rot) g.pose().rotate((float) (-Math.PI / 2 - Math.atan2(Math.cos(yaw), -Math.sin(yaw))));
+		g.blit(RenderPipelines.GUI_TEXTURED, TEX, Math.round(-d / 2f - ox), Math.round(-d / 2f - oz), 0, 0, d, d, size, size, size, size);
+		g.pose().popMatrix();
+		g.disableScissor();
 		g.fill(mx - 1, my - 1, mx + 2, my + 2, 0xFFFFFFFF);
 		// vạch hướng nhìn
-		double yaw = Math.toRadians(mc.player.getYRot());
-		int dx = (int) Math.round(-Math.sin(yaw) * 5), dz = (int) Math.round(Math.cos(yaw) * 5);
+		int dx = rot ? 0 : (int) Math.round(-Math.sin(yaw) * 5), dz = rot ? -5 : (int) Math.round(Math.cos(yaw) * 5);
 		g.fill(Math.min(mx, mx + dx), Math.min(my, my + dz), Math.max(mx, mx + dx) + 1, Math.max(my, my + dz) + 1, 0xFFD3A8F5);
 		return y + box + 6;
 	}

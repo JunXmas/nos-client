@@ -2,54 +2,77 @@ package dev.jun.nosclient.gui;
 
 import dev.jun.nosclient.Mods;
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.feat.Waypoints;
 import dev.jun.nosclient.scene.SceneConfig;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Cài đặt Nos client (R-Shift) theo preview: tấm kính lớn, cột trái có logo + danh mục + bộ đếm "đang bật",
- * bên phải là lưới thẻ mod nhóm "Cơ bản"/"Nâng cao", mỗi thẻ có icon, tên, mô tả và công tắc trượt.
- * Bản này mới có nhóm HUD đã làm thật; danh mục khác hiện mờ "sắp có" thay vì giả vờ chạy được.
+ * Cài đặt Nos client (R-Shift) theo preview 07/08/17/18: cột trái (logo, tìm kiếm, danh mục, ngôn ngữ, bộ đếm),
+ * "Tổng quan" gom mọi mod một chỗ, mỗi danh mục là lưới thẻ, bấm thẻ mở bảng chi tiết bên phải với tuỳ chọn riêng.
+ * Vẽ kiểu immediate-mode: lúc vẽ ghi luôn vùng bấm (hits), nên bố cục và vùng bấm không bao giờ lệch nhau.
  */
 public final class NosSettingsScreen extends Screen {
 	private static final Identifier LOGO = Identifier.fromNamespaceAndPath("nosclient", "textures/gui/logo.png");
-	private final Screen parent;
-	private final SceneConfig c = SceneConfig.INSTANCE;
-	private final long opened = System.nanoTime();
-	private long last = opened;
-
-	/** Danh mục đang chọn ở cột trái. */
-	private int cat;
-	/** Hoạt ảnh công tắc/rê chuột của từng thẻ, theo id mod. */
-	private final java.util.Map<String, float[]> anim = new java.util.HashMap<>();
-
-	private List<Mods.Mod> mods() {
-		return Mods.of(Mods.CATS[cat]);
-	}
-
-	private float[] k(Mods.Mod m) {
-		return anim.computeIfAbsent(m.id(), id -> new float[]{m.get().get() ? 1 : 0, 0});
-	}
-
-	/** Nhóm của thẻ: HUD chia Cơ bản/Nâng cao như preview, danh mục khác một nhóm. */
-	private static boolean basic(Mods.Mod m) {
-		return !m.group().equals("advanced");
-	}
-
 	private static final String[] CATS = Mods.CATS;
 	private static final ItemStack[] CAT_ICON = {new ItemStack(Items.COMPASS), new ItemStack(Items.PURPLE_SHULKER_BOX), new ItemStack(Items.GRASS_BLOCK),
 		new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.ENDER_EYE)};
+	private static final int GAP = 8;
+
+	private final Screen parent;
+	private final SceneConfig c = SceneConfig.INSTANCE;
+	private final Minecraft mc = Minecraft.getInstance();
+	private final long opened = System.nanoTime();
+	private long last = opened;
+	private float dt, t;
+	private int mx, my;
+
+	/** -1 = Tổng quan, 0..4 = Mods.CATS. */
+	private int cat = -1;
+	/** HUD: 0 = thẻ mod, 1 = giao diện HUD. */
+	private int tab;
+	/** Mod đang mở bảng chi tiết, null = đóng. */
+	private String detail;
+	private String query = "";
+	/** Ô tìm tự vẽ bằng font của mod (EditBox của game chỉ đo con trỏ theo font mặc định). */
+	private boolean searchFocus;
+	private Component note;
+	private float scroll, dScroll;
+	private double scrollTarget, dTarget;
+	private int maxScroll, dMax;
+	private final Map<String, Float> anim = new HashMap<>();
+
+	private record Hit(int x0, int y0, int x1, int y1, Runnable run) {}
+
+	private final List<Hit> hits = new ArrayList<>();
+	/** Vùng cắt đang bật [x0,y0,x1,y1]; vùng bấm ngoài vùng cắt bị bỏ. */
+	private int[] clip;
+	/** Thanh trượt đang kéo: tuỳ chọn + hai mép rãnh; dragLook = thanh của khu giao diện HUD. */
+	private Opt drag;
+	private int dragX0, dragX1, dragLook = -1;
 
 	public NosSettingsScreen(Screen parent) {
 		super(Component.translatable("nosclient.settings.title"));
@@ -58,11 +81,11 @@ public final class NosSettingsScreen extends Screen {
 
 	// ---------- bố cục ----------
 	private int pw() {
-		return Math.min(width - 24, 600);
+		return Math.min(width - 24, 640);
 	}
 
 	private int ph() {
-		return Math.min(height - 24, 360);
+		return Math.min(height - 24, 380);
 	}
 
 	private int px() {
@@ -73,310 +96,667 @@ public final class NosSettingsScreen extends Screen {
 		return (height - ph()) / 2;
 	}
 
-	private static final int GAP = 8;
-
-	/** Cột trái hẹp lại khi màn hẹp để lưới thẻ còn đủ 2 cột. */
 	private int side() {
-		return pw() >= 560 ? 140 : 112;
-	}
-	/** 0 = thẻ mod, 1 = giao diện HUD. Tách tab để màn thấp không phải nhồi hai khu chồng lên nhau. */
-	private int tab;
-
-	/** Thẻ cao 44 (có mô tả); không đủ chỗ trong tấm kính thì 28 (chỉ tên + công tắc) để lưới không tràn. */
-	private int cardH() {
-		int basic = (int) mods().stream().filter(NosSettingsScreen::basic).count(), adv = mods().size() - basic;
-		int rows = (basic + cols() - 1) / cols() + (adv + cols() - 1) / cols();
-		return 76 + rows * (50 + GAP) + 22 + 14 <= ph() ? 50 : 36;
+		return pw() >= 560 ? 140 : 116;
 	}
 
-	private int cols() {
-		return Math.max(1, (pw() - side() - 44 + GAP) / (118 + GAP));
+	/** Bảng chi tiết: 184 px bên phải; màn hẹp thì phủ hết phần phải. */
+	private int dw() {
+		return pw() - side() >= 440 ? 184 : pw() - side();
 	}
 
-	private int cardW() {
-		return (pw() - side() - 44 - (cols() - 1) * GAP) / cols();
+	private void setQuery(String q) {
+		query = q.length() > 40 ? q.substring(0, 40) : q;
+		scroll = 0;
+		scrollTarget = 0;
 	}
 
-	/** Vị trí thẻ thứ i trong nhóm của nó; nhóm Nâng cao nằm dưới Cơ bản. */
-	private int[] cardPos(int i) {
-		Mods.Mod m = mods().get(i);
-		int basic = (int) mods().stream().filter(NosSettingsScreen::basic).count();
-		int idx = basic(m) ? i : i - basic;
-		int rowsBasic = (basic + cols() - 1) / cols();
-		int top = py() + 76 - (int) scroll + (basic(m) ? 0 : rowsBasic * (cardH() + GAP) + 22);
-		int x = px() + side() + 22 + (idx % cols()) * (cardW() + GAP), y = top + (idx / cols()) * (cardH() + GAP);
-		return new int[]{x, y};
+	// ---------- tiện ích vẽ ----------
+	private boolean hov(int x0, int y0, int x1, int y1) {
+		return mx >= x0 && mx < x1 && my >= y0 && my < y1 && (clip == null || mx >= clip[0] && mx < clip[2] && my >= clip[1] && my < clip[3]);
 	}
 
+	private void hit(int x0, int y0, int x1, int y1, Runnable r) {
+		if (clip != null) {
+			x0 = Math.max(x0, clip[0]);
+			y0 = Math.max(y0, clip[1]);
+			x1 = Math.min(x1, clip[2]);
+			y1 = Math.min(y1, clip[3]);
+		}
+		if (x0 < x1 && y0 < y1) hits.add(new Hit(x0, y0, x1, y1, r));
+	}
+
+	private void clipOn(GuiGraphics g, int x0, int y0, int x1, int y1) {
+		clip = new int[]{x0, y0, x1, y1};
+		g.enableScissor(x0, y0, x1, y1);
+	}
+
+	private void clipOff(GuiGraphics g) {
+		clip = null;
+		g.disableScissor();
+	}
+
+	/** Công tắc mượt theo khoá (field config). */
+	private float k(String key, boolean on) {
+		float v = Ui.approach(anim.getOrDefault(key, on ? 1f : 0f), on ? 1 : 0, dt, 14);
+		anim.put(key, v);
+		return Ui.ease(v);
+	}
+
+	private void icon(GuiGraphics g, ItemStack s, int cx, int cy, float scale) {
+		g.pose().pushMatrix();
+		g.pose().translate(cx, cy);
+		g.pose().scale(scale, scale);
+		g.renderFakeItem(s, -8, -8);
+		g.pose().popMatrix();
+	}
+
+	private void click() {
+		mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+	}
+
+	private static Component tr(String key) {
+		return Component.translatable(key);
+	}
+
+	private static Component name(Mods.Mod m) {
+		return tr("nosclient.mod." + m.id());
+	}
+
+	private static boolean on(Mods.Mod m) {
+		return m.get().get();
+	}
+
+	private void flip(Mods.Mod m) {
+		m.set().accept(!on(m));
+		c.save();
+	}
+
+	private int lines(GuiGraphics g, Component text, int x, int y, int w, int col) {
+		List<FormattedCharSequence> ls = font.split(text, w);
+		for (int i = 0; i < ls.size(); i++) g.drawString(font, ls.get(i), x, y + i * 10, col, false);
+		return ls.size() * 10;
+	}
+
+	/** Nút phẳng có chữ; trả bề rộng. */
+	private int button(GuiGraphics g, Component label, int x, int y, int h, boolean active, Runnable r) {
+		int w = Ui.width(label) + 16;
+		boolean hv = active && hov(x, y, x + w, y + h);
+		g.fill(x, y, x + w, y + h, !active ? 0x0AFFFFFF : hv ? 0x335E3A8A : 0x14FFFFFF);
+		Ui.frame(g, x, y, x + w, y + h, hv ? 0x59D3A8F5 : 0x1FFFFFFF);
+		Ui.text(g, label, x + 8, y + (h - 7) / 2, active ? Ui.TEXT : Ui.FAINT);
+		if (active) hit(x, y, x + w, y + h, r);
+		return w;
+	}
+
+	// ---------- tìm kiếm: bỏ dấu để gõ "toa do" vẫn ra "Toạ độ" ----------
+	static String fold(String s) {
+		return Normalizer.normalize(s.toLowerCase(Locale.ROOT), Normalizer.Form.NFD).replaceAll("\\p{M}", "").replace('đ', 'd');
+	}
+
+	private boolean matches(Mods.Mod m, String q) {
+		StringBuilder b = new StringBuilder(I18n.get("nosclient.mod." + m.id())).append(' ').append(I18n.get("nosclient.mod." + m.id() + ".desc"));
+		for (Opt o : Opt.BY_MOD.getOrDefault(m.id(), List.of())) b.append(' ').append(I18n.get("nosclient." + o.label()));
+		return fold(b.toString()).contains(q);
+	}
+
+	private List<Mods.Mod> results() {
+		String q = fold(query.trim());
+		return Mods.ALL.stream().filter(m -> matches(m, q)).toList();
+	}
+
+	private boolean searching() {
+		return !query.isBlank();
+	}
+
+	// ---------- vẽ ----------
 	@Override
-	public void render(GuiGraphics g, int mx, int my, float pt) {
-		super.render(g, mx, my, pt);
+	public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
+		super.render(g, mouseX, mouseY, pt);
+		mx = mouseX;
+		my = mouseY;
 		long now = System.nanoTime();
-		float dt = Math.min(.05f, (now - last) / 1e9f), t = (now - opened) / 1e9f;
+		dt = Math.min(.05f, (now - last) / 1e9f);
+		t = (now - opened) / 1e9f;
 		last = now;
+		hits.clear();
 		float in = Ui.ease(Math.min(1, t / .35f));
 		int x = px(), y = py() + Math.round((1 - in) * 10), w = pw(), h = ph();
 		Ui.panel(g, x, y, x + w, y + h, Ui.alpha(0xB8141821, in));
-		// cột trái
-		g.fill(x + side(), y + 1, x + side() + 1, y + h - 1, 0x14FFFFFF);
-		g.fill(x + 1, y + 1, x + side(), y + h - 1, 0x1A000000);
-		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, LOGO, x + 16, y + 16, 0, 0, 22, 22, 22, 22);
+		left(g, x, y, h);
+
+		boolean showDetail = detail != null;
+		int rx = x + side() + 20, top = y + 58;
+		int cx1 = x + w - 20 - (showDetail && dw() < w - side() ? dw() - 8 : 0);
+		header(g, x, y, w, rx, showDetail ? cx1 : x + w - 20);
+		scroll = Ui.approach(scroll, (float) scrollTarget, dt, 16);
+		if (!(showDetail && dw() >= w - side())) {
+			clipOn(g, x + side() + 1, y + 54, showDetail ? x + w - dw() : x + w - 1, y + h - 3);
+			int bottom;
+			if (searching()) bottom = cards(g, rx, cx1, top - (int) scroll, List.of(new Group(null, results())));
+			else if (cat < 0) bottom = overview(g, rx, cx1, top - (int) scroll);
+			else if (cat == 0 && tab == 1) bottom = look(g, rx, cx1, top - (int) scroll);
+			else bottom = cards(g, rx, cx1, top - (int) scroll, groups());
+			clipOff(g);
+			maxScroll = Math.max(0, bottom + (int) scroll - (y + h - 10));
+			scrollTarget = Math.min(scrollTarget, maxScroll);
+			if (maxScroll > 0) {
+				int st = y + 58, sb = y + h - 8, len = Math.max(16, (sb - st) * (sb - st) / (sb - st + maxScroll));
+				int pos = st + Math.round((sb - st - len) * Math.min(1, scroll / maxScroll));
+				int sx = (showDetail ? x + w - dw() : x + w) - 5;
+				g.fill(sx, pos, sx + 2, pos + len, 0x55FFFFFF);
+			}
+		}
+		if (showDetail) Mods.ALL.stream().filter(m -> m.id().equals(detail)).findFirst().ifPresent(m -> detailPanel(g, m, x + w - dw(), y + 54, x + w - 1, y + h - 1));
+	}
+
+	private void left(GuiGraphics g, int x, int y, int h) {
+		int s = side();
+		g.fill(x + s, y + 1, x + s + 1, y + h - 1, 0x14FFFFFF);
+		g.fill(x + 1, y + 1, x + s, y + h - 1, 0x1A000000);
+		g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 16, y + 16, 0, 0, 22, 22, 22, 22);
 		Ui.text(g, Ui.bold(Component.literal("Nos client")), x + 46, y + 18, Ui.TEXT);
 		Ui.text(g, Ui.small(Component.literal("NOSTALGIA · R-SHIFT")), x + 46, y + 29, Ui.FAINT);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.cats")), x + 16, y + 56, Ui.FAINT);
-		for (int i = 0; i < CATS.length; i++) {
-			int cy = y + 70 + i * 26;
-			boolean sel = i == cat, live = true;
-			if (sel) {
-				g.fill(x + 10, cy, x + side() - 10, cy + 22, 0x405E3A8A);
-				g.fill(x + 3, cy + 5, x + 5, cy + 17, Ui.ACCENT);
-			}
-			g.pose().pushMatrix();
-			g.pose().translate(x + 18, cy + 4);
-			g.pose().scale(.8f, .8f);
-			g.renderFakeItem(CAT_ICON[i], 0, 0);
-			g.pose().popMatrix();
-			Ui.text(g, Ui.ui(Component.translatable("nosclient.cat." + CATS[i])), x + 38, cy + 7, live ? Ui.TEXT : Ui.FAINT);
-			Component badge = Ui.small(Component.literal(Mods.on(CATS[i]) + "/" + Mods.of(CATS[i]).size()));
+		// ô tìm kiếm (chữ do EditBox vẽ, ta vẽ nền)
+		boolean sf = searchFocus;
+		g.fill(x + 12, y + 45, x + s - 12, y + 63, sf ? 0x22FFFFFF : 0x12FFFFFF);
+		Ui.frame(g, x + 12, y + 45, x + s - 12, y + 63, sf ? 0x66D3A8F5 : 0x1FFFFFFF);
+		int qx = x + 28, qw = s - 46;
+		if (query.isEmpty() && !sf) Ui.text(g, Ui.fit(Ui.small(tr("nosclient.settings.search")), qw), qx, y + 51, Ui.FAINT);
+		else {
+			// chữ dài hơn ô thì giữ phần cuối (chỗ đang gõ) trong tầm mắt
+			String shown = query;
+			while (shown.length() > 0 && Ui.width(Ui.small(Component.literal(shown))) > qw - 4) shown = shown.substring(1);
+			Component q = Ui.small(Component.literal(shown));
+			Ui.text(g, q, qx, y + 51, Ui.TEXT);
+			if (sf && (t * 2 % 2) < 1.2f) g.fill(qx + Ui.width(q) + 1, y + 49, qx + Ui.width(q) + 2, y + 59, Ui.ACCENT_HI);
+		}
+		// kính lúp vẽ tay (font không có glyph ⌕): khung 5 px + cán chéo
+		Ui.frame(g, x + 17, y + 50, x + 22, y + 55, Ui.FAINT);
+		g.fill(x + 22, y + 55, x + 24, y + 57, Ui.FAINT);
+		Ui.text(g, Ui.small(tr("nosclient.settings.cats")), x + 16, y + 72, Ui.FAINT);
+		int step = h >= 320 ? 24 : 20;
+		for (int i = -1; i < CATS.length; i++) {
+			int cy = y + 84 + (i + 1) * step, ch = step - 4;
+			boolean sel = i == cat && !searching(), hv = hov(x + 8, cy, x + s - 8, cy + ch);
+			if (sel || hv) g.fill(x + 8, cy, x + s - 8, cy + ch, sel ? 0x405E3A8A : 0x0FFFFFFF);
+			if (sel) g.fill(x + 3, cy + 4, x + 5, cy + ch - 4, Ui.ACCENT);
+			if (i < 0) g.blit(RenderPipelines.GUI_TEXTURED, LOGO, x + 18, cy + ch / 2 - 6, 0, 0, 12, 12, 12, 12);
+			else icon(g, CAT_ICON[i], x + 24, cy + ch / 2, .75f);
+			Ui.text(g, Ui.fit(Ui.ui(tr("nosclient.cat." + (i < 0 ? "all" : CATS[i]))), s - 80), x + 38, cy + ch / 2 - 3, Ui.TEXT);
+			long n = i < 0 ? Mods.ALL.stream().filter(NosSettingsScreen::on).count() : Mods.on(CATS[i]);
+			int total = i < 0 ? Mods.ALL.size() : Mods.of(CATS[i]).size();
+			Component badge = Ui.small(Component.literal(n + "/" + total));
 			int bw = Ui.width(badge) + 10;
-			g.fill(x + side() - 16 - bw, cy + 5, x + side() - 16, cy + 17, sel ? 0x40B06EE6 : 0x14FFFFFF);
-			Ui.text(g, badge, x + side() - 16 - bw + 5, cy + 8, sel ? 0xFFEAD4FB : Ui.FAINT);
+			g.fill(x + s - 14 - bw, cy + ch / 2 - 6, x + s - 14, cy + ch / 2 + 6, sel ? 0x40B06EE6 : 0x14FFFFFF);
+			Ui.text(g, badge, x + s - 14 - bw + 5, cy + ch / 2 - 3, sel ? 0xFFEAD4FB : Ui.FAINT);
+			int ci = i;
+			hit(x + 8, cy, x + s - 8, cy + ch, () -> openCat(ci));
 		}
-		int on = (int) Mods.ALL.stream().filter(m -> m.get().get()).count(), total = Mods.ALL.size();
-		Ui.text(g, Ui.small(Component.translatable("nosclient.settings.on")), x + 16, y + h - 40, Ui.MUTED);
+		// đáy: ngôn ngữ, bộ đếm, ghi chú — màn thấp thì chỉ giữ bộ đếm
+		if (h >= 320) {
+			int ly = y + h - 82, half = (s - 32) / 2;
+			g.fill(x + 16, ly, x + s - 16, ly + 16, 0x14FFFFFF);
+			String[] codes = {"vi_vn", "en_us"};
+			for (int i = 0; i < 2; i++) {
+				boolean sel = mc.options.languageCode.equals(codes[i]);
+				int bx = x + 16 + i * half;
+				if (sel) g.fill(bx + 2, ly + 2, bx + half - 2, ly + 14, 0x665E3A8A);
+				Component l = Ui.small(tr("nosclient.lang." + codes[i]));
+				Ui.text(g, l, bx + (half - Ui.width(l)) / 2, ly + 5, sel ? 0xFFEAD4FB : Ui.MUTED);
+				String code = codes[i];
+				hit(bx, ly, bx + half, ly + 16, () -> setLang(code));
+			}
+			lines(g, Ui.small(tr("nosclient.settings.footer")), x + 16, y + h - 30, s - 32, Ui.FAINT);
+		}
+		int on = (int) Mods.ALL.stream().filter(NosSettingsScreen::on).count(), total = Mods.ALL.size();
+		int cy = y + h - (h >= 320 ? 58 : 36);
+		Ui.text(g, Ui.small(tr("nosclient.settings.on")), x + 16, cy, Ui.MUTED);
 		Component n = Ui.bold(Component.literal(on + "/" + total));
-		Ui.text(g, n, x + side() - 16 - Ui.width(n), y + h - 41, Ui.TEXT);
-		g.fill(x + 16, y + h - 26, x + side() - 16, y + h - 23, 0x1FFFFFFF);
-		int fw = Math.round((side() - 32) * on / (float) total);
-		if (fw > 2) g.fill(x + 16, y + h - 26, x + 16 + fw, y + h - 23, Ui.ACC1);
-		// phần phải
-		int rx = x + side() + 22;
-		Ui.text(g, Ui.big(Component.translatable("nosclient.cat." + CATS[cat])), rx, y + 18, Ui.TEXT);
-		Ui.text(g, Ui.small(Component.translatable("nosclient.cat." + CATS[cat] + ".sub")), rx, y + 40, Ui.MUTED);
-		int dy = Math.round((1 - in) * 10);
-		if (cat == 0) tabs(g, dy);
-		else tab = 0;
-		if (tab == 0) {
-			scroll = Ui.approach(scroll, (float) scrollTarget, dt, 16);
-			g.enableScissor(x + side() + 1, py() + 56, x + w - 1, py() + ph() - 6);
-			int nb = (int) mods().stream().filter(NosSettingsScreen::basic).count();
-			if (nb < mods().size()) {
-				Ui.text(g, Ui.small(Component.translatable("nosclient.group.basic")), rx, py() + 62 - (int) scroll + dy, Ui.FAINT);
-				Ui.text(g, Ui.small(Component.translatable("nosclient.group.advanced")), rx, cardPos(nb)[1] - 14 + dy, Ui.FAINT);
-			}
-			for (int i = 0; i < mods().size(); i++) card(g, i, mx, my, dt, t, dy);
-			g.disableScissor();
-			int over = maxScroll();
-			if (over > 0) { // thanh cuộn mảnh bên phải
-				int top = py() + 58, bot = py() + ph() - 8, len = Math.max(16, (bot - top) * (bot - top) / (bot - top + over));
-				int pos = top + Math.round((bot - top - len) * scroll / over);
-				g.fill(x + w - 5, pos, x + w - 3, pos + len, 0x55FFFFFF);
-			}
-		} else look(g, dt, dy);
+		Ui.text(g, n, x + s - 16 - Ui.width(n), cy - 1, Ui.TEXT);
+		g.fill(x + 16, cy + 13, x + s - 16, cy + 15, 0x1FFFFFFF);
+		g.fill(x + 16, cy + 13, x + 16 + Math.round((s - 32) * on / (float) total), cy + 15, Ui.ACC1);
 	}
 
-	private static final String[] TABS = {"nosclient.tab.mods", "nosclient.tab.look"};
-
-	/** [x0, x1] của tab i, canh phải ngang hàng tiêu đề. */
-	private int[] tabBox(int i) {
-		int x1 = px() + pw() - 22;
-		for (int k = TABS.length - 1; k >= 0; k--) {
-			int w = Ui.width(Ui.bold(Component.translatable(TABS[k]))) + 22, x0 = x1 - w;
-			if (k == i) return new int[]{x0, x1};
-			x1 = x0 - 4;
+	private void header(GuiGraphics g, int x, int y, int w, int rx, int right) {
+		Component title, sub;
+		if (searching()) {
+			title = tr("nosclient.settings.results").copy().append(" “" + query.trim() + "”");
+			sub = Component.translatable("nosclient.settings.count", results().size());
+		} else {
+			String id = cat < 0 ? "all" : CATS[cat];
+			title = tr("nosclient.cat." + id);
+			sub = tr("nosclient.cat." + id + ".sub");
 		}
-		return new int[]{0, 0};
+		// nút bên phải: Đặt lại; HUD có thêm tab Mod / Giao diện
+		int bx = x + w - 20;
+		if (!searching()) {
+			Component rl = Ui.bold(tr("nosclient.settings.reset"));
+			bx -= Ui.width(rl) + 16;
+			button(g, rl, bx, y + 18, 18, true, this::askReset);
+			if (cat == 0) for (int i = 1; i >= 0; i--) {
+				Component tl = Ui.bold(tr(i == 0 ? "nosclient.tab.mods" : "nosclient.tab.look"));
+				int tw = Ui.width(tl) + 20, tx = bx - 6 - tw;
+				boolean sel = tab == i;
+				g.fill(tx, y + 18, tx + tw, y + 36, sel ? 0x665E3A8A : 0x14FFFFFF);
+				if (sel) g.fill(tx, y + 35, tx + tw, y + 36, Ui.ACCENT);
+				Ui.text(g, tl, tx + 10, y + 24, sel ? 0xFFEAD4FB : Ui.MUTED);
+				int ti = i;
+				hit(tx, y + 18, tx + tw, y + 36, () -> {
+					tab = ti;
+					scroll = 0;
+					scrollTarget = 0;
+				});
+				bx = tx + 2;
+			}
+		}
+		Ui.text(g, Ui.fit(Ui.big(title), bx - 8 - rx), rx, y + 18, Ui.TEXT);
+		Ui.text(g, Ui.fit(Ui.small(sub), right - rx), rx, y + 40, Ui.MUTED);
 	}
 
-	private void tabs(GuiGraphics g, int dy) {
-		int y = py() + 20 + dy;
-		for (int i = 0; i < TABS.length; i++) {
-			int[] b = tabBox(i);
-			boolean sel = i == tab;
-			g.fill(b[0], y, b[1], y + 18, sel ? 0x665E3A8A : 0x14FFFFFF);
-			if (sel) g.fill(b[0], y + 17, b[1], y + 18, Ui.ACCENT);
-			Component c = Ui.bold(Component.translatable(TABS[i]));
-			Ui.text(g, c, b[0] + 11, y + 5, sel ? 0xFFEAD4FB : Ui.MUTED);
+	// ---------- Tổng quan: thẻ tóm tắt từng danh mục + hàng bật/tắt nhanh ----------
+	private int overview(GuiGraphics g, int x0, int x1, int y) {
+		int n = CATS.length, gap = 6, W = x1 - x0, cw = (W - gap * (n - 1)) / n, ch = 46;
+		for (int i = 0; i < n; i++) {
+			int cx = x0 + i * (cw + gap);
+			boolean hv = hov(cx, y, cx + cw, y + ch);
+			g.fill(cx, y, cx + cw, y + ch, hv ? 0x1AFFFFFF : 0x0FFFFFFF);
+			Ui.frame(g, cx, y, cx + cw, y + ch, hv ? 0x40D3A8F5 : 0x14FFFFFF);
+			icon(g, CAT_ICON[i], cx + 14, y + 13, .75f);
+			Ui.text(g, Ui.fit(Ui.small(tr("nosclient.cat." + CATS[i])), cw - 30), cx + 26, y + 10, Ui.TEXT);
+			long on = Mods.on(CATS[i]);
+			int total = Mods.of(CATS[i]).size();
+			Component num = Ui.bold(Component.literal(on + "/" + total));
+			Ui.text(g, num, cx + 8, y + 25, Ui.TEXT);
+			Ui.text(g, Ui.fit(Ui.small(tr("nosclient.settings.enabled")), cw - 20 - Ui.width(num)), cx + 12 + Ui.width(num), y + 26, Ui.MUTED);
+			g.fill(cx + 8, y + ch - 8, cx + cw - 8, y + ch - 6, 0x1FFFFFFF);
+			g.fill(cx + 8, y + ch - 8, cx + 8 + Math.round((cw - 16) * on / (float) total), y + ch - 6, Ui.ACC1);
+			int ci = i;
+			hit(cx, y, cx + cw, y + ch, () -> openCat(ci));
 		}
+		y += ch + 14;
+		int cols = W >= 520 ? 4 : W >= 330 ? 3 : 2, rw = (W - (cols - 1) * gap) / cols, rh = 18;
+		for (int i = 0; i < n; i++) {
+			Ui.text(g, Ui.small(Component.literal(I18n.get("nosclient.cat." + CATS[i]).toUpperCase(Locale.ROOT))), x0 + 2, y, Ui.FAINT);
+			Component open = Ui.small(tr("nosclient.settings.open"));
+			int ow = Ui.width(open);
+			Ui.text(g, open, x1 - ow, y, hov(x1 - ow - 4, y - 3, x1, y + 9) ? Ui.TEXT : Ui.ACCENT_HI);
+			int ci = i;
+			hit(x1 - ow - 4, y - 3, x1, y + 9, () -> openCat(ci));
+			y += 12;
+			List<Mods.Mod> ms = Mods.of(CATS[i]);
+			for (int j = 0; j < ms.size(); j++) {
+				Mods.Mod m = ms.get(j);
+				int rx0 = x0 + (j % cols) * (rw + gap), ry0 = y + (j / cols) * (rh + 4);
+				float k = k(Opt.field(m), on(m));
+				boolean hv = hov(rx0, ry0, rx0 + rw, ry0 + rh);
+				g.fill(rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, hv ? 0x408A5BC4 : 0x2E8A5BC4, k));
+				Ui.frame(g, rx0, ry0, rx0 + rw, ry0 + rh, Ui.lerpCol(0x14FFFFFF, 0x4DD3A8F5, k));
+				icon(g, m.icon(), rx0 + 10, ry0 + rh / 2, .65f);
+				Ui.text(g, Ui.fit(Ui.ui(name(m)), rw - 20 - 32), rx0 + 20, ry0 + 6, Ui.TEXT);
+				Ui.toggle(g, rx0 + rw - 28, ry0 + 3, k);
+				hit(rx0, ry0, rx0 + rw, ry0 + rh, () -> flip(m));
+			}
+			y += (ms.size() + cols - 1) / cols * (rh + 4) + 8;
+		}
+		return y;
+	}
+
+	// ---------- lưới thẻ của một danh mục (hoặc kết quả tìm) ----------
+	private record Group(String label, List<Mods.Mod> mods) {}
+
+	private List<Group> groups() {
+		List<Mods.Mod> ms = Mods.of(CATS[cat]);
+		if (cat != 0) return List.of(new Group(null, ms));
+		return List.of(new Group("nosclient.group.basic", ms.stream().filter(m -> !m.group().equals("advanced")).toList()),
+			new Group("nosclient.group.advanced", ms.stream().filter(m -> m.group().equals("advanced")).toList()));
+	}
+
+	private int cards(GuiGraphics g, int x0, int x1, int y, List<Group> gs) {
+		int W = x1 - x0, cols = Math.max(1, (W + GAP) / (128 + GAP)), cw = (W - (cols - 1) * GAP) / cols, ch = 58;
+		int idx = 0;
+		for (Group gr : gs) {
+			if (gr.mods.isEmpty()) continue;
+			if (gr.label != null) {
+				Ui.text(g, Ui.small(tr(gr.label)), x0 + 2, y + 2, Ui.FAINT);
+				y += 14;
+			}
+			for (int i = 0; i < gr.mods.size(); i++, idx++) card(g, gr.mods.get(i), x0 + (i % cols) * (cw + GAP), y + (i / cols) * (ch + GAP), cw, ch, idx);
+			y += (gr.mods.size() + cols - 1) / cols * (ch + GAP) + 6;
+		}
+		if (searching() && idx == 0) Ui.text(g, Ui.ui(tr("nosclient.settings.none")), x0, y + 4, Ui.MUTED);
+		return y;
+	}
+
+	private void card(GuiGraphics g, Mods.Mod m, int x, int y, int w, int h, int i) {
+		boolean on = on(m), sel = m.id().equals(detail), hv = hov(x, y, x + w, y + h);
+		float k = k(Opt.field(m), on), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
+		int bg = Ui.lerpCol(hv ? 0x1AFFFFFF : 0x0FFFFFFF, hv ? 0x408A5BC4 : 0x2E8A5BC4, k);
+		g.fill(x, y, x + w, y + h, Ui.alpha(bg, in));
+		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(sel ? 0xCCD3A8F5 : Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
+		g.fill(x + 10, y + 9, x + 28, y + 27, Ui.alpha(0x1FFFFFFF, in));
+		icon(g, m.icon(), x + 19, y + 18, .9f);
+		Ui.text(g, Ui.fit(Ui.bold(name(m)), w - 34 - 40), x + 34, y + 14, Ui.alpha(Ui.TEXT, in));
+		Ui.toggle(g, x + w - 34, y + 12, k);
+		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.mod." + m.id() + ".desc")), w - 20), x + 10, y + 33, Ui.alpha(Ui.MUTED, in));
+		if (I18n.exists("nosclient.warn." + m.id())) {
+			Component wl = Ui.small(tr("nosclient.warn.short"));
+			g.fill(x + 10, y + 44, x + 18 + Ui.width(wl), y + 53, 0x33E6B23C);
+			Ui.text(g, wl, x + 14, y + 46, 0xFFF2C46B);
+		}
+		Component more = Ui.small(tr("nosclient.settings.options"));
+		Ui.text(g, more, x + w - 10 - Ui.width(more), y + 46, hv || sel ? Ui.TEXT : Ui.ACCENT_HI);
+		hit(x, y, x + w, y + h, () -> {
+			detail = sel ? null : m.id();
+			dScroll = 0;
+			dTarget = 0;
+			note = null;
+		});
+		hit(x + w - 40, y + 6, x + w - 4, y + 30, () -> flip(m));
+	}
+
+	// ---------- bảng chi tiết ----------
+	private void detailPanel(GuiGraphics g, Mods.Mod m, int x0, int y0, int x1, int y1) {
+		g.fill(x0, y0, x1, y1, 0xF0161A23);
+		g.fill(x0, y0, x0 + 1, y1, 0x1FFFFFFF);
+		dScroll = Ui.approach(dScroll, (float) dTarget, dt, 16);
+		clipOn(g, x0 + 1, y0, x1, y1);
+		int px = x0 + 12, pw = x1 - x0 - 24, y = y0 + 12 - (int) dScroll;
+		g.fill(px, y, px + 26, y + 26, 0x1FFFFFFF);
+		icon(g, m.icon(), px + 13, y + 13, 1.1f);
+		Ui.text(g, Ui.fit(Ui.bold(name(m)), pw - 34 - 14), px + 34, y + 3, Ui.TEXT);
+		boolean def = Opt.defOn(Opt.field(m));
+		int by = y + 15, bx = px + 34;
+		Component db = Ui.small(tr(def ? "nosclient.detail.defOn" : "nosclient.detail.defOff"));
+		g.fill(bx, by, bx + Ui.width(db) + 8, by + 10, 0x14FFFFFF);
+		Ui.text(g, db, bx + 4, by + 2, Ui.MUTED);
+		bx += Ui.width(db) + 12;
+		if (I18n.exists("nosclient.warn." + m.id())) {
+			Component wb = Ui.small(tr("nosclient.warn." + m.id()));
+			if (bx + Ui.width(wb) + 8 > px + pw) {
+				bx = px + 34;
+				by += 13;
+				y += 13;
+			}
+			g.fill(bx, by, bx + Ui.width(wb) + 8, by + 10, 0x33E6B23C);
+			Ui.text(g, wb, bx + 4, by + 2, 0xFFF2C46B);
+		}
+		y += 36;
+		y += lines(g, Ui.small(tr("nosclient.mod." + m.id() + ".desc")), px, y, pw, Ui.MUTED) + 8;
+		// trạng thái bật/tắt
+		boolean on = on(m);
+		g.fill(px, y, px + pw, y + 30, 0x0FFFFFFF);
+		Ui.frame(g, px, y, px + pw, y + 30, 0x14FFFFFF);
+		Ui.text(g, Ui.bold(tr(on ? "nosclient.detail.on" : "nosclient.detail.off")), px + 8, y + 6, Ui.TEXT);
+		Ui.text(g, Ui.fit(Ui.small(tr(on ? "nosclient.detail.on.sub" : "nosclient.detail.off.sub")), pw - 46), px + 8, y + 18, Ui.MUTED);
+		Ui.toggle(g, px + pw - 32, y + 9, k(Opt.field(m), on));
+		hit(px, y, px + pw, y + 30, () -> flip(m));
+		y += 40;
+		List<Opt> opts = Opt.BY_MOD.getOrDefault(m.id(), List.of());
+		boolean extra = m.id().equals("waypoint") || m.id().equals("mp");
+		if (!opts.isEmpty() || extra) {
+			Ui.text(g, Ui.small(tr("nosclient.detail.opts")), px + 2, y, Ui.FAINT);
+			y += 12;
+			int top = y;
+			for (int i = 0; i < opts.size(); i++) {
+				if (i > 0) g.fill(px + 8, y, px + pw - 8, y + 1, 0x0FFFFFFF);
+				y = option(g, opts.get(i), px, y, pw);
+			}
+			if (!opts.isEmpty()) Ui.frame(g, px, top, px + pw, y, 0x14FFFFFF);
+			y = extras(g, m, px, y + 6, pw);
+		}
+		// "Cách chạy": mod làm gì với máy, để người chơi yên tâm bật
+		int ph = font.split(Ui.small(tr("nosclient.mod." + m.id() + ".perf")), pw - 16).size() * 10;
+		y += 6;
+		g.fill(px, y, px + pw, y + ph + 24, 0x0AFFFFFF);
+		Ui.frame(g, px, y, px + pw, y + ph + 24, 0x14FFFFFF);
+		Ui.text(g, Ui.bold(tr("nosclient.detail.perf")), px + 8, y + 7, Ui.ACCENT_HI);
+		lines(g, Ui.small(tr("nosclient.mod." + m.id() + ".perf")), px + 8, y + 19, pw - 16, Ui.MUTED);
+		y += ph + 34;
+		clipOff(g);
+		dMax = Math.max(0, y + (int) dScroll - y1);
+		dTarget = Math.min(dTarget, dMax);
+		// nút đóng nằm ngoài vùng cuộn
+		boolean hv = hov(x1 - 18, y0 + 4, x1 - 4, y0 + 18);
+		Ui.text(g, Ui.ui(Component.literal("×")), x1 - 14, y0 + 7, hv ? Ui.TEXT : Ui.MUTED);
+		hit(x1 - 20, y0 + 2, x1 - 2, y0 + 20, () -> detail = null);
+	}
+
+	private Component optLabel(String key) {
+		return key.startsWith("opt.") ? tr("nosclient." + key) : Component.literal(key);
+	}
+
+	/** Một hàng tuỳ chọn; trả y kế tiếp. */
+	private int option(GuiGraphics g, Opt o, int x, int y, int w) {
+		Component label = Ui.ui(optLabel(o.label()));
+		switch (o.type()) {
+			case "chk" -> {
+				boolean v = o.bool();
+				Ui.text(g, Ui.fit(label, w - 48), x + 8, y + 7, Ui.TEXT);
+				Ui.toggle(g, x + w - 32, y + 5, k(o.field(), v));
+				hit(x, y, x + w, y + 22, () -> {
+					o.set(v ? 0 : 1);
+					c.save();
+				});
+				return y + 22;
+			}
+			case "seg" -> {
+				int sel = o.segIndex(), segW = 0;
+				Component[] ls = new Component[o.choices().length];
+				for (int i = 0; i < ls.length; i++) segW += Ui.width(ls[i] = Ui.small(optLabel(o.choices()[i]))) + 12;
+				boolean wrap = Ui.width(label) + 12 + segW > w - 16;
+				Ui.text(g, Ui.fit(label, w - 16), x + 8, y + 7, Ui.TEXT);
+				int sx = x + w - 8 - segW, sy = wrap ? y + 19 : y + 4;
+				g.fill(sx, sy, sx + segW, sy + 14, 0x14FFFFFF);
+				for (int i = 0; i < ls.length; i++) {
+					int bw = Ui.width(ls[i]) + 12;
+					if (i == sel) g.fill(sx + 1, sy + 1, sx + bw - 1, sy + 13, 0x665E3A8A);
+					Ui.text(g, ls[i], sx + 6, sy + 4, i == sel ? 0xFFEAD4FB : Ui.MUTED);
+					int ci = i;
+					hit(sx, sy, sx + bw, sy + 14, () -> {
+						o.setSeg(ci);
+						c.save();
+					});
+					sx += bw;
+				}
+				return y + (wrap ? 38 : 22);
+			}
+			case "rng" -> {
+				double v = o.num();
+				String shown = o.field().equals("gamma") ? (v < 0 ? I18n.get("nosclient.gamma.game") : Math.round(v * 100) + "%" + (v >= 10 ? " · Full bright" : ""))
+					: (int) Math.round(v) + o.unit();
+				Component val = Ui.bold(Component.literal(shown));
+				Ui.text(g, Ui.fit(label, w - 24 - Ui.width(val)), x + 8, y + 7, Ui.TEXT);
+				Ui.text(g, val, x + w - 8 - Ui.width(val), y + 7, Ui.ACCENT_HI);
+				int tx0 = x + 10, tx1 = x + w - 10, ty = y + 24;
+				double f = v < 0 ? (.5 - o.min()) / (o.max() - o.min()) : (v - o.min()) / (o.max() - o.min());
+				int kx = (int) Math.round(tx0 + Math.min(1, Math.max(0, f)) * (tx1 - tx0));
+				g.fill(tx0, ty, tx1, ty + 2, 0x24FFFFFF);
+				g.fill(tx0, ty, kx, ty + 2, Ui.ACC1);
+				g.fill(kx - 2, ty - 4, kx + 2, ty + 6, 0xFFFFFFFF);
+				hit(tx0 - 4, ty - 7, tx1 + 4, ty + 9, () -> {
+					drag = o;
+					dragX0 = tx0;
+					dragX1 = tx1;
+					slide(mx);
+				});
+				return y + 34;
+			}
+			default -> { // phím: hiện phím đang gán, bấm mở màn Điều khiển của game
+				KeyMapping km = keyOf(o.field());
+				Component key = Ui.bold(km == null ? Component.literal("?") : km.getTranslatedKeyMessage());
+				Ui.text(g, Ui.fit(label, w - 40 - Ui.width(key)), x + 8, y + 7, Ui.TEXT);
+				int kw = Ui.width(key) + 12, kx = x + w - 8 - kw;
+				boolean hv = hov(kx, y + 4, kx + kw, y + 18);
+				g.fill(kx, y + 4, kx + kw, y + 18, hv ? 0x335E3A8A : 0x1FFFFFFF);
+				Ui.frame(g, kx, y + 4, kx + kw, y + 18, hv ? 0x59D3A8F5 : 0x24FFFFFF);
+				Ui.text(g, key, kx + 6, y + 8, Ui.TEXT);
+				hit(x, y, x + w, y + 22, () -> mc.setScreen(new KeyBindsScreen(this, mc.options)));
+				return y + 22;
+			}
+		}
+	}
+
+	private int extras(GuiGraphics g, Mods.Mod m, int x, int y, int w) {
+		boolean inWorld = mc.player != null && mc.level != null;
+		if (m.id().equals("waypoint")) {
+			button(g, Ui.bold(tr("nosclient.wp.add")), x, y, 18, inWorld && c.waypoint, () -> {
+				var wp = Waypoints.addHere(mc);
+				note = Component.translatable("nosclient.wp.added", wp.name(), wp.x(), wp.y(), wp.z());
+			});
+			y += 22;
+			Component sub = note != null ? note : inWorld ? Component.translatable("nosclient.wp.count", Waypoints.here(mc).size()) : tr("nosclient.wp.noworld");
+			y += lines(g, Ui.small(sub), x + 2, y, w - 4, note != null ? Ui.ACCENT_HI : Ui.FAINT) + 4;
+		} else if (m.id().equals("mp")) {
+			boolean sp = mc.getSingleplayerServer() != null;
+			button(g, Ui.bold(tr("nosclient.mp.openroom")), x, y, 18, sp && c.mp, () -> mc.setScreen(new PlayTogetherScreen(this)));
+			y += 22;
+			if (!sp) y += lines(g, Ui.small(tr("nosclient.mp.needsp")), x + 2, y, w - 4, Ui.FAINT) + 4;
+		}
+		return y;
+	}
+
+	private KeyMapping keyOf(String name) {
+		for (KeyMapping km : mc.options.keyMappings) if (km.getName().equals(name)) return km;
+		return null;
+	}
+
+	private void slide(double x) {
+		if (drag == null) return;
+		double f = Math.min(1, Math.max(0, (x - dragX0) / (double) (dragX1 - dragX0))), v = drag.min() + f * (drag.max() - drag.min());
+		drag.set(drag.field().equals("gamma") ? Math.round(v * 10) / 10.0 : Math.round(v));
 	}
 
 	// ---------- khu "Giao diện HUD": kích thước, độ trong suốt nền, mờ khi đứng yên ----------
-	private int lookY() {
-		return py() + 70;
+	private int lookTrackEnd(int x0, int x1) {
+		return x0 + Math.min(220, (x1 - x0) * 55 / 100);
 	}
 
-	private int lookX0() {
-		return px() + side() + 22;
-	}
-
-	private int lookX1() {
-		return px() + pw() - 22;
-	}
-
-	private int dragging = -1;
-	private float fadeK = c.hudIdleFade ? 1 : 0;
-
-	private void look(GuiGraphics g, float dt, int dy) {
-		int y = lookY() + dy, x0 = lookX0(), x1 = lookX1();
+	private int look(GuiGraphics g, int x0, int x1, int y) {
+		y += 10;
 		double[] val = {c.hudScale - .5, c.hudBg};
 		String[] lab = {"nosclient.look.size", "nosclient.look.bg"};
 		String[] shown = {Math.round(c.hudScale * 100) + "%", Math.round(c.hudBg * 100) + "%"};
+		int te = lookTrackEnd(x0, x1);
 		for (int i = 0; i < 2; i++) {
-			int ry = y + i * 34, tx0 = x0, tx1 = trackEnd();
-			Ui.text(g, Ui.ui(Component.translatable(lab[i])), tx0, ry, Ui.TEXT);
+			int ry = y + i * 34;
+			Ui.text(g, Ui.ui(tr(lab[i])), x0, ry, Ui.TEXT);
 			Component v = Ui.bold(Component.literal(shown[i]));
-			Ui.text(g, v, tx1 - Ui.width(v), ry, Ui.ACCENT_HI);
-			int ty = ry + 15, kx = (int) Math.round(tx0 + val[i] * (tx1 - tx0));
-			g.fill(tx0, ty, tx1, ty + 2, 0x24FFFFFF);
-			g.fill(tx0, ty, kx, ty + 2, Ui.ACC1);
+			Ui.text(g, v, te - Ui.width(v), ry, Ui.ACCENT_HI);
+			int ty = ry + 15, kx = (int) Math.round(x0 + val[i] * (te - x0));
+			g.fill(x0, ty, te, ty + 2, 0x24FFFFFF);
+			g.fill(x0, ty, kx, ty + 2, Ui.ACC1);
 			g.fill(kx - 2, ty - 4, kx + 2, ty + 6, 0xFFFFFFFF);
+			int li = i;
+			hit(x0 - 4, ry + 8, te + 4, ry + 24, () -> {
+				dragLook = li;
+				dragX0 = x0;
+				dragX1 = te;
+				setLook(mx);
+			});
 		}
-		fadeK = Ui.approach(fadeK, c.hudIdleFade ? 1 : 0, dt, 14);
 		int fy = y + 72;
-		Ui.toggle(g, x0, fy, Ui.ease(fadeK));
-		Ui.text(g, Ui.ui(Component.translatable("nosclient.look.fade")), x0 + 30, fy + 2, Ui.TEXT);
-		Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.look.fade.desc")), x1 - x0 - 30), x0 + 30, fy + 14, Ui.MUTED);
+		Ui.toggle(g, x0, fy, k("hudIdleFade", c.hudIdleFade));
+		Ui.text(g, Ui.ui(tr("nosclient.look.fade")), x0 + 30, fy + 2, Ui.TEXT);
+		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.look.fade.desc")), x1 - x0 - 30), x0 + 30, fy + 14, Ui.MUTED);
+		hit(x0, fy - 2, x1, fy + 22, () -> {
+			c.hudIdleFade = !c.hudIdleFade;
+			c.save();
+		});
+		int iy = fy + 32;
+		Ui.toggle(g, x0, iy, k("intro", c.intro));
+		Ui.text(g, Ui.ui(tr("nosclient.intro.opt")), x0 + 30, iy + 2, Ui.TEXT);
+		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.intro.opt.desc")), x1 - x0 - 30), x0 + 30, iy + 14, Ui.MUTED);
+		hit(x0, iy - 2, x1, iy + 22, () -> {
+			c.intro = !c.intro;
+			c.save();
+		});
 		// xem trước: một viên HUD thật ở đúng cỡ và độ đậm nền đang chọn
-		int pvx = trackEnd() + 24, pvy = y;
+		int pvx = te + 24;
 		if (pvx + 60 < x1) {
-			Ui.text(g, Ui.small(Component.translatable("nosclient.look.preview")), pvx, pvy, Ui.FAINT);
-			var f = Minecraft.getInstance().font;
-			// cỡ thật so với giao diện, nhưng không tràn khỏi khung xem trước
-			float k = Math.min((float) c.hudScale, (x1 - pvx) / (float) (f.width("XYZ 120 64 -35") + 8));
+			Ui.text(g, Ui.small(tr("nosclient.look.preview")), pvx, y, Ui.FAINT);
+			float k = Math.min((float) c.hudScale, (x1 - pvx) / (float) (font.width("XYZ 120 64 -35") + 8));
 			g.pose().pushMatrix();
-			g.pose().translate(pvx, pvy + 14);
+			g.pose().translate(pvx, y + 14);
 			g.pose().scale(k, k);
 			String[] rows = {"123 FPS", "XYZ 120 64 -35", "0 | 0 CPS"};
 			for (int r = 0; r < rows.length; r++) {
-				int w = f.width(rows[r]) + 8;
-				g.fill(0, r * 15, w, r * 15 + 13, (int) Math.round(c.hudBg * 255) << 24);
-				g.drawString(f, rows[r], 4, r * 15 + 3, 0xFFFFFFFF, false);
+				g.fill(0, r * 15, font.width(rows[r]) + 8, r * 15 + 13, (int) Math.round(c.hudBg * 255) << 24);
+				g.drawString(font, rows[r], 4, r * 15 + 3, 0xFFFFFFFF, false);
 			}
 			g.pose().popMatrix();
 		}
+		return iy + 30;
 	}
 
-	/** Thanh kéo chiếm nửa trái, nửa phải để xem trước. */
-	private int trackEnd() {
-		return lookX0() + Math.min(220, (lookX1() - lookX0()) * 55 / 100);
-	}
-
-	private void setTrack(int i, double mx) {
-		double k = Math.min(1, Math.max(0, (mx - lookX0()) / (double) (trackEnd() - lookX0())));
-		if (i == 0) c.hudScale = Math.round((.5 + k) * 20) / 20.0; // bước 5%
+	private void setLook(double x) {
+		double k = Math.min(1, Math.max(0, (x - dragX0) / (double) (dragX1 - dragX0)));
+		if (dragLook == 0) c.hudScale = Math.round((.5 + k) * 20) / 20.0; // bước 5%
 		else c.hudBg = Math.round(k * 20) / 20.0;
 	}
 
-	@Override
-	public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
-		if (dragging >= 0) {
-			setTrack(dragging, e.x());
-			return true;
+	// ---------- hành động ----------
+	private void openCat(int i) {
+		cat = i;
+		tab = 0;
+		detail = null;
+		scroll = 0;
+		scrollTarget = 0;
+		if (searching()) setQuery("");
+	}
+
+	/** Đổi ngôn ngữ game như màn Ngôn ngữ, nhưng chỉ nạp lại bảng chữ (không nạp lại cả resource pack). */
+	private void setLang(String code) {
+		if (code.equals(mc.options.languageCode)) return;
+		mc.options.languageCode = code;
+		mc.getLanguageManager().setSelected(code);
+		mc.getLanguageManager().onResourceManagerReload(mc.getResourceManager());
+		mc.options.save();
+	}
+
+	private List<Mods.Mod> scope() {
+		return cat < 0 ? Mods.ALL : Mods.of(CATS[cat]);
+	}
+
+	private void askReset() {
+		Component what = tr("nosclient.cat." + (cat < 0 ? "all" : CATS[cat]));
+		mc.setScreen(new ConfirmScreen(ok -> {
+			if (ok) reset();
+			mc.setScreen(this);
+		}, Component.translatable("nosclient.reset.title", what), tr("nosclient.reset.msg")));
+	}
+
+	/** Bật/tắt, tuỳ chọn và phím của các mod trong phạm vi về mặc định; Tổng quan và HUD trả cả giao diện HUD. */
+	private void reset() {
+		boolean keys = false;
+		for (Mods.Mod m : scope()) {
+			Opt.reset(Opt.field(m));
+			for (Opt o : Opt.BY_MOD.getOrDefault(m.id(), List.of())) {
+				if (!o.type().equals("key")) Opt.reset(o.field());
+				else if (keyOf(o.field()) instanceof KeyMapping km) {
+					km.setKey(km.getDefaultKey());
+					keys = true;
+				}
+			}
 		}
-		return super.mouseDragged(e, dx, dy);
-	}
-
-	@Override
-	public boolean mouseReleased(MouseButtonEvent e) {
-		if (dragging >= 0) {
-			dragging = -1;
-			c.save();
-			return true;
+		if (cat <= 0) for (String f : new String[]{"hudScale", "hudBg", "hudIdleFade"}) Opt.reset(f);
+		if (keys) {
+			KeyMapping.resetMapping();
+			mc.options.save();
 		}
-		return super.mouseReleased(e);
+		c.save();
 	}
 
-	private float scroll;
-	private double scrollTarget;
-
-	/** Phần nội dung thẻ cao hơn khung bao nhiêu. */
-	private int maxScroll() {
-		int last = cardPos(mods().size() - 1)[1] + (int) scroll + cardH();
-		return Math.max(0, last - (py() + ph() - 10));
-	}
-
-	@Override
-	public boolean mouseScrolled(double mx, double my, double sx, double sy) {
-		if (tab == 0 && maxScroll() > 0) {
-			scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget - sy * 24));
-			return true;
-		}
-		return super.mouseScrolled(mx, my, sx, sy);
-	}
-
-
-	private void card(GuiGraphics g, int i, int mx, int my, float dt, float t, int dy) {
-		Mods.Mod m = mods().get(i);
-		int[] p = cardPos(i);
-		int x = p[0], y = p[1] + dy, w = cardW(), h = cardH();
-		boolean hov = mx >= x && mx < x + w && my >= y && my < y + h, on = m.get().get();
-		float[] mk = k(m);
-		mk[0] = Ui.approach(mk[0], on ? 1 : 0, dt, 14);
-		mk[1] = Ui.approach(mk[1], hov ? 1 : 0, dt, 12);
-		float k = Ui.ease(mk[0]), in = Ui.ease(Math.min(1, Math.max(0, (t - .03f * i) / .4f)));
-		int base = Ui.lerpCol(0x0FFFFFFF, 0x2E8A5BC4, k), top = Ui.lerpCol(base, Ui.lerpCol(0x1AFFFFFF, 0x408A5BC4, k), mk[1]);
-		g.fill(x, y, x + w, y + h, Ui.alpha(top, in));
-		Ui.frame(g, x, y, x + w, y + h, Ui.alpha(Ui.lerpCol(0x14FFFFFF, 0x59D3A8F5, k), in));
-		int iy = h >= 50 ? 10 : (h - 18) / 2;
-		g.fill(x + 12, y + iy, x + 30, y + iy + 18, Ui.alpha(0x1FFFFFFF, in));
-		g.pose().pushMatrix();
-		g.pose().translate(x + 21, y + iy + 9);
-		g.pose().scale(.9f, .9f);
-		g.renderFakeItem(m.icon(), -8, -8);
-		g.pose().popMatrix();
-		Ui.toggle(g, x + w - 12 - 24, y + iy + 3, k);
-		int tx = x + 40, tw = w - 40 - 12 - 24 - 8;
-		Ui.text(g, Ui.fit(Ui.bold(Component.translatable("nosclient.mod." + m.id())), tw), tx, y + iy + 5, Ui.alpha(Ui.TEXT, in));
-		if (h >= 50) Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.mod." + m.id() + ".desc")), w - 24), x + 12, y + 35, Ui.alpha(Ui.MUTED, in));
-	}
-
+	// ---------- nhập ----------
 	@Override
 	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
-		for (int i = 0; i < CATS.length; i++) {
-			int cy = py() + 70 + i * 26;
-			if (e.x() >= px() + 10 && e.x() < px() + side() - 10 && e.y() >= cy && e.y() < cy + 22) {
-				if (cat != i) {
-					cat = i;
-					scroll = 0;
-					scrollTarget = 0;
-					Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
-				}
-				return true;
-			}
-		}
-		for (int i = 0; cat == 0 && i < TABS.length; i++) {
-			int[] b = tabBox(i);
-			if (e.x() >= b[0] && e.x() < b[1] && e.y() >= py() + 20 && e.y() < py() + 38) {
-				tab = i;
-				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
-				return true;
-			}
-		}
-		if (tab == 1) {
-			int ly = lookY();
-			for (int i = 0; i < 2; i++) {
-				int ry = ly + i * 34;
-				if (e.x() >= lookX0() - 4 && e.x() <= trackEnd() + 4 && e.y() >= ry + 8 && e.y() <= ry + 24) {
-					dragging = i;
-					setTrack(i, e.x());
-					return true;
-				}
-			}
-			if (e.x() >= lookX0() && e.x() < lookX1() && e.y() >= ly + 70 && e.y() < ly + 92) {
-				c.hudIdleFade = !c.hudIdleFade;
-				c.save();
-				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
-				return true;
-			}
-			return super.mouseClicked(e, dbl);
-		}
-		for (int i = 0; i < mods().size(); i++) {
-			int[] p = cardPos(i);
-			if (tab == 0 && e.y() >= py() + 56 && e.y() < py() + ph() - 6 && e.x() >= p[0] && e.x() < p[0] + cardW() && e.y() >= p[1] && e.y() < p[1] + cardH()) {
-				Mods.Mod m = mods().get(i);
-				m.set().accept(!m.get().get());
-				c.save();
-				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+		searchFocus = e.x() >= px() + 12 && e.x() < px() + side() - 12 && e.y() >= py() + 45 && e.y() < py() + 63;
+		if (searchFocus) return true;
+		for (int i = hits.size() - 1; i >= 0; i--) {
+			Hit h = hits.get(i);
+			if (e.x() >= h.x0 && e.x() < h.x1 && e.y() >= h.y0 && e.y() < h.y1) {
+				h.run.run();
+				click();
 				return true;
 			}
 		}
@@ -384,17 +764,73 @@ public final class NosSettingsScreen extends Screen {
 	}
 
 	@Override
+	public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+		if (drag != null) slide(e.x());
+		else if (dragLook >= 0) setLook(e.x());
+		else return super.mouseDragged(e, dx, dy);
+		return true;
+	}
+
+	@Override
+	public boolean mouseReleased(MouseButtonEvent e) {
+		if (drag != null || dragLook >= 0) {
+			drag = null;
+			dragLook = -1;
+			c.save();
+			return true;
+		}
+		return super.mouseReleased(e);
+	}
+
+	@Override
+	public boolean mouseScrolled(double x, double y, double sx, double sy) {
+		if (detail != null && x >= px() + pw() - dw()) {
+			dTarget = Math.max(0, Math.min(dMax, dTarget - sy * 24));
+			return true;
+		}
+		if (maxScroll > 0) {
+			scrollTarget = Math.max(0, Math.min(maxScroll, scrollTarget - sy * 24));
+			return true;
+		}
+		return super.mouseScrolled(x, y, sx, sy);
+	}
+
+	@Override
 	public boolean keyPressed(KeyEvent e) {
+		if (searchFocus) {
+			int k = e.key();
+			if (k == GLFW.GLFW_KEY_ESCAPE || k == GLFW.GLFW_KEY_ENTER) searchFocus = false;
+			// Ctrl+Backspace xoá hết, Backspace xoá một ký tự
+			else if (k == GLFW.GLFW_KEY_BACKSPACE && !query.isEmpty()) setQuery((e.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0 ? "" : query.substring(0, query.offsetByCodePoints(query.length(), -1)));
+			return true; // nuốt mọi phím khi đang gõ, kể cả R-Shift/E
+		}
 		if (e.key() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
 			onClose();
+			return true;
+		}
+		if (e.key() == GLFW.GLFW_KEY_ESCAPE && detail != null) {
+			detail = null;
+			return true;
+		}
+		// Ctrl+F nhảy vào ô tìm
+		if (e.key() == GLFW.GLFW_KEY_F && (e.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0) {
+			searchFocus = true;
 			return true;
 		}
 		return super.keyPressed(e);
 	}
 
 	@Override
+	public boolean charTyped(CharacterEvent e) {
+		if (!searchFocus || !e.isAllowedChatCharacter()) return false;
+		setQuery(query + e.codepointAsString());
+		return true;
+	}
+
+	@Override
 	public void onClose() {
-		Minecraft.getInstance().setScreen(parent);
+		c.save();
+		mc.setScreen(parent);
 	}
 
 	@Override

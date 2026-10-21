@@ -112,25 +112,26 @@ public final class Hud {
 				biomeKey = k;
 				biomeName = Component.translatable("biome.minecraft." + k).getString();
 			}
-			y = row(g, f, x, y, "XYZ", b.getX() + " " + b.getY() + " " + b.getZ(), null) + GAP;
-			y = row(g, f, x, y, null, biomeName, null) + GAP;
+			String xyz = c.coordsDecimal ? String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f", p.getX(), p.getY(), p.getZ()) : b.getX() + " " + b.getY() + " " + b.getZ();
+			y = row(g, f, x, y, "XYZ", xyz, null) + GAP;
+			if (c.coordsBiome) y = row(g, f, x, y, null, biomeName, null) + GAP;
 		}
 		if (c.day) {
 			if (now - lastDay > 2_000_000_000L || dayText.isEmpty()) {
 				long t = mc.level.getDayTime();
 				int h = (int) ((t / 1000 + 6) % 24), m = (int) (t % 1000 * 60 / 1000);
-				dayText = Component.translatable("nosclient.hud.day.label").getString() + " " + (t / 24000 + 1) + "  " + (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+				dayText = Component.translatable("nosclient.hud.day.label").getString() + " " + (t / 24000 + 1) + (c.dayTime ? "  " + (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m : "");
 				lastDay = now;
 			}
 			y = row(g, f, x, y, null, dayText, null) + GAP;
 		}
-		if (c.cps) y = row(g, f, x, y, null, left.count(now) + " | " + right.count(now), "CPS") + GAP;
+		if (c.cps) y = row(g, f, x, y, null, c.cpsRight ? left.count(now) + " | " + right.count(now) : String.valueOf(left.count(now)), "CPS") + GAP;
 		if (c.ping && mc.getConnection() != null) {
 			PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
 			y = row(g, f, x, y, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms") + GAP;
 		}
 		if (c.keys) y = keys(g, f, mc, x, y + GAP, now, d) + GAP;
-		if (c.sprint && dev.jun.nosclient.feat.Feats.sprintOn) y = row(g, f, x, y, null, Component.translatable("nosclient.hud.sprint").getString(), null) + GAP;
+		if (c.sprint && c.sprintShow && dev.jun.nosclient.feat.Feats.sprintOn) y = row(g, f, x, y, null, Component.translatable("nosclient.hud.sprint").getString(), null) + GAP;
 		// cột phải bắt đầu ở 30% chiều cao: góc phải trên là chỗ toast (thành tựu, hướng dẫn) của game
 		int ry = Math.round(g.guiHeight() / (float) c.hudScale * .3f);
 		if (c.minimap) ry = Minimap.render(g, mc, W - 6, ry, Math.max(BA, .4f));
@@ -184,6 +185,7 @@ public final class Hud {
 
 	private int fps(GuiGraphics g, Font f, int x, int y, int fps, int low) {
 		String v = String.valueOf(fps), lo = "1% " + low;
+		if (!c.fpsLow) return row(g, f, x, y, null, v, "FPS");
 		int spw = 22, w = PAD + sw(f, v + " FPS") + 8 + spw + 8 + sw(f, lo) + PAD;
 		bg(g, x, y, w, H);
 		float ty = y + (H - 8 * TS) / 2;
@@ -235,6 +237,7 @@ public final class Hud {
 			g.fill(xx - 1, y + 1, xx + 2, y + 4, T(wp.color()));
 		}
 		g.fill(cx, y, cx + 1, y + h, T(0xFFFFFFFF));
+		if (!SceneConfig.INSTANCE.directionDeg) return;
 		String deg = Math.round(yaw) % 360 + "°";
 		int bw = sw(f, deg) + 2 * PAD;
 		bg(g, cx - bw / 2, y + h + GAP, bw, 15);
@@ -249,10 +252,14 @@ public final class Hud {
 		key(g, f, 2, x + s + gap, y + s + gap, s, s, "S", o.keyDown, dt);
 		key(g, f, 3, x + 2 * (s + gap), y + s + gap, s, s, "D", o.keyRight, dt);
 		int full = 3 * s + 2 * gap, mw = (full - gap) / 2, my = y + 2 * (s + gap);
-		key(g, f, 4, x, my, mw, s, "LMB " + left.count(now), o.keyAttack, dt);
-		key(g, f, 5, x + mw + gap, my, mw, s, "RMB " + right.count(now), o.keyUse, dt);
-		key(g, f, 6, x, my + s + gap, full, 10, "", o.keyJump, dt);
-		return my + s + gap + 10;
+		if (c.keysMouse) {
+			key(g, f, 4, x, my, mw, s, c.keysCps ? "LMB " + left.count(now) : "LMB", o.keyAttack, dt);
+			key(g, f, 5, x + mw + gap, my, mw, s, c.keysCps ? "RMB " + right.count(now) : "RMB", o.keyUse, dt);
+			my += s + gap;
+		}
+		if (!c.keysSpace) return my - gap;
+		key(g, f, 6, x, my, full, 10, "", o.keyJump, dt);
+		return my + 10;
 	}
 
 	// ---------- waypoint ----------
@@ -310,7 +317,7 @@ public final class Hud {
 		}
 		if (!lookHas) return;
 		int iw = lookIcon.isEmpty() ? 0 : 20, w = Math.max(sw(f, lookName), sw(f, lookSub) + (lookTool.isEmpty() ? 0 : 14)) + iw + 2 * PAD;
-		int h = 28, x = cx - w / 2;
+		int h = lookSub.isEmpty() && lookTool.isEmpty() ? 18 : 28, x = cx - w / 2;
 		bg(g, x, y, w, h);
 		if (iw > 0) g.renderItem(lookIcon, x + PAD - 1, y + 6);
 		int tx = x + PAD + iw;
@@ -340,10 +347,10 @@ public final class Hud {
 		if (hit instanceof net.minecraft.world.phys.EntityHitResult eh) {
 			var e = eh.getEntity();
 			lookName = e.getDisplayName().getString();
-			lookSub = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
+			lookSub = c.blockId ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString() : "";
 			lookIcon = net.minecraft.world.item.ItemStack.EMPTY;
 			lookTool = net.minecraft.world.item.ItemStack.EMPTY;
-			if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+			if (c.blockHp && e instanceof net.minecraft.world.entity.LivingEntity le) {
 				lookHp = le.getHealth() / Math.max(1, le.getMaxHealth());
 				lookSub = Math.round(le.getHealth()) + "/" + Math.round(le.getMaxHealth()) + " ♥  " + lookSub;
 			}
@@ -352,10 +359,10 @@ public final class Hud {
 			var st = mc.level.getBlockState(bh.getBlockPos());
 			if (st.isAir()) return;
 			lookName = st.getBlock().getName().getString();
-			lookSub = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(st.getBlock()).toString();
+			lookSub = c.blockId ? net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(st.getBlock()).toString() : "";
 			lookIcon = new net.minecraft.world.item.ItemStack(st.getBlock().asItem());
 			// công cụ đúng: theo tag mineable của game
-			lookTool = st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE) ? TOOLS[0] : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE) ? TOOLS[1]
+			lookTool = !c.blockTool ? net.minecraft.world.item.ItemStack.EMPTY : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE) ? TOOLS[0] : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE) ? TOOLS[1]
 				: st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL) ? TOOLS[2] : st.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE) ? TOOLS[3]
 				: net.minecraft.world.item.ItemStack.EMPTY;
 			lookHas = true;
@@ -368,8 +375,8 @@ public final class Hud {
 		for (var e : p.getActiveEffects()) {
 			if (!e.showIcon()) continue;
 			String name = e.getEffect().value().getDisplayName().getString() + (e.getAmplifier() > 0 ? " " + roman(e.getAmplifier() + 1) : "");
-			String time = e.isInfiniteDuration() ? "∞" : mmss(e.getDuration() / 20);
-			int w = PAD + 14 + 5 + sw(f, name) + 6 + sw(f, time) + PAD, h = H + 2, x = xr - w;
+			String time = !c.fxTime ? "" : e.isInfiniteDuration() ? "∞" : mmss(e.getDuration() / 20);
+			int w = PAD + 14 + 5 + sw(f, name) + (time.isEmpty() ? 0 : 6 + sw(f, time)) + PAD, h = H + 2, x = xr - w;
 			bg(g, x, y, w, h);
 			float blink = !e.isInfiniteDuration() && e.endsWithin(200) ? .45f + .55f * (float) Math.abs(Math.sin(System.nanoTime() / 2.5e8)) : 1;
 			g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, net.minecraft.client.gui.Gui.getMobEffectSprite(e.getEffect()), x + PAD, y + 1, 14, 14, T(Ui.alpha(0xFFFFFFFF, blink)));
@@ -400,19 +407,23 @@ public final class Hud {
 	private int armor(GuiGraphics g, Font f, LocalPlayer p, int xr, int y) {
 		for (int i = 0; i < ARMOR.length; i++) {
 			var it = p.getItemBySlot(ARMOR[i]);
-			if (it.isEmpty() || !it.isDamageableItem() && i < 4) continue;
-			if (!it.isDamageableItem()) continue;
-			int left = it.getMaxDamage() - it.getDamageValue(), k = System.identityHashCode(it.getItem()) * 31 + left;
+			if (i >= 4 && !c.armorHand) continue;
+			if (it.isEmpty() || !it.isDamageableItem()) continue;
+			int left = it.getMaxDamage() - it.getDamageValue(), k = (System.identityHashCode(it.getItem()) * 31 + left) * 4 + c.armorFmt;
+			float frac = left / (float) Math.max(1, it.getMaxDamage());
 			if (armorKey[i] != k || armorText[i] == null) {
 				armorKey[i] = k;
-				armorText[i] = String.valueOf(left);
+				armorText[i] = c.armorFmt == 0 ? String.valueOf(left) : c.armorFmt == 1 ? Math.round(frac * 100) + "%" : "";
 			}
-			float frac = left / (float) Math.max(1, it.getMaxDamage());
 			int col = frac > .5f ? 0xFF7FD873 : frac > .2f ? 0xFFF5C451 : 0xFFF2555A;
-			int w = PAD + 16 + 5 + sw(f, armorText[i]) + PAD, h = 18, x = xr - w;
+			// cảnh báo dưới 10%: chữ và vạch nhấp nháy đỏ
+			boolean warn = c.armorWarn && frac < .1f;
+			float bl = warn ? .4f + .6f * (float) Math.abs(Math.sin(System.nanoTime() / 2e8)) : 1;
+			int w = PAD + 16 + (armorText[i].isEmpty() ? 0 : 5 + sw(f, armorText[i])) + PAD, h = 18, x = xr - w;
 			bg(g, x, y, w, h);
+			if (warn) g.fill(x, y, x + w, y + h, T(Ui.alpha(0x66F2555A, bl)));
 			g.renderItem(it, x + PAD - 1, y + 1);
-			txt(g, f, armorText[i], x + PAD + 20, y + (h - 8 * TS) / 2, T(col));
+			if (!armorText[i].isEmpty()) txt(g, f, armorText[i], x + PAD + 20, y + (h - 8 * TS) / 2, T(Ui.alpha(col, bl)));
 			g.fill(x, y + h - 1, x + Math.round(w * frac), y + h, T(col)); // vạch độ bền dưới đáy ô
 			y += h + GAP;
 		}
@@ -442,7 +453,7 @@ public final class Hud {
 		if (invEmpty) return; // túi trống: không vẽ ô tối vô nghĩa
 		int cell = 17, cols = 9, w = cols * cell + 4, h = 3 * cell + 4, x = W / 2 - w / 2;
 		int y = Math.round(g.guiHeight() / (float) c.hudScale) - 22 - 40 - h; // trên hotbar + thanh máu
-		bg(g, x, y, w, h);
+		if (c.invhudBg) bg(g, x, y, w, h);
 		for (int i = 0; i < 27; i++) {
 			if (inv[i].isEmpty()) continue;
 			int cx = x + 2 + (i % cols) * cell, cy = y + 2 + (i / cols) * cell;

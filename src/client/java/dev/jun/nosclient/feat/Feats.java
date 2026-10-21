@@ -32,6 +32,7 @@ public final class Feats {
 	public static boolean looking;
 	public static float lookYaw, lookPitch;
 	private static CameraType lookPrev;
+	private static boolean lookToggled;
 
 	/** FOV dọc của khung vừa vẽ (độ), đã tính zoom. */
 	public static volatile float lastFov = 70;
@@ -89,7 +90,10 @@ public final class Feats {
 
 	/** Giữ phím: camera xoay quanh người chơi, hướng chạy giữ nguyên; thả ra thì về góc nhìn cũ. */
 	private static void freelook(Minecraft mc) {
-		boolean want = c.freelook && FREELOOK.isDown() && mc.screen == null;
+		// kiểu "bấm bật/tắt": mỗi cú bấm đổi trạng thái; kiểu "giữ": giữ phím mới nhìn quanh
+		if (c.freelookToggle) while (FREELOOK.consumeClick()) lookToggled = !lookToggled;
+		else lookToggled = false;
+		boolean want = c.freelook && (c.freelookToggle ? lookToggled : FREELOOK.isDown()) && mc.screen == null;
 		if (want && !looking) {
 			looking = true;
 			lookYaw = mc.player.getYRot();
@@ -109,9 +113,12 @@ public final class Feats {
 		gammaApplied = c.gamma;
 	}
 
+	/** Lần cuối có phím/chuột (cho Dynamic FPS AFK). */
+	public static volatile long lastInput = System.currentTimeMillis();
+
 	/** Lăn chuột khi đang zoom: đổi mức 1.5× – 50×. @return true nếu đã nuốt cú lăn. */
 	public static boolean scroll(double dy) {
-		if (zoomTarget <= 1 || dy == 0) return false;
+		if (zoomTarget <= 1 || dy == 0 || !c.zoomScroll) return false;
 		zoomMul = Math.min(50, Math.max(1.5, zoomMul * (dy > 0 ? 1.25 : 0.8)));
 		zoomTarget = zoomMul;
 		return true;
@@ -121,8 +128,10 @@ public final class Feats {
 	public static int fpsCap(Minecraft mc) {
 		if (!c.dfps) return -1;
 		var w = mc.getWindow();
-		if (w.isMinimized() || w.isIconified()) return 1;
+		if (c.dfpsMin && (w.isMinimized() || w.isIconified())) return 1;
 		if (!mc.isWindowActive()) return c.dfpsBg;
+		// AFK 5 phút (không chạm phím/chuột) thì hạ còn 10 FPS
+		if (c.dfpsAfk && mc.screen == null && System.currentTimeMillis() - lastInput > 300_000) return 10;
 		return -1;
 	}
 }

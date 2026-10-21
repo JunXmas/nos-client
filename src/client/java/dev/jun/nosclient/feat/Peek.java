@@ -53,7 +53,7 @@ public final class Peek {
 		g.nextStratum();
 		int tint = box.getColor() == null ? 0xFF8E6E9E : 0xFF000000 | box.getColor().getTextureDiffuseColor();
 		Ui.panel(g, x, y, x + w, y + h, 0xF2101218);
-		g.fill(x, y, x + w, y + 2, tint); // khung theo màu hộp
+		if (c.shulkerColor) g.fill(x, y, x + w, y + 2, tint); // khung theo màu hộp
 		for (int i = 0; i < items.length; i++) {
 			int cx = x + 4 + (i % 9) * cell, cy = y + 5 + (i / 9) * cell;
 			g.fill(cx, cy, cx + 16, cy + 16, 0x14FFFFFF);
@@ -69,7 +69,7 @@ public final class Peek {
 		var data = mc.level.getMapData(id);
 		if (data == null) return;
 		var tex = mc.getMapTextureManager().prepareMapTexture(id, data);
-		int s = 96, x = Math.min(mx + 12, sw - s - 12), y = Math.max(4, my - s - 22);
+		int s = new int[]{64, 96, 128}[c.mapSize], x = Math.min(mx + 12, sw - s - 12), y = Math.max(4, my - s - 22);
 		g.nextStratum();
 		Ui.panel(g, x, y, x + s + 8, y + s + 8, 0xF2101218);
 		g.blit(RenderPipelines.GUI_TEXTURED, tex, x + 4, y + 4, 0, 0, s, s, s, s);

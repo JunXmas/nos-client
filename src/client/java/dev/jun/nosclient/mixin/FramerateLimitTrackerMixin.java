@@ -11,6 +11,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Dynamic FPS: hạ giới hạn khung khi game ở nền hoặc bị thu nhỏ, đỡ nóng máy. */
 @Mixin(FramerateLimitTracker.class)
 public abstract class FramerateLimitTrackerMixin {
+	@Inject(method = "onInputReceived", at = @At("HEAD"))
+	private void nosclient$input(org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+		Feats.lastInput = System.currentTimeMillis();
+	}
+
 	@Inject(method = "getFramerateLimit", at = @At("RETURN"), cancellable = true)
 	private void nosclient$dfps(CallbackInfoReturnable<Integer> cir) {
 		int cap = Feats.fpsCap(Minecraft.getInstance());

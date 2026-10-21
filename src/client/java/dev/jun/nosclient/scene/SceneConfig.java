@@ -47,6 +47,31 @@ public final class SceneConfig {
 	public int dfpsBg = 15;
 	public boolean mpOffline = true, mpPvp = true;
 
+	// ---- tuỳ chọn con của từng mod (theo preview) ----
+	public boolean coordsBiome = true, coordsDecimal = false;
+	public boolean directionDeg = true;
+	public boolean dayTime = true;
+	public boolean fpsLow = true;
+	public boolean cpsRight = true;
+	public boolean invhudBg = true;
+	public boolean fxTime = true;
+	public boolean shulkerColor = true;
+	/** 0 nhỏ, 1 vừa, 2 lớn. */
+	public int mapSize = 1;
+	/** Độ bền: 0 số, 1 %, 2 chỉ vạch. */
+	public int armorFmt = 0;
+	public boolean armorHand = true, armorWarn = true;
+	public boolean blockId = true, blockTool = true, blockHp = true;
+	public boolean minimapRotate = false;
+	public boolean zoomScroll = true;
+	public boolean keysMouse = true, keysCps = true, keysSpace = true;
+	public boolean sprintShow = true;
+	/** Freelook: false = giữ phím, true = bấm bật/tắt. */
+	public boolean freelookToggle = false;
+	public boolean dfpsMin = true, dfpsAfk = false;
+	/** Chạy intro (cây mọc → logo) một lần mỗi khi mở game. */
+	public boolean intro = true;
+
 	// ---- giao diện HUD ----
 	/** Cỡ HUD (0,5–1,5 × cỡ giao diện), độ đục nền ô (0–1), mờ khi đứng yên. */
 	public double hudScale = .8, hudBg = .45;
@@ -108,6 +133,8 @@ public final class SceneConfig {
 		zoomLevel = zoomLevel <= 2 ? 2 : zoomLevel <= 4 ? 4 : 8;
 		dfpsBg = Math.min(60, Math.max(1, dfpsBg));
 		if (gamma != -1) gamma = Math.min(16, Math.max(0, gamma));
+		mapSize = Math.min(2, Math.max(0, mapSize));
+		armorFmt = Math.min(2, Math.max(0, armorFmt));
 	}
 
 	public void save() {

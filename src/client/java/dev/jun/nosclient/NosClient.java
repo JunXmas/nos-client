@@ -39,7 +39,10 @@ public final class NosClient implements ClientModInitializer {
 
 		// màn chính vanilla → màn chính Nos client (giữ đủ chức năng: chơi đơn, mạng, tuỳ chọn, thoát)
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
-			if (screen instanceof TitleScreen) mc.setScreen(new NosTitleScreen());
+			if (!(screen instanceof TitleScreen)) return;
+			// lần đầu tới màn chính trong phiên: chạy intro trước (tắt được trong cài đặt)
+			if (dev.jun.nosclient.scene.SceneConfig.INSTANCE.intro && !dev.jun.nosclient.gui.IntroScreen.played) mc.setScreen(new dev.jun.nosclient.gui.IntroScreen(new NosTitleScreen()));
+			else mc.setScreen(new NosTitleScreen());
 		});
 
 		// R-Shift trong game mở cài đặt Nos client
