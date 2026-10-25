@@ -14,6 +14,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.saveddata.maps.MapId;
 
 /**
@@ -67,11 +68,33 @@ public final class Peek {
 		Minecraft mc = Minecraft.getInstance();
 		MapId id = it.get(DataComponents.MAP_ID);
 		var data = mc.level.getMapData(id);
-		if (data == null) return;
-		var tex = mc.getMapTextureManager().prepareMapTexture(id, data);
-		int s = new int[]{64, 96, 128}[c.mapSize], x = Math.min(mx + 12, sw - s - 12), y = Math.max(4, my - s - 22);
+		// máy chủ chỉ gửi dữ liệu bản đồ khi đang cầm/treo khung: bản đồ nằm trong rương thì client chưa có.
+		// Chơi đơn: đọc từ server tích hợp (cùng tiến trình). Chỉ đọc để vẽ, KHÔNG nhét vào ClientLevel — đó là đối
+		// tượng server đang sửa trên luồng khác, dùng chung với client là hai luồng cùng ghi một mảng màu.
+		if (data == null && mc.getSingleplayerServer() != null) data = mc.getSingleplayerServer().overworld().getMapData(id);
+		int s = new int[]{64, 96, 128}[c.mapSize], x = Math.min(mx + 12, sw - s - 12), y = Math.max(4, my - s - 34);
 		g.nextStratum();
-		Ui.panel(g, x, y, x + s + 8, y + s + 8, 0xF2101218);
+		if (data == null) { // chơi mạng, bản đồ chưa từng cầm: nói rõ thay vì im lặng không hiện gì
+			Component n = Ui.small(Component.translatable("nosclient.map.peek.unknown"));
+			Ui.panel(g, x, y + s - 10, x + Ui.width(n) + 16, y + s + 8, 0xF2101218);
+			Ui.text(g, n, x + 8, y + s - 4, Ui.MUTED);
+			return;
+		}
+		var tex = mc.getMapTextureManager().prepareMapTexture(id, data);
+		Ui.panel(g, x, y, x + s + 8, y + s + 20, 0xF2101218);
 		g.blit(RenderPipelines.GUI_TEXTURED, tex, x + 4, y + 4, 0, 0, s, s, s, s);
+		// vị trí mình nếu cùng chiều và nằm trong bản đồ
+		var p = mc.player;
+		int span = 128 << data.scale;
+		if (p != null && data.dimension == mc.level.dimension()) {
+			double fx = (p.getX() - data.centerX) / span + .5, fz = (p.getZ() - data.centerZ) / span + .5;
+			if (fx >= 0 && fx <= 1 && fz >= 0 && fz <= 1) {
+				int px = x + 4 + (int) Math.round(fx * s), pz = y + 4 + (int) Math.round(fz * s);
+				g.fill(px - 2, pz - 2, px + 3, pz + 3, 0xFF000000);
+				g.fill(px - 1, pz - 1, px + 2, pz + 2, 0xFFFFFFFF);
+			}
+		}
+		String info = "1:" + (1 << data.scale) + "  ·  " + span + "×" + span + (data.locked ? "  ·  " + Component.translatable("nosclient.map.locked").getString() : "");
+		Ui.text(g, Ui.small(Component.literal(info)), x + 6, y + s + 8, Ui.MUTED);
 	}
 }

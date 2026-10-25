@@ -34,8 +34,8 @@ public final class SceneConfig {
 	public boolean recipe = true, shulker = true, mappv = true, armor = true;
 	// ---- thế giới: waypoint, minimap tắt; thông tin khối, zoom, ánh sáng bật ----
 	public boolean waypoint = false, minimap = false, blockinfo = true, zoom = true, dynlight = true;
-	/** Minimap: bán kính tối đa tính theo chunk (spec: cắt theo bề rộng tối đa, không vẽ hang). */
-	public int minimapChunks = 4;
+	/** Minimap: chỉ số zoom trong Minimap.ZOOMS (0,5/1/2/4 px mỗi khối) và cạnh ô (đơn vị giao diện). */
+	public int minimapZoom = 1, minimapSize = 96;
 	/** Gamma ghi vào tuỳ chọn độ sáng của game; -1 = giữ độ sáng gốc của game. */
 	public double gamma = -1;
 	// ---- PvP & phím: keystrokes, toggle sprint bật; freelook tắt ----
@@ -129,7 +129,8 @@ public final class SceneConfig {
 		tod = Math.min(100, Math.max(40, tod));
 		hudScale = Math.min(1.5, Math.max(.5, hudScale));
 		hudBg = Math.min(1, Math.max(0, hudBg));
-		minimapChunks = Math.min(32, Math.max(1, minimapChunks));
+		minimapZoom = Math.min(3, Math.max(0, minimapZoom));
+		minimapSize = Math.min(160, Math.max(48, minimapSize));
 		zoomLevel = zoomLevel <= 2 ? 2 : zoomLevel <= 4 ? 4 : 8;
 		dfpsBg = Math.min(60, Math.max(1, dfpsBg));
 		if (gamma != -1) gamma = Math.min(16, Math.max(0, gamma));

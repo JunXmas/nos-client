@@ -75,7 +75,7 @@ record Opt(String type, String field, String label, String[] choices, double min
 		Map.entry("mappv", List.of(seg("mapSize", "opt.map.size", "opt.small", "opt.medium", "opt.large"))),
 		Map.entry("armor", List.of(seg("armorFmt", "opt.armor.fmt", "opt.armor.num", "opt.armor.pct", "opt.armor.bar"), chk("armorHand", "opt.armor.hand"), chk("armorWarn", "opt.armor.warn"))),
 		Map.entry("waypoint", List.of(key("nosclient.key.waypoint", "opt.key"))),
-		Map.entry("minimap", List.of(rng("minimapChunks", "opt.minimap.w", 1, 32, " chunk"), chk("minimapRotate", "opt.minimap.rot"))),
+		Map.entry("minimap", List.of(seg("minimapZoom", "opt.minimap.zoom", "½×", "1×", "2×", "4×"), rng("minimapSize", "opt.minimap.size", 48, 160, " px"), chk("minimapRotate", "opt.minimap.rot"), key("nosclient.key.worldmap", "opt.minimap.mapkey"))),
 		Map.entry("blockinfo", List.of(chk("blockId", "opt.block.id"), chk("blockTool", "opt.block.tool"), chk("blockHp", "opt.block.hp"))),
 		Map.entry("zoom", List.of(key("nosclient.key.zoom", "opt.key"), seg("zoomLevel", "opt.zoom.lv", "2×", "4×", "8×"), chk("zoomScroll", "opt.zoom.scroll"))),
 		Map.entry("light", List.of(rng("gamma", "opt.light.gamma", 0, 10, "%"))),

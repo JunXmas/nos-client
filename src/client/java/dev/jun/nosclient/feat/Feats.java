@@ -17,7 +17,7 @@ public final class Feats {
 	private Feats() {}
 
 	private static final SceneConfig c = SceneConfig.INSTANCE;
-	public static KeyMapping ZOOM, FREELOOK, WAYPOINT, WAYPOINTS, HUD_EDIT;
+	public static KeyMapping ZOOM, FREELOOK, WAYPOINT, WAYPOINTS, HUD_EDIT, WORLD_MAP, MAP_IN, MAP_OUT;
 	private static final boolean PROBE = Boolean.getBoolean("nosclient.probe");
 	private static int probeTicks;
 
@@ -47,6 +47,11 @@ public final class Feats {
 		WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", GLFW.GLFW_KEY_B, cat));
 		WAYPOINTS = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoints", GLFW.GLFW_KEY_J, cat));
 		HUD_EDIT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.hudedit", GLFW.GLFW_KEY_H, cat));
+		WORLD_MAP = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.worldmap", GLFW.GLFW_KEY_M, cat));
+		MAP_IN = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapin", GLFW.GLFW_KEY_EQUAL, cat));
+		MAP_OUT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapout", GLFW.GLFW_KEY_MINUS, cat));
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents.CHUNK_LOAD.register(dev.jun.nosclient.map.MapCache::onChunkLoad);
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> dev.jun.nosclient.map.MapCache.flush(true));
 		zoomMul = c.zoomLevel;
 		ClientTickEvents.END_CLIENT_TICK.register(Feats::tick);
 	}
@@ -64,6 +69,9 @@ public final class Feats {
 		}
 		sprint(mc);
 		while (WAYPOINTS.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.WaypointScreen(null));
+		while (WORLD_MAP.consumeClick()) if (mc.screen == null && c.minimap) mc.setScreen(new dev.jun.nosclient.gui.WorldMapScreen(null));
+		while (MAP_IN.consumeClick()) if (c.minimap) { c.minimapZoom = Math.min(3, c.minimapZoom + 1); c.save(); }
+		while (MAP_OUT.consumeClick()) if (c.minimap) { c.minimapZoom = Math.max(0, c.minimapZoom - 1); c.save(); }
 		while (HUD_EDIT.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.HudEditScreen(null));
 		while (WAYPOINT.consumeClick()) if (c.waypoint) {
 			// B chỉ THÊM. Bản cũ "đứng gần thì xoá" làm mất waypoint khi bấm hai lần gần nhau; xoá/sửa ở màn quản lý (J)
