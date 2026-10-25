@@ -22,6 +22,15 @@ public abstract class MouseHandlerMixin {
 		else if (info.button() == 1) Hud.INSTANCE.right.click(now);
 	}
 
+	/**
+	 * Game chỉ coi phím/bấm/cuộn là "có người", không tính rê chuột: ngồi ở màn chính rê chuột 60 giây là bị hạ
+	 * xuống 30 FPS (AFK). Rê chuột cũng là có mặt.
+	 */
+	@Inject(method = "onMove", at = @At("HEAD"))
+	private void nosclient$moveIsInput(long window, double x, double y, CallbackInfo ci) {
+		Minecraft.getInstance().getFramerateLimitTracker().onInputReceived();
+	}
+
 	/** Zoom: đang zoom thì lăn chuột đổi mức zoom thay vì đổi ô hotbar. */
 	@Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
 	private void nosclient$zoomScroll(long window, double dx, double dy, CallbackInfo ci) {

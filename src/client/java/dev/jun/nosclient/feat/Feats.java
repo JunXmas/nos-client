@@ -10,7 +10,7 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Tính năng chạy theo tick, không vẽ gì: Toggle Sprint, Zoom, Freelook, Dynamic FPS, Gamma.
+ * Tính năng chạy theo tick, không vẽ gì: Toggle Sprint, Zoom, Freelook, Dynamic FPS. Gamma nằm ở LightTextureMixin.
  * Trạng thái để mixin đọc nằm ở các field static — đọc một biến, không tra cứu gì mỗi khung.
  */
 public final class Feats {
@@ -18,6 +18,8 @@ public final class Feats {
 
 	private static final SceneConfig c = SceneConfig.INSTANCE;
 	public static KeyMapping ZOOM, FREELOOK, WAYPOINT;
+	private static final boolean PROBE = Boolean.getBoolean("nosclient.probe");
+	private static int probeTicks;
 
 	// ---- Toggle Sprint ----
 	public static boolean sprintOn, sneakOn;
@@ -37,12 +39,10 @@ public final class Feats {
 	/** FOV dọc của khung vừa vẽ (độ), đã tính zoom. */
 	public static volatile float lastFov = 70;
 
-	// ---- Gamma ----
-	private static double gammaApplied = Double.NaN;
-
 	public static void init() {
 		KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nosclient", "feat"));
-		ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", GLFW.GLFW_KEY_C, cat));
+		// Zoomify cũng mặc định phím C: có nó thì phím zoom của ta để trống, khỏi một phím hai việc
+		ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", dev.jun.nosclient.Mods.ZOOM_OWNED ? GLFW.GLFW_KEY_UNKNOWN : GLFW.GLFW_KEY_C, cat));
 		FREELOOK = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.freelook", GLFW.GLFW_KEY_LEFT_ALT, cat));
 		WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", GLFW.GLFW_KEY_B, cat));
 		zoomMul = c.zoomLevel;
@@ -50,7 +50,10 @@ public final class Feats {
 	}
 
 	private static void tick(Minecraft mc) {
-		gamma(mc);
+		if (PROBE && ++probeTicks % 100 == 0) // chỉ để đo: -Dnosclient.probe=true in giới hạn FPS, gamma đang áp, màn hiện tại mỗi 5 giây
+			org.slf4j.LoggerFactory.getLogger("nosclient").info("probe fps-limit={} reason={} gamma-opt={} gamma-nos={} screen={}",
+				mc.getFramerateLimitTracker().getFramerateLimit(), mc.getFramerateLimitTracker().getThrottleReason(), mc.options.gamma().get(), c.gamma,
+				mc.screen == null ? "-" : mc.screen.getClass().getSimpleName());
 		DynLight.tick(mc);
 		dev.jun.nosclient.hud.Minimap.tick(mc);
 		if (mc.player == null) {
@@ -63,7 +66,7 @@ public final class Feats {
 			if (Waypoints.removeNear(mc)) mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.removed"), false);
 			else mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.added", Waypoints.addHere(mc).name()), false);
 		}
-		boolean z = c.zoom && ZOOM.isDown() && mc.screen == null;
+		boolean z = c.zoom && !dev.jun.nosclient.Mods.ZOOM_OWNED && ZOOM.isDown() && mc.screen == null;
 		if (!z) zoomMul = c.zoomLevel; // thả phím: lần sau zoom lại từ mức đã chọn
 		zoomTarget = z ? zoomMul : 1;
 		freelook(mc);
@@ -106,13 +109,6 @@ public final class Feats {
 		}
 	}
 
-	/** Gamma: ghi thẳng vào tuỳ chọn độ sáng của game (như full bright); -1 = không đụng. */
-	private static void gamma(Minecraft mc) {
-		if (c.gamma < 0 || c.gamma == gammaApplied) return;
-		((dev.jun.nosclient.mixin.OptionInstanceAccessor) (Object) mc.options.gamma()).nosclient$setRaw(c.gamma);
-		gammaApplied = c.gamma;
-	}
-
 	/** Lần cuối có phím/chuột (cho Dynamic FPS AFK). */
 	public static volatile long lastInput = System.currentTimeMillis();
 
@@ -124,9 +120,14 @@ public final class Feats {
 		return true;
 	}
 
+	/** Màn do Nos client vẽ cảnh động (cần đủ FPS, không phải menu tĩnh). */
+	public static boolean nosScreen(net.minecraft.client.gui.screens.Screen s) {
+		return s instanceof dev.jun.nosclient.gui.NosTitleScreen || s instanceof dev.jun.nosclient.gui.IntroScreen || s instanceof dev.jun.nosclient.gui.NosSettingsScreen;
+	}
+
 	/** Dynamic FPS: game ở nền thì hạ FPS, bị thu nhỏ thì gần như dừng vẽ. -1 = để game tự quyết. */
 	public static int fpsCap(Minecraft mc) {
-		if (!c.dfps) return -1;
+		if (!c.dfps || dev.jun.nosclient.Mods.DFPS_OWNED) return -1;
 		var w = mc.getWindow();
 		if (c.dfpsMin && (w.isMinimized() || w.isIconified())) return 1;
 		if (!mc.isWindowActive()) return c.dfpsBg;

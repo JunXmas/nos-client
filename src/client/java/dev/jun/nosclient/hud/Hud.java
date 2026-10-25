@@ -77,7 +77,8 @@ public final class Hud {
 			lastSpark = now;
 		}
 		LocalPlayer p = mc.player;
-		if (p == null || mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) return;
+		// chỉ nhường chỗ khi màn F3 thật sự mở; showDebugScreen() còn true khi bật hitbox (F3+B) hay bất kỳ mục debug nào
+		if (p == null || mc.options.hideGui || mc.debugEntries.isOverlayVisible()) return;
 		if (mc.gui.getChat().isChatFocused() || mc.options.keyPlayerList.isDown()) return; // nhường chỗ cho chat / Tab
 		boolean busy = p.getDeltaMovement().horizontalDistanceSqr() > 1e-4 || left.count(now) + right.count(now) > 0 || p.hurtTime > 0;
 		if (busy) lastBusy = now;
@@ -382,15 +383,27 @@ public final class Hud {
 	}
 
 	// ---------- thông tin khối & mob ----------
-	/** Theo spec: đọc thứ đang nhìn mỗi 10 tick (0,5 giây), giữa hai lần chỉ vẽ lại bản đã đọc. */
 	private long lastLook;
+	private Object lastTarget;
+
+	/** Khoá của thứ đang nhìn: toạ độ khối + trạng thái khối, hoặc id mob. */
+	private static Object lookTarget(Minecraft mc) {
+		var hit = mc.hitResult;
+		if (hit instanceof net.minecraft.world.phys.EntityHitResult eh) return eh.getEntity().getId();
+		if (hit instanceof net.minecraft.world.phys.BlockHitResult bh && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK && mc.level != null)
+			return java.util.List.of(bh.getBlockPos(), mc.level.getBlockState(bh.getBlockPos()));
+		return null;
+	}
 	private String lookName = "", lookSub = "";
 	private net.minecraft.world.item.ItemStack lookIcon = net.minecraft.world.item.ItemStack.EMPTY, lookTool = net.minecraft.world.item.ItemStack.EMPTY;
 	private boolean lookHas;
 	private float lookHp = -1;
 
 	private int blockinfo(GuiGraphics g, Font f, Minecraft mc, int cx, int y, long now) {
-		if (now - lastLook > 500_000_000L) {
+		// đọc lại ngay khi nhìn sang khối/mob khác (so mục tiêu mỗi khung rất rẻ); cùng mục tiêu thì 4 lần/giây cho máu, tên
+		Object target = lookTarget(mc);
+		if (!java.util.Objects.equals(target, lastTarget) || now - lastLook > 250_000_000L) {
+			lastTarget = target;
 			lastLook = now;
 			readLook(mc);
 		}

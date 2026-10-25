@@ -53,6 +53,20 @@ public final class Mods {
 	 * xanh dương hệ thống. Dùng để tô công tắc, viền thẻ và quầng sáng cho "bật" luôn ra đúng màu phe, không chỉ một
 	 * màu tím chung chung cho mọi thứ.
 	 */
+	/**
+	 * Mod khác làm cùng việc (có sẵn trong Fabulously Optimized). Có mặt thì tính năng của ta tự nghỉ để khỏi
+	 * giành phím/giành giới hạn FPS/thắp sáng hai lần — không tắt hộ mod người khác.
+	 */
+	private static final java.util.Map<String, String> CONFLICT = java.util.Map.of("zoom", "zoomify", "dfps", "dynamic_fps", "light", "lambdynlights");
+
+	/** Tên mod đang làm thay việc này, hoặc null. */
+	public static String conflict(String id) {
+		String other = CONFLICT.get(id);
+		return other != null && net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(other) ? other : null;
+	}
+
+	public static final boolean ZOOM_OWNED = conflict("zoom") != null, DFPS_OWNED = conflict("dfps") != null, LIGHT_OWNED = conflict("light") != null;
+
 	public static final String[] CATS = {"hud", "inv", "world", "pvp", "sys"};
 	private static final int[] CAT_COLOR = {0xFF4DD9C4, 0xFFB06EE6, 0xFF5AC54F, 0xFFF2824D, 0xFF5BA8F2};
 

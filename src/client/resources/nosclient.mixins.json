@@ -7,7 +7,7 @@
 		"PanoramaRendererMixin",
 		"MouseHandlerMixin",
 		"BossHealthOverlayAccessor",
-		"OptionInstanceAccessor",
+		"LightTextureMixin",
 		"GameRendererMixin",
 		"CameraMixin",
 		"FramerateLimitTrackerMixin",

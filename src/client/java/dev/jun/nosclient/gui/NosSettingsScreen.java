@@ -475,7 +475,12 @@ public final class NosSettingsScreen extends Screen {
 		Ui.text(g, Ui.fit(Ui.bold(name(m)), w - 34 - 40), x + 34, y + 14, Ui.alpha(Ui.TEXT, in));
 		Ui.toggle(g, x + w - 34, y + 12, k, accent);
 		Ui.text(g, Ui.fit(Ui.small(tr("nosclient.mod." + m.id() + ".desc")), w - 20), x + 10, y + 33, Ui.alpha(Ui.MUTED, in));
-		if (I18n.exists("nosclient.warn." + m.id())) {
+		String owner = Mods.conflict(m.id());
+		if (owner != null) { // mod khác đang làm việc này: ghi rõ để người chơi khỏi tưởng bật mà không ăn
+			Component wl = Ui.small(Component.translatable("nosclient.conflict", owner));
+			g.fill(x + 10, y + 44, x + 18 + Ui.width(wl), y + 53, 0x335BA8F2);
+			Ui.text(g, wl, x + 14, y + 46, 0xFF9CC8F7);
+		} else if (I18n.exists("nosclient.warn." + m.id())) {
 			Component wl = Ui.small(tr("nosclient.warn.short"));
 			g.fill(x + 10, y + 44, x + 18 + Ui.width(wl), y + 53, 0x33E6B23C);
 			Ui.text(g, wl, x + 14, y + 46, 0xFFF2C46B);

@@ -34,7 +34,7 @@ public final class DynLight {
 	public static void tick(Minecraft mc) {
 		Player p = mc.player;
 		int lv = 0;
-		if (SceneConfig.INSTANCE.dynlight && p != null) {
+		if (SceneConfig.INSTANCE.dynlight && !dev.jun.nosclient.Mods.LIGHT_OWNED && p != null) {
 			lv = Math.max(emission(p.getMainHandItem()), emission(p.getOffhandItem()));
 			if (p.isOnFire()) lv = Math.max(lv, 15);
 		}

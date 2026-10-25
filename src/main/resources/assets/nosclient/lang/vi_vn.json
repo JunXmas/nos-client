@@ -105,6 +105,7 @@
 	"nosclient.mod.minimap.desc": "Góc nhìn từ trên xuống, không hiện hang động.",
 	"nosclient.mod.blockinfo": "Thông tin khối & mob",
 	"nosclient.mod.blockinfo.desc": "Tên, ID và công cụ đúng của thứ đang nhìn vào.",
+	"nosclient.conflict": "Đang dùng %s",
 	"nosclient.mod.zoom": "Zoom",
 	"nosclient.mod.zoom.desc": "Giữ C để phóng to, lăn chuột để chỉnh mức.",
 	"nosclient.mod.light": "Ánh sáng",

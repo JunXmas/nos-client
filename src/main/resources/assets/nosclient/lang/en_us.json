@@ -105,6 +105,7 @@
 	"nosclient.mod.minimap.desc": "Top-down view, no caves shown.",
 	"nosclient.mod.blockinfo": "Block & mob info",
 	"nosclient.mod.blockinfo.desc": "Name, ID and right tool of what you're looking at.",
+	"nosclient.conflict": "Handled by %s",
 	"nosclient.mod.zoom": "Zoom",
 	"nosclient.mod.zoom.desc": "Hold C to zoom, scroll to adjust.",
 	"nosclient.mod.light": "Lighting",
