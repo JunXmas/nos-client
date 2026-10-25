@@ -25,11 +25,16 @@ public final class Waypoints {
 	private Waypoints() {}
 
 	private static final Logger LOG = LoggerFactory.getLogger("nosclient");
-	public record Wp(String name, int x, int y, int z, String dim, int color) {}
+	/** hidden: ẩn khỏi HUD/la bàn nhưng vẫn giữ. Gson đọc file cũ (không có field) thành false. */
+	public record Wp(String name, int x, int y, int z, String dim, int color, boolean hidden) {
+		public Wp withName(String n) { return new Wp(n, x, y, z, dim, color, hidden); }
+		public Wp withColor(int c) { return new Wp(name, x, y, z, dim, c, hidden); }
+		public Wp withHidden(boolean h) { return new Wp(name, x, y, z, dim, color, h); }
+	}
 
 	private static final Gson GSON = new Gson();
 	private static Map<String, List<Wp>> all;
-	private static final int[] COLORS = {0xFFD3A8F5, 0xFF7FD873, 0xFF3ECFD5, 0xFFF5C451, 0xFFF2555A};
+	public static final int[] COLORS = {0xFFD3A8F5, 0xFF7FD873, 0xFF3ECFD5, 0xFFF5C451, 0xFFF2555A};
 
 	private static Path file() {
 		return FabricLoader.getInstance().getConfigDir().resolve("nosclient-waypoints.json");
@@ -63,7 +68,7 @@ public final class Waypoints {
 		return "unknown";
 	}
 
-	private static String dim(Minecraft mc) {
+	public static String dim(Minecraft mc) {
 		return mc.level.dimension().identifier().toString();
 	}
 
@@ -71,28 +76,39 @@ public final class Waypoints {
 	public static List<Wp> here(Minecraft mc) {
 		if (mc.level == null) return List.of();
 		String d = dim(mc);
-		return all().getOrDefault(serverKey(mc), List.of()).stream().filter(w -> w.dim.equals(d)).toList();
+		return all().getOrDefault(serverKey(mc), List.of()).stream().filter(w -> w.dim.equals(d) && !w.hidden).toList();
 	}
 
-	/** Đánh dấu chỗ đang đứng (phím B). */
-	public static Wp addHere(Minecraft mc) {
-		var p = mc.player.blockPosition();
-		var list = all().computeIfAbsent(serverKey(mc), k -> new ArrayList<>());
-		Wp w = new Wp("#" + (list.size() + 1), p.getX(), p.getY(), p.getZ(), dim(mc), COLORS[list.size() % COLORS.length]);
+	/** Mọi waypoint của máy chủ hiện tại (mọi chiều, kể cả đã ẩn) — cho màn quản lý. Sửa list này rồi gọi save(). */
+	public static List<Wp> mine(Minecraft mc) {
+		return all().computeIfAbsent(serverKey(mc), k -> new ArrayList<>());
+	}
+
+	public static void saveNow() {
+		save();
+	}
+
+	/** Thêm waypoint tại toạ độ cho trước (màn quản lý / bản đồ thế giới). */
+	public static Wp add(Minecraft mc, String name, int x, int y, int z) {
+		var list = mine(mc);
+		Wp w = new Wp(name == null || name.isBlank() ? "#" + (list.size() + 1) : name, x, y, z, dim(mc), COLORS[list.size() % COLORS.length], false);
 		list.add(w);
 		save();
 		return w;
 	}
 
-	/** Xoá waypoint gần nhất trong 4 khối (bấm B khi đứng trên một waypoint). @return true nếu đã xoá. */
-	public static boolean removeNear(Minecraft mc) {
+	/** Đánh dấu chỗ đang đứng (phím B). */
+	public static Wp addHere(Minecraft mc) {
 		var p = mc.player.blockPosition();
-		var list = all().get(serverKey(mc));
-		if (list == null) return false;
+		return add(mc, null, p.getX(), p.getY(), p.getZ());
+	}
+
+	/** Waypoint của chiều hiện tại cách chỗ đứng ≤ r khối (Manhattan), hoặc null. */
+	public static Wp near(Minecraft mc, int r) {
+		var p = mc.player.blockPosition();
 		String d = dim(mc);
-		boolean gone = list.removeIf(w -> w.dim.equals(d) && Math.abs(w.x - p.getX()) + Math.abs(w.y - p.getY()) + Math.abs(w.z - p.getZ()) <= 4);
-		if (gone) save();
-		return gone;
+		for (Wp w : mine(mc)) if (w.dim.equals(d) && Math.abs(w.x - p.getX()) + Math.abs(w.y - p.getY()) + Math.abs(w.z - p.getZ()) <= r) return w;
+		return null;
 	}
 
 	public static boolean enabled() {

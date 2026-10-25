@@ -17,7 +17,7 @@ public final class Feats {
 	private Feats() {}
 
 	private static final SceneConfig c = SceneConfig.INSTANCE;
-	public static KeyMapping ZOOM, FREELOOK, WAYPOINT;
+	public static KeyMapping ZOOM, FREELOOK, WAYPOINT, WAYPOINTS, HUD_EDIT;
 	private static final boolean PROBE = Boolean.getBoolean("nosclient.probe");
 	private static int probeTicks;
 
@@ -45,6 +45,8 @@ public final class Feats {
 		ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", dev.jun.nosclient.Mods.ZOOM_OWNED ? GLFW.GLFW_KEY_UNKNOWN : GLFW.GLFW_KEY_C, cat));
 		FREELOOK = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.freelook", GLFW.GLFW_KEY_LEFT_ALT, cat));
 		WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", GLFW.GLFW_KEY_B, cat));
+		WAYPOINTS = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoints", GLFW.GLFW_KEY_J, cat));
+		HUD_EDIT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.hudedit", GLFW.GLFW_KEY_H, cat));
 		zoomMul = c.zoomLevel;
 		ClientTickEvents.END_CLIENT_TICK.register(Feats::tick);
 	}
@@ -61,10 +63,15 @@ public final class Feats {
 			return;
 		}
 		sprint(mc);
+		while (WAYPOINTS.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.WaypointScreen(null));
+		while (HUD_EDIT.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.HudEditScreen(null));
 		while (WAYPOINT.consumeClick()) if (c.waypoint) {
-			// đứng ngay trên một waypoint thì bấm B để xoá, không thì đánh dấu chỗ đang đứng
-			if (Waypoints.removeNear(mc)) mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.removed"), false);
-			else mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.added", Waypoints.addHere(mc).name()), false);
+			// B chỉ THÊM. Bản cũ "đứng gần thì xoá" làm mất waypoint khi bấm hai lần gần nhau; xoá/sửa ở màn quản lý (J)
+			if (Waypoints.near(mc, 2) != null) mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.exists", WAYPOINTS.getTranslatedKeyMessage()), false);
+			else {
+				var wp = Waypoints.addHere(mc);
+				mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.added", wp.name(), wp.x(), wp.y(), wp.z()), false);
+			}
 		}
 		boolean z = c.zoom && !dev.jun.nosclient.Mods.ZOOM_OWNED && ZOOM.isDown() && mc.screen == null;
 		if (!z) zoomMul = c.zoomLevel; // thả phím: lần sau zoom lại từ mức đã chọn

@@ -36,6 +36,16 @@ public final class NosClient implements ClientModInitializer {
 			btns.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.translatable("nosclient.mp.button"),
 				b -> mc.setScreen(new dev.jun.nosclient.gui.PlayTogetherScreen(screen))).bounds(w / 2 - 102, bottom + 4, 204, 20).build());
 		});
+		// menu tạm dừng (mọi chế độ): Sửa HUD + Waypoint, hai nút nhỏ dưới cùng — sửa bố cục cần thấy HUD thật nên phải mở được từ trong game
+		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
+			if (!(screen instanceof net.minecraft.client.gui.screens.PauseScreen ps) || !ps.showsPauseMenu()) return;
+			var btns = net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen);
+			int bottom = btns.stream().mapToInt(b -> b.getY() + b.getHeight()).max().orElse(h / 2);
+			btns.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.translatable("nosclient.settings.edit"),
+				b -> mc.setScreen(new dev.jun.nosclient.gui.HudEditScreen(screen))).bounds(w / 2 - 102, bottom + 4, 100, 20).build());
+			btns.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.translatable("nosclient.wp.title"),
+				b -> mc.setScreen(new dev.jun.nosclient.gui.WaypointScreen(screen))).bounds(w / 2 + 2, bottom + 4, 100, 20).build());
+		});
 
 		// màn chính vanilla → màn chính Nos client (giữ đủ chức năng: chơi đơn, mạng, tuỳ chọn, thoát)
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {
