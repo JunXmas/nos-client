@@ -18,9 +18,12 @@ import java.util.function.Supplier;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Environment(EnvType.CLIENT)
 public final class LyricsService implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger("nosclient");
     private final Path directory;
     private final Supplier<SystemMedia> provider;
     private final LyricsService.Lookup lookup;
@@ -229,6 +232,11 @@ public final class LyricsService implements AutoCloseable {
 
                 this.snapshot = new LyricsService.Snapshot(track, this.timeline, this.resultStatus);
             } catch (Exception error) {
+                // Cả bước đọc nhạc chết thì phải nghe được: báo một lần mỗi khi chuyển từ chạy sang hỏng.
+                if (this.mediaFailures == 0 && !"unavailable".equals(this.snapshot.status())) {
+                    LOG.warn("Không đọc được bài đang phát, lời nhạc tạm tắt: {}", error.toString());
+                }
+
                 if (++this.mediaFailures >= 2) {
                     this.closeMedia();
                     this.mediaFailures = 0;
