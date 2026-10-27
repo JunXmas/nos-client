@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import dev.jun.nosclient.Ui;
 import dev.jun.nosclient.scene.SceneConfig;
+import dev.jun.nosclient.theme.HsvColor;
 import dev.jun.nosclient.theme.ThemePalette;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -51,6 +52,12 @@ public final class AuroraSky {
     private static float night;
     private static float shown;
     private static long last;
+    /** Thời gian riêng của cực quang: chạy nhanh hơn khi sôi động nhưng có trần, không nhảy theo từng câu. */
+    private static double clock;
+    /** Lệch sắc độ của màu nhịp so với màu chữ (độ), đổi mỗi câu; hue hiện tại trôi mượt về đích. */
+    private static float hueTarget;
+    private static float hue;
+    private static int beats;
 
     private AuroraSky() {
     }
@@ -67,8 +74,24 @@ public final class AuroraSky {
     static void kick(int letters, long lengthMs) {
         float perSecond = letters / Math.max(0.6F, lengthMs / 1000.0F);
         targetEnergy = Math.clamp((perSecond - 3.0F) / 9.0F, 0.15F, 1.0F);
-        pulse = 1.0F;
+        // Nhịp dồn dập thì chỉ đẩy thêm một phần, không bừng lại từ đầu mỗi câu (drop không còn chớp loạn).
+        pulse = Math.min(1.0F, pulse * 0.4F + 0.7F);
         ripple = -0.1F;
+        // Màu nhịp: lần lượt bốn tông quanh màu chữ (0°, +40°, −35°, +80°), như đèn sân khấu đổi theo câu.
+        float[] steps = {0.0F, 40.0F, -35.0F, 80.0F};
+        hueTarget = steps[beats++ % steps.length];
+    }
+
+    /** Màu nhịp hiện tại (đã trôi mượt), cho cả trời và màn cực quang. */
+    public static int beatColor() {
+        int ink = 0xFF000000 | SceneConfig.INSTANCE.lyricsInk;
+        HsvColor base = HsvColor.fromRgb(ink);
+        return 0xFF000000 | new HsvColor(base.hue() + hue, Math.max(0.55, base.saturation()), Math.max(0.85, base.value())).rgb();
+    }
+
+    /** Độ đậm phủ màu nhịp lên trời đêm (0..1), cho mixin màu trời. */
+    public static float skyTint() {
+        return shown * night * (0.07F + 0.05F * energy + 0.09F * pulse);
     }
 
     /** Hết lời (nhạc dạo, dừng phát): lắng dần. */
@@ -92,19 +115,23 @@ public final class AuroraSky {
         // Ban ngày cộng sáng lên trời sáng thì gần như không thấy; vẫn để một chút cho biết đang bật.
         float targetNight = 1.0F - (float)Math.clamp((ThemePalette.luminance(sky) - 0.06) / 0.35, 0.0, 0.9);
         night = Ui.approach(night, targetNight, dt, 2.0F);
-        energy = Ui.approach(energy, targetEnergy, dt, 1.2F);
-        pulse *= (float)Math.exp(-dt * 1.6F);
-        ripple += dt / 1.4F;
-        float t = c.animations ? (float)(now / 1.0E9 % 3600.0) : 0.0F;
+        energy = Ui.approach(energy, targetEnergy, dt, 0.6F);
+        pulse *= (float)Math.exp(-dt * 1.1F);
+        ripple += dt / 2.2F;
+        hue = Ui.approach(hue, hueTarget, dt, 1.4F);
+        // Đồng hồ riêng: tối đa 1.6× tốc độ thường kể cả lúc drop.
+        clock += c.animations ? dt * (1.0 + 0.6 * energy) : 0.0;
+        clock %= 3600.0;
+        float t = (float)clock;
         double radius = Math.max(48.0, mc.options.getEffectiveRenderDistance() * 16 * 0.97);
-        int top = ThemePalette.mix(0xFF000000 | c.lyricsInk, 0xFF7A3CFF, 0.35);
+        int top = beatColor();
         if (type == null) {
             type = RenderType.create("nos_aurora", RenderSetup.builder(PIPELINE).bufferSize(65536).createRenderSetup());
         }
 
         VertexConsumer vc = buffers.getBuffer(type);
         Matrix4f m = matrices.last().pose();
-        float sway = 1.0F + 1.4F * energy + pulse;
+        float sway = 1.0F + 0.6F * energy + 0.4F * pulse;
 
         for (int r = 0; r < RIBBONS; r++) {
             double center = r * 120.0 + 30.0;
@@ -114,17 +141,17 @@ public final class AuroraSky {
 
             for (int i = 0; i <= SEGMENTS; i++) {
                 float s = i / (float)SEGMENTS;
-                double bearing = center + 110.0 * (s - 0.5) + 3.0 * Math.sin(s * 10.0 + t * (0.5 + energy * 1.5)) * sway;
+                double bearing = center + 110.0 * (s - 0.5) + 3.0 * Math.sin(s * 10.0 + t * 0.6) * sway;
                 double base = 16.0 + 6.0 * Math.sin(s * Math.PI * 2.0 + t * 0.3 + r);
                 double height = (22.0 + 10.0 * Math.sin(s * Math.PI * 3.0 - t * 0.2 + r * 2.0)) * (1.0 + 0.3 * energy + 0.2 * pulse);
                 bottom[i] = SkyTextPlane.direction(bearing, base).mul((float)radius);
                 up[i] = SkyTextPlane.direction(bearing, base + height).mul((float)radius);
                 float edge = (float)Math.pow(Math.sin(Math.PI * s), 0.7);
                 float wave = (float)Math.exp(-(s - ripple) * (s - ripple) / 0.006);
-                glow[i] = shown * (0.15F + 0.85F * night) * edge * (0.45F + 0.35F * energy + 0.3F * pulse + 0.9F * pulse * wave);
+                glow[i] = shown * (0.15F + 0.85F * night) * edge * (0.5F + 0.25F * energy + 0.25F * pulse + 0.6F * pulse * wave);
             }
 
-            float phase = t * 0.08F * (1.0F + energy) + r * 5.0F;
+            float phase = t * 0.06F + r * 5.0F;
 
             for (int i = 0; i < SEGMENTS; i++) {
                 float u0 = i / (float)SEGMENTS * 12.0F + phase;

@@ -1,5 +1,6 @@
 package dev.jun.nosclient.mixin;
 
+import dev.jun.nosclient.media.AuroraSky;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.scene.SkyPalette;
 import net.fabricmc.api.EnvType;
@@ -23,9 +24,24 @@ public abstract class SkyAttributeMixin {
     @Unique
     private double nosclient$hour;
 
+    /** Trời đêm và sương mù ngả theo màu nhịp của cực quang (đổi theo câu hát). Chỉ khi cực quang đang hiện. */
+    @Unique
+    private void nosclient$beat(EnvironmentAttribute<?> attribute, CallbackInfoReturnable<Object> result) {
+        if ((attribute == EnvironmentAttributes.SKY_COLOR || attribute == EnvironmentAttributes.FOG_COLOR) && result.getReturnValue() instanceof Integer base) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.gameRenderer != null && mc.gameRenderer.getMainCamera().attributeProbe() == (Object)this) {
+                float k = AuroraSky.skyTint() * (attribute == EnvironmentAttributes.FOG_COLOR ? 0.6F : 1.0F);
+                if (k > 0.002F) {
+                    result.setReturnValue(base & 0xFF000000 | SkyPalette.blend(base & 0xFFFFFF, AuroraSky.beatColor() & 0xFFFFFF, k));
+                }
+            }
+        }
+    }
+
     @Inject(method = "getValue(Lnet/minecraft/world/attribute/EnvironmentAttribute;F)Ljava/lang/Object;", at = @At("RETURN"), cancellable = true)
     private void nosclient$sky(EnvironmentAttribute<?> attribute, float partialTick, CallbackInfoReturnable<Object> result) {
         SceneConfig c = SceneConfig.INSTANCE;
+        this.nosclient$beat(attribute, result);
         if (!c.sky) {
             this.nosclient$lastSky = 0L;
         } else {

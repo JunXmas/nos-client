@@ -41,6 +41,7 @@ public final class SkyLyrics {
     private static final int ROW = 13;
     private static final int DUST = 5;
     private static final int MOTES = 7;
+    static final String INTERLUDE = "♪ ♪ ♪";
     private static final float[][] EDGE = new float[][]{{-0.22F, 0.0F}, {0.22F, 0.0F}, {0.0F, -0.22F}, {0.0F, 0.22F}};
     private static final float[][] AURA = new float[][]{
         {-0.55F, 0.0F}, {0.55F, 0.0F}, {0.0F, -0.55F}, {0.0F, 0.55F}, {-0.39F, -0.39F}, {0.39F, -0.39F}, {-0.39F, 0.39F}, {0.39F, 0.39F}
@@ -96,6 +97,7 @@ public final class SkyLyrics {
         String line = "";
         String upcoming = "";
         String id = "";
+        boolean newLine = true;
         long start = 0L;
         long length = 4000L;
         if (active) {
@@ -106,6 +108,11 @@ public final class SkyLyrics {
             if (index >= 0) {
                 line = lines.get(index).text();
                 start = lines.get(index).atMs();
+                // Dòng trống trong LRC = nhạc dạo/gian tấu. Trước đây chữ biến mất cả chục giây như mất lời; giờ hiện
+                // nốt nhạc nhỏ để biết vẫn đang theo bài.
+                if (line.isBlank() && index + 1 < lines.size() && lines.get(index + 1).atMs() - start > 3000L) {
+                    line = INTERLUDE;
+                }
                 if (index + 1 < lines.size()) {
                     length = lines.get(index + 1).atMs() - start;
                     upcoming = c.lyricsNext ? lines.get(index + 1).text() : "";
@@ -113,6 +120,19 @@ public final class SkyLyrics {
             }
 
             id = state.track().key() + ":" + index;
+            // Chữ khối: câu chia cụm ngắn hiện lần lượt; khoá đổi theo cụm nên mỗi cụm là một lần "sinh" riêng.
+            if (index >= 0 && poster() && !line.isBlank() && !INTERLUDE.equals(line)) {
+                List<String> chunks = LyricChunks.split(line);
+                long[] at = LyricChunks.starts(chunks, length);
+                int chunk = LyricChunks.indexAt(at, position - start);
+                id += "#" + chunk;
+                start += at[chunk];
+                length = at[chunk + 1] - at[chunk];
+                line = chunks.get(chunk);
+                // Chữ khối chỉ hiện cụm đang hát: dòng kế tiếp nguyên câu bên cạnh làm trời đầy chữ.
+                upcoming = "";
+                newLine = chunk == 0;
+            }
         }
 
         Camera camera = mc.gameRenderer.getMainCamera();
@@ -135,16 +155,31 @@ public final class SkyLyrics {
 
             if (line.isBlank()) {
                 AuroraSky.calm();
-            } else {
+            } else if (newLine) {
+                // Nhịp cực quang theo CÂU, không theo cụm: cụm nhỏ dồn dập mà kick từng cụm thì cực quang giật liên tục.
                 AuroraSky.kick(line.length(), length);
             }
 
             if (!line.isBlank()) {
-                float[] anchor = c.lyricsFollow
-                    ? LyricMotion.anchor(camera.yRot(), camera.xRot(), last == null ? 0.0F : last.bearing, last == null ? 0.0F : last.elevation,
-                        last != null && now - last.born < 20000000000L)
-                    : new float[]{c.lyricsBearing, c.lyricsElevation};
-                shown.add(new Shown(line, id.hashCode() * 31L + now, anchor[0], anchor[1], now, start, length));
+                long seed = id.hashCode() * 31L + now;
+                float[] anchor;
+                if (poster() && c.lyricsFollow) {
+                    // Rải cụm ngẫu nhiên trong khung nhìn (luôn trên trời), tránh chỗ hai cụm vừa hiện.
+                    List<float[]> recent = new ArrayList<>();
+                    for (int i = Math.max(0, shown.size() - 2); i < shown.size(); i++) {
+                        recent.add(new float[]{shown.get(i).bearing, shown.get(i).elevation});
+                    }
+
+                    anchor = LyricChunks.place(camera.yRot(), -camera.xRot(), Feats.lastFov, (double)mc.getWindow().getWidth() / Math.max(1, mc.getWindow().getHeight()),
+                        seed, recent);
+                } else if (c.lyricsFollow) {
+                    anchor = LyricMotion.anchor(camera.yRot(), camera.xRot(), last == null ? 0.0F : last.bearing, last == null ? 0.0F : last.elevation,
+                        last != null && now - last.born < 20000000000L);
+                } else {
+                    anchor = new float[]{c.lyricsBearing, c.lyricsElevation};
+                }
+
+                shown.add(new Shown(line, seed, anchor[0], anchor[1], now, start, length));
             }
         }
 
@@ -154,7 +189,8 @@ public final class SkyLyrics {
             shown.removeFirst();
         }
 
-        next = upcoming;
+        // Chữ khối: không hiện câu kế tiếp (kể cả lúc nhạc dạo) — mỗi lúc chỉ một cụm trên trời.
+        next = poster() ? "" : upcoming;
         // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
         // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
         // Đặt sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
