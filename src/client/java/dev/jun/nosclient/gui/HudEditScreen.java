@@ -32,6 +32,13 @@ public final class HudEditScreen extends Screen {
     private int barW;
     private int barStride;
     private int toolbarTop;
+    private int toolbarX;
+    private int toolbarW;
+    /** 1 = bảng chỉnh hiện, 0 = ẩn (đang kéo gadget) — lò xo nhẹ cho khỏi giật. */
+    private float toolbarShow = 1.0F;
+    private long toolbarAt = System.nanoTime();
+    static final int TOOLBAR_H = 64;
+    static final int TOOLBAR_MARGIN = 10;
     private final MenuMotion motion = new MenuMotion();
     private final List<HudEditScreen.Btn> btns = new ArrayList<>();
 
@@ -123,16 +130,78 @@ public final class HudEditScreen extends Screen {
             }
 
             this.toolbar(g, mx, my);
+            // Gadget nằm dưới bảng (đáy lẫn đỉnh đều kín): vẽ lại viền của nó đè lên bảng để thấy chỗ mà bấm.
+            for (Entry<String, float[]> e : this.hud.rects.entrySet()) {
+                float[] r = e.getValue();
+                if (this.covered(r)) {
+                    int x0 = (int)Math.floor(r[0]) - 2;
+                    int y0 = (int)Math.floor(r[1]) - 2;
+                    Glass.outline(g, x0, y0, (int)Math.ceil(r[2]) + 2 - x0, (int)Math.ceil(r[3]) + 2 - y0, Ui.alpha(Ui.ACCENT, 0.9F));
+                }
+            }
         }
+    }
+
+    private boolean covered(float[] r) {
+        return this.toolbarShow > 0.02F
+            && r[2] > this.toolbarX && r[0] < this.toolbarX + this.toolbarW && r[3] > this.toolbarTop && r[1] < this.toolbarTop + TOOLBAR_H;
+    }
+
+    /**
+     * Bảng chỉnh nằm đáy, trừ khi đè lên gadget nào thì lên đỉnh; cả hai đều đè thì giữ đáy (gadget vẫn
+     * bấm được vì gadget được ưu tiên hơn nền bảng). Trả về y của bảng.
+     */
+    static int dock(int screenH, int x0, int x1, Iterable<float[]> gadgets) {
+        int bottom = screenH - TOOLBAR_H - TOOLBAR_MARGIN;
+        int top = TOOLBAR_MARGIN;
+        boolean underBottom = false;
+        boolean underTop = false;
+
+        for (float[] r : gadgets) {
+            boolean across = r[2] > x0 && r[0] < x1;
+            underBottom |= across && r[3] > bottom && r[1] < bottom + TOOLBAR_H;
+            underTop |= across && r[3] > top && r[1] < top + TOOLBAR_H;
+        }
+
+        return underBottom && !underTop ? top : bottom;
+    }
+
+    private boolean onToolbar(double mx, double my) {
+        return this.toolbarShow > 0.5F
+            && mx >= this.toolbarX && mx < this.toolbarX + this.toolbarW && my >= this.toolbarTop && my < this.toolbarTop + TOOLBAR_H;
     }
 
     private void toolbar(GuiGraphics g, int mx, int my) {
         this.btns.clear();
+        long now = System.nanoTime();
+        float dt = Math.min(0.05F, (now - this.toolbarAt) / 1.0E9F);
+        this.toolbarAt = now;
+        float target = this.drag == null ? 1.0F : 0.0F;
+        this.toolbarShow = SceneConfig.INSTANCE.animations ? Ui.approach(this.toolbarShow, target, dt, 14.0F) : target;
+        if (this.toolbarShow < 0.02F) {
+            return;
+        }
+
+        float opacity = UiOpacity.value;
+        boolean hidesGadget = this.hud.rects.values().stream().anyMatch(this::covered);
+        UiOpacity.value = opacity * this.toolbarShow * (hidesGadget ? 0.45F : 1.0F);
+        try {
+            this.toolbarBody(g, mx, my);
+        } finally {
+            UiOpacity.value = opacity;
+        }
+
+        if (this.toolbarShow < 0.5F) {
+            this.btns.clear();
+        }
+    }
+
+    private void toolbarBody(GuiGraphics g, int mx, int my) {
         HudLayout.Slot slot = this.sel == null ? null : HudLayout.get(this.sel);
-        int w = Math.min(392, this.width - 24);
-        int x = (this.width - w) / 2;
-        int y = this.toolbarTop = this.height - 74;
-        Glass.panel(g, x, y, w, 64, -266852567, 1705362355);
+        int w = this.toolbarW = Math.min(392, this.width - 24);
+        int x = this.toolbarX = (this.width - w) / 2;
+        int y = this.toolbarTop = dock(this.height, x, x + w, this.hud.rects.values());
+        Glass.panel(g, x, y, w, TOOLBAR_H, -266852567, 1705362355);
         Component reset = Ui.small(Component.translatable(this.sel == null ? "nosclient.edit.resetAll" : "nosclient.edit.reset"));
         Component done = Ui.small(Component.translatable("nosclient.edit.done"));
         Component theme = Ui.small(Component.translatable("nosclient.theme.short"));
@@ -211,6 +280,8 @@ public final class HudEditScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
         if (!this.motion.closing() && e.button() == 0) {
+            // Ưu tiên: nút trên bảng > gadget > nền bảng. Trước đây cả dải ngang dưới đáy nuốt mọi cú
+            // bấm nên gadget lọt xuống đó là kẹt luôn.
             for (HudEditScreen.Btn button : this.btns) {
                 if (e.x() >= button.x0 && e.x() < button.x1 && e.y() >= button.y0 && e.y() < button.y1) {
                     button.run.run();
@@ -219,11 +290,11 @@ public final class HudEditScreen extends Screen {
                 }
             }
 
-            if (e.y() >= this.toolbarTop) {
+            String id = this.at(e.x(), e.y());
+            if (id == null && this.onToolbar(e.x(), e.y())) {
                 return true;
             }
 
-            String id = this.at(e.x(), e.y());
             this.sel = id;
             if (id != null) {
                 float[] r = this.hud.rects.get(id);
