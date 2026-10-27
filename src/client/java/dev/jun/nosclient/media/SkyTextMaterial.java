@@ -68,6 +68,10 @@ public final class SkyTextMaterial {
     }
 
     public static void init() {
+        ShaderPacks.assign(CORE, "BEACON_BEAM");
+        ShaderPacks.assign(SOFT, "BEACON_BEAM");
+        ShaderPacks.assign(STAR, "BEACON_BEAM");
+        ShaderPacks.assign(POSTER, "BEACON_BEAM");
     }
 
     public static RenderType stars() {

@@ -63,6 +63,7 @@ public final class AuroraSky {
     }
 
     static void init() {
+        ShaderPacks.assign(PIPELINE, "BEACON_BEAM");
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             if (context.matrices() != null) {
                 render(context.matrices(), context.consumers());

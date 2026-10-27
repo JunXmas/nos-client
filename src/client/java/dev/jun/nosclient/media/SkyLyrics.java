@@ -195,9 +195,19 @@ public final class SkyLyrics {
         // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
         // Đặt sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
         radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * 0.92);
+        if (ShaderPacks.active()) {
+            // Shaderpack phủ sương theo khoảng cách lên cả chữ: sát mép tầm nhìn chữ chìm hẳn. Kéo về gần — đổi lại
+            // núi rất xa không che chữ được nữa.
+            radius = Math.min(radius, 48.0);
+        }
         ThemePalette palette = Theme.palette();
         int sky = camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F);
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);
+        if (ShaderPacks.active()) {
+            // Shaderpack tone-map lại cả khung hình nên chữ trắng-mờ chìm vào trời: dùng màu mực người chơi chọn, đậm.
+            int lyricInk = 0xFF000000 | c.lyricsInk;
+            ink = new CelestialTypography.Ink(ThemePalette.mix(lyricInk, 0xFFFFFF, 0.25), 0x14061A, lyricInk, 0.9F, 0.55F);
+        }
         float targetGlow = c.lyricsCinematic ? ink.haloOpacity() * (float)c.lyricsGlow : 0.0F;
         glow = c.animations ? Ui.approach(glow, targetGlow, elapsed, 4.0F) : targetGlow;
     }
@@ -464,7 +474,7 @@ public final class SkyLyrics {
     }
 
     private static boolean poster() {
-        return SceneConfig.INSTANCE.lyricsStyle == 0;
+        return SceneConfig.INSTANCE.lyricsStyle == 0 && !ShaderPacks.active();
     }
 
     private static List<Line> wrap(Font font, String raw, double raster) {
