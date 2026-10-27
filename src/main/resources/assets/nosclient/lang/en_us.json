@@ -344,6 +344,7 @@
 	"nosclient.opt.lyrics.motion.fade": "Dissolve",
 	"nosclient.opt.lyrics.motion.none": "Off",
 	"nosclient.opt.lyrics.duration": "Transition duration",
+	"nosclient.look.shadow": "HUD text shadow",
 	"nosclient.look.readable": "Keep HUD readable · minimum 10 px",
 	"nosclient.edit.readable": " · legibility limit",
 	"nosclient.opt.lyrics.follow": "Spawn where I look",

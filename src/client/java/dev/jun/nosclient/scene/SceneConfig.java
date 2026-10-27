@@ -106,6 +106,7 @@ public final class SceneConfig {
     public double hudBg = 0.45;
     public boolean hudIdleFade = true;
     public boolean hudReadable = true;
+    public boolean hudShadow = false;
     public double lyricsWidth = 1.18;
     public double lyricsTracking = 0.6;
     public double lyricsHeight = 1.2;
@@ -166,6 +167,11 @@ public final class SceneConfig {
                     }
                 }
             }
+        }
+
+        if (!props.containsKey("hudShadow")) {
+            // Trước khi có tuỳ chọn này, bóng chữ đi theo kiểu HUD "Tối giản": giữ nguyên cho người đang dùng.
+            c.hudShadow = c.hudStyle == 1;
         }
 
         if (!props.containsKey("uiRevision")) {

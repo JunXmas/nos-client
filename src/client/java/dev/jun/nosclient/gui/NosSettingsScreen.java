@@ -862,7 +862,14 @@ public final class NosSettingsScreen extends Screen {
             this.c.hudReadable = !this.c.hudReadable;
             this.c.save();
         });
-        int ay = ry + 25;
+        int sy = ry + 25;
+        Ui.toggle(g, x0, sy, this.k("hudShadow", this.c.hudShadow), hudAccent);
+        Ui.text(g, Ui.ui(tr("nosclient.look.shadow")), x0 + 30, sy + 2, Ui.TEXT);
+        this.hit(x0, sy - 2, x1, sy + 20, () -> {
+            this.c.hudShadow = !this.c.hudShadow;
+            this.c.save();
+        });
+        int ay = sy + 25;
         Ui.toggle(g, x0, ay, this.k("animations", this.c.animations));
         Ui.text(g, Ui.ui(tr("nosclient.look.animations")), x0 + 30, ay + 2, Ui.TEXT);
         this.hit(x0, ay - 2, x1, ay + 20, () -> {

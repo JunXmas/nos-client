@@ -471,7 +471,7 @@ public final class Hud {
             g.pose().translate(x, y);
             g.pose().scale(1.0F, 1.0F);
             Ui.snapText(g);
-            g.drawString(f, Ui.hud(s), 0, 0, col, SceneConfig.INSTANCE.hudStyle == 1);
+            g.drawString(f, Ui.hud(s), 0, 0, col, SceneConfig.INSTANCE.hudShadow);
             g.pose().popMatrix();
         }
     }
@@ -863,11 +863,21 @@ public final class Hud {
         this.keyGlow[i] = this.c.animations ? Ui.approach(this.keyGlow[i], binding.isDown() ? 1.0F : 0.0F, dt, 20.0F) : (binding.isDown() ? 1.0F : 0.0F);
         float e = Ui.ease(this.keyGlow[i]);
         ThemePalette palette = Theme.palette();
-        int color = ThemePalette.mix(palette.surface(), palette.accent(), e * 0.9);
-        Glass.fill(g, x, y, w, h, Ui.alpha(color, BA + (Math.max(BA, 0.9F * TA) - BA) * e));
-        Glass.outline(g, x, y, w, h, T(Ui.alpha(ACC, 0.1F + e * 0.45F)));
-        int foreground = T(Ui.lerpCol(TEXT, palette.ink(), e));
-        float press = this.c.animations ? e * 0.6F : 0.0F;
+        // Phím bấm: phủ accent nhạt + viền accent + lún nhẹ. Trước đây đổ đặc accent 90% và đổi chữ sang màu mực
+        // đen, ra một khối xanh đậm chói mắt giữa HUD trong suốt.
+        float sink = this.c.animations ? 0.06F * e : 0.0F;
+        g.pose().pushMatrix();
+        g.pose().translate(x + w / 2.0F, y + h / 2.0F);
+        g.pose().scale(1.0F - sink, 1.0F - sink);
+        g.pose().translate(-(x + w / 2.0F), -(y + h / 2.0F));
+        Glass.fill(g, x, y, w, h, Ui.alpha(palette.surface(), BA));
+        if (e > 0.01F) {
+            Glass.fill(g, x, y, w, h, T(Ui.alpha(ACC, 0.28F * e)));
+        }
+
+        Glass.outline(g, x, y, w, h, T(Ui.alpha(ACC, 0.1F + e * 0.55F)));
+        int foreground = T(Ui.lerpCol(TEXT, ThemePalette.mix(TEXT, ACC, 0.45) | 0xFF000000, e));
+        float press = 0.0F;
         if (label.isEmpty()) {
             Glass.fill(g, x + w / 2 - 8, y + h / 2, 16, 1, foreground);
         } else {
@@ -879,6 +889,8 @@ public final class Hud {
                 txt(g, f, lines[1], x + (w - sw(f, lines[1])) / 2.0F, y + 15 + press, Ui.alpha(foreground, 0.8F));
             }
         }
+
+        g.pose().popMatrix();
     }
 
     @Environment(EnvType.CLIENT)

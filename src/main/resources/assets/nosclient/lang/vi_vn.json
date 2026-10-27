@@ -344,6 +344,7 @@
 	"nosclient.opt.lyrics.motion.fade": "Mờ dần",
 	"nosclient.opt.lyrics.motion.none": "Tắt",
 	"nosclient.opt.lyrics.duration": "Thời gian chuyển",
+	"nosclient.look.shadow": "Đổ bóng chữ HUD",
 	"nosclient.look.readable": "Giữ chữ HUD dễ đọc · tối thiểu 10 px",
 	"nosclient.edit.readable": " · giữ nét",
 	"nosclient.opt.lyrics.follow": "Hiện theo hướng nhìn",
