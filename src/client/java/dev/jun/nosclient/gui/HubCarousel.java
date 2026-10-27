@@ -3,61 +3,78 @@ package dev.jun.nosclient.gui;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
+/**
+ * Vòng thẻ danh mục. Con trỏ vòng và độ mở từng thẻ đều là lò xo: thẻ cũ thu lại ngay, vòng quay tới,
+ * thẻ mới bung ra khi vòng gần tới nơi — ba pha gối lên nhau thay vì chạy tuần tự, bấm liên tiếp thì
+ * vòng đổi hướng mượt chứ không chạy lại từ đầu.
+ */
 @Environment(EnvType.CLIENT)
 public final class HubCarousel {
     public static final int COUNT = 5;
-    private final RenderTween clock = new RenderTween(680000000L);
-    private double cursor;
-    private double from;
-    private double target;
+    private final Spring cursor = new Spring(0.0F);
+    private final Spring[] open = new Spring[COUNT];
+    private float target;
     private int selected;
     private int previous;
-    private float open = 1.0F;
-    private float collapse;
-    private boolean moving;
-    private boolean pending;
+    private long last = -1L;
+
+    public HubCarousel() {
+        for (int i = 0; i < COUNT; i++) {
+            this.open[i] = new Spring(0.0F);
+        }
+    }
 
     public void snap(int selected) {
-        this.selected = this.previous = Math.floorMod(selected, 5);
-        this.cursor = this.from = this.target = this.selected;
-        this.open = 1.0F;
-        this.moving = this.pending = false;
+        this.selected = this.previous = Math.floorMod(selected, COUNT);
+        this.target = this.selected;
+        this.cursor.snap(this.target);
+
+        for (int i = 0; i < COUNT; i++) {
+            this.open[i].snap(i == this.selected ? 1.0F : 0.0F);
+        }
+
+        this.last = -1L;
     }
 
     public void select(int index) {
-        index = Math.floorMod(index, 5);
+        index = Math.floorMod(index, COUNT);
         if (index != this.selected) {
             this.previous = this.selected;
-            this.collapse = this.open;
             this.selected = index;
-            this.from = this.cursor;
-            this.target = this.from + relative(index - this.from);
-            this.pending = this.moving = true;
-            this.open = 0.0F;
+            this.target = this.cursor.value + (float)relative(index - this.cursor.value);
         }
     }
 
     public HubCarousel.Frame frame(long now, boolean animated) {
-        if (this.pending) {
-            this.clock.restart();
-            this.pending = false;
+        float dt = this.last < 0L ? 0.0F : Math.min(0.05F, (now - this.last) / 1.0E9F);
+        this.last = now;
+        float[] expansion = new float[COUNT];
+        if (!animated) {
+            this.snap(this.selected);
+        } else {
+            this.cursor.step(this.target, dt, 15.0F, 0.86F);
         }
 
-        if (!this.moving) {
-            return new HubCarousel.Frame(this.cursor, this.selected, this.previous, 1.0F, 0.0F, false);
+        float gap = Math.abs(this.target - this.cursor.value);
+        boolean moving = gap > 0.002F || Math.abs(this.cursor.velocity) > 0.01F;
+
+        for (int i = 0; i < COUNT; i++) {
+            // Thẻ được chọn chỉ bung khi vòng còn cách đích dưới 0.3 bước: thấy rõ thẻ bay vào giữa rồi mới nở.
+            float goal = i == this.selected && gap < 0.3F ? 1.0F : 0.0F;
+            if (animated) {
+                this.open[i].step(goal, dt, goal > 0.5F ? 17.0F : 24.0F, goal > 0.5F ? 0.74F : 1.0F);
+            }
+
+            expansion[i] = Math.max(0.0F, this.open[i].value);
+            moving |= !this.open[i].resting(goal);
         }
 
-        float p = this.clock.linear(now, animated);
-        double travel = smooth((p - 0.08) / 0.64);
-        this.cursor = this.from + (this.target - this.from) * travel;
-        this.open = (float)smooth((p - 0.72) / 0.28);
-        float oldOpen = this.collapse * (1.0F - (float)smooth(p / 0.18));
-        if (p >= 1.0F) {
-            this.moving = false;
-            this.cursor = this.from = this.target = this.selected;
+        if (!moving) {
+            this.target = this.selected;
+            this.cursor.snap(this.target);
         }
 
-        return new HubCarousel.Frame(this.cursor, this.selected, this.previous, this.open, oldOpen, this.moving);
+        return new HubCarousel.Frame(this.cursor.value, this.selected, this.previous, expansion, Math.min(1.0F, expansion[this.selected]), moving);
     }
 
     public static double relative(double value) {
@@ -76,7 +93,8 @@ public final class HubCarousel {
     public static HubCarousel.Card card(HubCarousel.Frame f, int index, int viewportWidth, int x, int y, int w, int h) {
         double distance = relative(index - f.cursor);
         double absolute = Math.abs(distance);
-        float expansion = index == f.selected ? f.open : (index == f.previous ? f.oldOpen : 0.0F);
+        float expansion = f.expansion[index];
+        float settle = Math.min(1.0F, expansion);
         boolean wide = viewportWidth >= 600;
         float cw = wide ? 60.0F : Math.min(54.0F, (w - 12) / 5.0F);
         float ch = wide ? 70.0F : 18.0F;
@@ -94,11 +112,13 @@ public final class HubCarousel {
         }
 
         float visibility = 1.0F - (float)smooth((absolute - 2.0) / 0.48);
-        float width = mix(cw, w, expansion);
-        float height = mix(ch, h, expansion);
-        float cx = centerX + dx * (1.0F - expansion);
-        float cy = centerY + dy * (1.0F - expansion);
-        return new HubCarousel.Card(cx - width / 2.0F, cy - height / 2.0F, width, height, visibility, expansion);
+        // Thẻ xa thì nhỏ lại một chút: vòng có chiều sâu thay vì dàn phẳng.
+        float depth = 1.0F - 0.1F * (float)Math.min(2.0, absolute) * (1.0F - settle);
+        float width = mix(cw * depth, w, expansion);
+        float height = mix(ch * depth, h, expansion);
+        float cx = centerX + dx * (1.0F - settle);
+        float cy = centerY + dy * (1.0F - settle);
+        return new HubCarousel.Card(cx - width / 2.0F, cy - height / 2.0F, width, height, visibility, settle);
     }
 
     @Environment(EnvType.CLIENT)
@@ -106,6 +126,6 @@ public final class HubCarousel {
     }
 
     @Environment(EnvType.CLIENT)
-    public record Frame(double cursor, int selected, int previous, float open, float oldOpen, boolean moving) {
+    public record Frame(double cursor, int selected, int previous, float[] expansion, float open, boolean moving) {
     }
 }

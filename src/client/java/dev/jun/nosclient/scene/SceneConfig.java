@@ -112,6 +112,7 @@ public final class SceneConfig {
     public double lyricsGlow = 1.4;
     public boolean lyricsCinematic = true;
     public boolean lyricsBlendSky = true;
+    public boolean lyricsFollow = true;
 
     private static Path file() {
         return FabricLoader.getInstance().getConfigDir().resolve("nosclient.properties");

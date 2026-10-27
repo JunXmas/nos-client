@@ -1,6 +1,9 @@
 package dev.jun.nosclient.media;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import java.util.HashMap;
 import java.util.Map;
 import net.fabricmc.api.EnvType;
@@ -14,6 +17,19 @@ import net.minecraft.resources.Identifier;
 public final class SkyTextMaterial {
     private static final RenderPipeline CORE = pipeline("sky_text", true);
     private static final RenderPipeline SOFT = pipeline("sky_text_soft", false);
+    /** Hạt sáng cộng dồn (bụi sao, vệt bay, chòm sao): không ghi depth nhưng vẫn bị địa hình che. */
+    private static final RenderPipeline STAR = RenderPipelines.register(
+        RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("nosclient", "pipeline/sky_star"))
+            .withVertexShader(Identifier.fromNamespaceAndPath("nosclient", "core/sky_star"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath("nosclient", "core/sky_star"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, Mode.QUADS)
+            .withBlend(BlendFunction.ADDITIVE)
+            .withDepthWrite(false)
+            .withCull(false)
+            .build()
+    );
+    private static RenderType stars;
     private static final Map<Identifier, RenderType> CORES = new HashMap<>();
     private static final Map<Identifier, RenderType> SOFTS = new HashMap<>();
 
@@ -33,6 +49,14 @@ public final class SkyTextMaterial {
     }
 
     public static void init() {
+    }
+
+    public static RenderType stars() {
+        if (stars == null) {
+            stars = RenderType.create("nos_sky_stars", RenderSetup.builder(STAR).bufferSize(65536).createRenderSetup());
+        }
+
+        return stars;
     }
 
     public static RenderType type(Identifier atlas, boolean soft) {

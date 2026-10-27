@@ -5,7 +5,7 @@ import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
 public final class HubMotion {
-    private final RenderTween tween = new RenderTween(240000000L);
+    private final RenderTween tween = new RenderTween(340000000L);
     private boolean pending;
     private int direction = 1;
 
@@ -21,7 +21,12 @@ public final class HubMotion {
         }
 
         float p = this.tween.value(now, animated);
-        return new HubMotion.Frame(p, this.direction * 16 * (1.0F - p), 3.0F * (1.0F - p));
+        // Nội dung trượt vào theo hướng chuyển, mờ nhanh hơn trượt để không thấy "bóng ma" ở giữa đường.
+        return new HubMotion.Frame(Math.min(1.0F, p * 1.35F), this.direction * 22 * (1.0F - p), 4.0F * (1.0F - p));
+    }
+
+    public int direction() {
+        return this.direction;
     }
 
     @Environment(EnvType.CLIENT)

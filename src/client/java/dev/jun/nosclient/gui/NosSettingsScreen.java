@@ -57,6 +57,7 @@ public final class NosSettingsScreen extends Screen {
     private final SceneConfig c = SceneConfig.INSTANCE;
     private final Minecraft mc = Minecraft.getInstance();
     private final long opened = System.nanoTime();
+    private long paneAt = this.opened;
     private long last = this.opened;
     private float dt;
     private float t;
@@ -376,12 +377,20 @@ public final class NosSettingsScreen extends Screen {
                 int bottom = y + h - 8;
                 this.clipOn(g, x + 10, top, x + w - 10, bottom);
 
+                float since = (System.nanoTime() - this.paneAt) / 1.0E9F;
+                float paneOpacity = UiOpacity.value;
+
                 for (int i = 0; i < list.size(); i++) {
                     int ry = top + i * 21 - (int)this.scroll;
                     if (ry + 19 >= top && ry < bottom) {
-                        this.row(g, list.get(i), x + 12, ry, w - 24);
+                        // Hàng vào so le từ trên xuống, trượt nhẹ theo hướng chuyển danh mục.
+                        float e = this.c.animations ? Ui.ease(Math.clamp((since - 0.05F - Math.max(0, (ry - top) / 21) * 0.028F) / 0.26F, 0.0F, 1.0F)) : 1.0F;
+                        UiOpacity.value = paneOpacity * e;
+                        this.row(g, list.get(i), x + 12 + Math.round(12.0F * (1.0F - e) * Math.signum(this.hubMotion.direction())), ry, w - 24);
                     }
                 }
+
+                UiOpacity.value = paneOpacity;
 
                 if (list.isEmpty()) {
                     Ui.text(g, Ui.ui(tr("nosclient.settings.none")), x + 16, top + 7, Ui.MUTED);
@@ -431,6 +440,15 @@ public final class NosSettingsScreen extends Screen {
                 boolean selectable = index != orbit.selected();
                 boolean hover = selectable && this.hov(cx, cy, cx + cw, cy + ch);
                 float glow = this.k("hover.cat." + index, hover);
+                if (card.open() < 0.05F) {
+                    // Thẻ chờ lơ lửng lệch pha nhau; trỏ vào thì nhấc lên và nở ra.
+                    float bob = this.c.animations ? (float)Math.sin(this.t * 1.6F + index * 1.3F) * 1.5F * (1.0F - glow) : 0.0F;
+                    int grow = Math.round(3.0F * glow);
+                    cx -= grow;
+                    cw += grow * 2;
+                    cy += Math.round(bob - 4.0F * glow) - grow;
+                    ch += grow * 2;
+                }
                 Glass.panel(g, cx, cy, cw, ch, Ui.lerpCol(-653124319, -315603652, glow), Ui.lerpCol(1539167944, -858134051, glow));
                 float labelOpacity = 1.0F - (float)Math.clamp(card.open() / 0.6, 0.0, 1.0);
                 UiOpacity.value *= labelOpacity;
@@ -534,6 +552,7 @@ public final class NosSettingsScreen extends Screen {
                 Camera camera = this.mc.gameRenderer.getMainCamera();
                 this.c.lyricsBearing = Math.floorMod(Math.round(camera.yRot()), 360);
                 this.c.lyricsElevation = Math.clamp(Math.round(-camera.xRot()), 15, 80);
+                this.c.lyricsFollow = false;
                 this.c.save();
             });
             y += 24;
@@ -849,6 +868,7 @@ public final class NosSettingsScreen extends Screen {
 
     private void paneChanged(int direction) {
         this.hubMotion.enter(direction);
+        this.paneAt = System.nanoTime();
         this.hits.clear();
         this.maxScroll = 0;
         this.dMax = 0;

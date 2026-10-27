@@ -30,6 +30,7 @@ public final class NosTitleScreen extends Screen {
     private int h;
     private int gap;
     private int logoY;
+    private long opened = System.nanoTime();
 
     public NosTitleScreen() {
         super(Component.literal("Nos Client"));
@@ -40,12 +41,14 @@ public final class NosTitleScreen extends Screen {
     }
 
     private void button(int x, int y, int w, String label, Runnable action) {
-        this.addRenderableWidget(new GlassButton(x, y, w, this.h, Component.translatable(label), action));
+        float row = (y - this.y) / (float)(this.h + this.gap);
+        this.addRenderableWidget(new GlassButton(x, y, w, this.h, Component.translatable(label), action).delayed(0.08F + 0.055F * row + (x > this.x ? 0.03F : 0.0F)));
     }
 
     @Override
     protected void init() {
         this.motion.enter();
+        this.opened = System.nanoTime();
         this.minecraft
             .getSkinManager()
             .get(this.minecraft.getGameProfile())
@@ -73,8 +76,9 @@ public final class NosTitleScreen extends Screen {
         }, Component.translatable("nosclient.menu.quit"), Component.translatable("nosclient.menu.quit.confirm"))));
         this.addRenderableWidget(
             new GlassButton(
-                this.width - 98, this.height - 30, 86, 18, Component.translatable("nosclient.scene.title"), () -> this.navigate(new SceneSettingsScreen(this))
-            )
+                    this.width - 98, this.height - 30, 86, 18, Component.translatable("nosclient.scene.title"), () -> this.navigate(new SceneSettingsScreen(this))
+                )
+                .delayed(0.4F)
         );
     }
 
@@ -100,8 +104,25 @@ public final class NosTitleScreen extends Screen {
             super.render(g, mx, my, pt);
             Component title = Ui.logo("Nos Client");
             int tx = (this.width - Ui.width(title)) / 2 + 13;
-            g.blit(RenderPipelines.GUI_TEXTURED, LOGO, tx - 32, this.logoY + 4, 0.0F, 0.0F, 24, 24, 24, 24, UiOpacity.tint(-1));
+            float age = (System.nanoTime() - this.opened) / 1.0E9F;
+            boolean animated = SceneConfig.INSTANCE.animations;
+            float enter = animated ? Ui.ease(Math.clamp(age / 0.6F, 0.0F, 1.0F)) : 1.0F;
+            // Logo rơi nhẹ xuống chỗ rồi bồng bềnh; biểu tượng xoay vào trước chữ một nhịp.
+            float bob = animated ? (float)Math.sin(age * 1.1F) * 1.2F : 0.0F;
+            float opacity = UiOpacity.value;
+            UiOpacity.value = opacity * enter;
+            g.pose().pushMatrix();
+            g.pose().translate(0.0F, -10.0F * (1.0F - enter) + bob);
+            float spin = animated ? (1.0F - Ui.ease(Math.clamp(age / 0.5F, 0.0F, 1.0F))) * -1.2F : 0.0F;
+            g.pose().pushMatrix();
+            g.pose().translate(tx - 20, this.logoY + 16);
+            g.pose().rotate(spin);
+            g.blit(RenderPipelines.GUI_TEXTURED, LOGO, -12, -12, 0.0F, 0.0F, 24, 24, 24, 24, UiOpacity.tint(-1));
+            g.pose().popMatrix();
+            UiOpacity.value = opacity * (animated ? Ui.ease(Math.clamp((age - 0.12F) / 0.5F, 0.0F, 1.0F)) : 1.0F);
             Ui.text(g, title, tx, this.logoY, Ui.TEXT);
+            g.pose().popMatrix();
+            UiOpacity.value = opacity;
             if (this.width >= 440) {
                 PlayerFaceRenderer.draw(g, this.skin, this.width - 132, 14, 17);
                 Ui.text(g, Ui.fit(Ui.ui(this.minecraft.getUser().getName()), 96), this.width - 109, 19, Ui.TEXT);
