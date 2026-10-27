@@ -9,14 +9,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,9 +76,63 @@ public final class Waypoints {
     public static String serverKey(Minecraft mc) {
         if (mc.getCurrentServer() != null) {
             return mc.getCurrentServer().ip.toLowerCase(Locale.ROOT);
-        } else {
-            return mc.getSingleplayerServer() != null ? "sp:" + mc.getSingleplayerServer().getWorldData().getLevelName() : "unknown";
         }
+
+        MinecraftServer server = mc.getSingleplayerServer();
+        if (server == null) {
+            return "unknown";
+        }
+
+        Path root = server.getWorldPath(LevelResource.ROOT);
+        String key = singleplayerKey(root, server.getWorldData().worldGenOptions().seed());
+        if (claimed.add(key) && migrate(all(), FabricLoader.getInstance().getConfigDir().resolve("nosclient-map"), "sp:" + folder(root), key)) {
+            save();
+        }
+
+        return key;
+    }
+
+    private static final Set<String> claimed = new HashSet<>();
+
+    private static String folder(Path worldRoot) {
+        Path name = worldRoot.toAbsolutePath().normalize().getFileName();
+        return name == null ? "unknown" : name.toString();
+    }
+
+    /**
+     * Khoá chơi đơn = thư mục save + seed. Trước đây là tên hiển thị nên "New World" và "New World (1)"
+     * (cùng tên) ghi đè bản đồ/waypoint của nhau; seed giữ cho world xoá đi tạo lại cùng tên vẫn mới tinh.
+     */
+    public static String singleplayerKey(Path worldRoot, long seed) {
+        return "sp:" + folder(worldRoot) + "@" + Long.toHexString(seed);
+    }
+
+    public static String dirName(String key) {
+        return key.replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    /**
+     * Dữ liệu khoá cũ (theo tên thư mục, trùng tên hiển thị với world mặc định) về tay world có thư mục đó —
+     * một lần, không chép đôi. Trả true nếu waypoint đổi (cần lưu).
+     */
+    static boolean migrate(Map<String, List<Waypoints.Wp>> waypoints, Path mapRoot, String legacy, String key) {
+        List<Waypoints.Wp> old = waypoints.remove(legacy);
+        if (old != null) {
+            waypoints.computeIfAbsent(key, k -> new ArrayList<>()).addAll(old);
+        }
+
+        Path from = mapRoot.resolve(dirName(legacy));
+        Path to = mapRoot.resolve(dirName(key));
+        if (Files.isDirectory(from) && !Files.exists(to)) {
+            try {
+                Files.move(from, to);
+                LOG.info("Bản đồ cũ {} chuyển về {}", from.getFileName(), to.getFileName());
+            } catch (IOException e) {
+                LOG.warn("Không chuyển được bản đồ cũ {} sang {}", from, to, e);
+            }
+        }
+
+        return old != null;
     }
 
     public static String dim(Minecraft mc) {

@@ -61,7 +61,7 @@ public final class MapCache {
     }
 
     private static Path dir(Minecraft mc) {
-        String server = Waypoints.serverKey(mc).replaceAll("[^A-Za-z0-9._-]", "_");
+        String server = Waypoints.dirName(Waypoints.serverKey(mc));
         String dim = mc.level.dimension().identifier().toString().replaceAll("[^A-Za-z0-9._-]", "_");
         return FabricLoader.getInstance().getConfigDir().resolve("nosclient-map").resolve(server).resolve(dim);
     }
