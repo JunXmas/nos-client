@@ -30,12 +30,14 @@ public class LyricMotionCheck {
         assert LyricMotion.litAt(0, 10, 3) < LyricMotion.litAt(9, 10, 3) && LyricMotion.litAt(9, 10, 3) < 3;
         // Neo theo góc nhìn: hướng nhìn thẳng vào yRot, nâng lên khỏi chân trời, không chạm đỉnh đầu.
         float[] a = LyricMotion.anchor(90, 0, 0, 0, false);
-        assert a[0] == 90 && a[1] >= 1.5F && a[1] <= 55;
-        assert LyricMotion.anchor(0, -90, 0, 0, false)[1] == 55 : "nhìn thẳng lên vẫn đặt chữ chéo cho đọc được";
+        assert a[0] == 90 && a[1] >= 22 && a[1] <= 62;
+        assert LyricMotion.anchor(0, -90, 0, 0, false)[1] == 62 : "nhìn thẳng lên vẫn đặt chữ chéo cho đọc được";
+        // Nhìn xuống đất thì chữ vẫn phải ở trên trời, không cắm xuống mặt đất.
+        assert LyricMotion.anchor(0, 60, 0, 0, false)[1] >= 22 : "nhìn xuống đất mà chữ chạm đất";
         // Quay nhẹ thì lời chỉ bám nửa đường; quay hẳn thì nhảy theo. Qua mốc 0/360 không bị vòng ngược.
-        assert Math.abs(LyricMotion.anchor(10, 0, 0, 1, true)[0] - 5.5F) < 0.01F;
-        assert LyricMotion.anchor(120, 0, 0, 1, true)[0] == 120;
-        float wrap = LyricMotion.anchor(350, 0, 10, 1, true)[0];
+        assert Math.abs(LyricMotion.anchor(10, 0, 0, 22, true)[0] - 5.5F) < 0.01F;
+        assert LyricMotion.anchor(120, 0, 0, 22, true)[0] == 120;
+        float wrap = LyricMotion.anchor(350, 0, 10, 22, true)[0];
         assert wrap > 355 || wrap < 1 : wrap;
         // Hash ổn định và nằm trong [0, 1).
         for (int i = 0; i < 1000; i++) { float h = LyricMotion.hash(i, i * 7, 3); assert h >= 0 && h < 1; }

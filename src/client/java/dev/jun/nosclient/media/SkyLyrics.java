@@ -150,9 +150,8 @@ public final class SkyLyrics {
         next = upcoming;
         // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
         // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
-        // Chữ khối đặt gần hơn (55% tầm nhìn) để nằm TRƯỚC rặng cây xa — lòng chữ lấy mẫu cảnh phía sau nên cần
-        // có cảnh có vân sau lưng; núi/cây gần hơn vẫn che được chữ.
-        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * (poster() ? 0.55 : 0.92));
+        // Đặt sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
+        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * 0.92);
         ThemePalette palette = Theme.palette();
         int sky = camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F);
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);

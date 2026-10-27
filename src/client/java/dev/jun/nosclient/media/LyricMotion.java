@@ -75,9 +75,8 @@ public final class LyricMotion {
      */
     public static float[] anchor(float yRot, float xRot, float prevBearing, float prevElevation, boolean hasPrev) {
         float bearing = (yRot % 360.0F + 360.0F) % 360.0F;
-        // Sát chân trời hơn (từ 3°) để chữ nằm trên rặng cây, núi xa — lòng chữ đảo màu cảnh thì cảnh càng có vân
-        // càng đẹp; trên nền trời trơn chữ chỉ ra một màu.
-        float elevation = Math.clamp(-xRot + 1.0F, 1.5F, 55.0F);
+        // Luôn nằm trên trời: nâng lên khỏi tầm mắt và không bao giờ thấp hơn 22° so với chân trời.
+        float elevation = Math.clamp(-xRot + 16.0F, 22.0F, 62.0F);
         if (hasPrev) {
             float d = ((bearing - prevBearing) % 360.0F + 540.0F) % 360.0F - 180.0F;
             if (Math.abs(d) < 28.0F) {
