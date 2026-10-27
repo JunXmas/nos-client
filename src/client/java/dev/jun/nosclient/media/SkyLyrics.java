@@ -150,7 +150,9 @@ public final class SkyLyrics {
         next = upcoming;
         // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
         // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
-        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * 0.92);
+        // Chữ khối đặt gần hơn (55% tầm nhìn) để nằm TRƯỚC rặng cây xa — lòng chữ lấy mẫu cảnh phía sau nên cần
+        // có cảnh có vân sau lưng; núi/cây gần hơn vẫn che được chữ.
+        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * (poster() ? 0.55 : 0.92));
         ThemePalette palette = Theme.palette();
         int sky = camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F);
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);
@@ -335,8 +337,22 @@ public final class SkyLyrics {
         return top + rows.size() * ROW;
     }
 
-    /** Lớp đổ khối: chồng các bản lệch xuống-phải, tối dần, như chữ đùn ra khỏi mặt phẳng. */
-    private static final int DEPTH = 5;
+    private static final float[] BOLDEN = {-0.32F, 0.0F, 0.32F};
+
+    /** Bóng mờ: hai vòng 8 hướng (gần đậm, xa nhạt) — đủ mềm mà chỉ 16 lần vẽ mỗi chữ. */
+    private static final float[][] SHADOW = shadowRing();
+
+    private static float[][] shadowRing() {
+        float[][] ring = new float[16][];
+        for (int i = 0; i < 16; i++) {
+            double angle = Math.PI * 2.0 * (i % 8) / 8.0;
+            float r = i < 8 ? 0.7F : 1.5F;
+            ring[i] = new float[]{(float)Math.cos(angle) * r, (float)Math.sin(angle) * r, i < 8 ? 0.07F : 0.03F};
+        }
+
+        return ring;
+    }
+
     /**
      * Một bậc lùi ra sau mặt chữ (đơn vị chữ; −z là xa camera trên mặt phẳng chữ). Phải lớn hơn bước depth ở
      * ~180 khối (≈ d²/(near·2²⁴) ≈ 0.04 khối) cộng phần bù của POLYGON_OFFSET (kéo lớp mềm về phía camera),
@@ -345,54 +361,46 @@ public final class SkyLyrics {
     private static final float BEHIND = -0.25F;
 
     /**
-     * Chữ khối kiểu poster. Lòng chữ vẽ TRƯỚC, thẳng lên cảnh: ba lượt blend đảo màu cảnh rồi ánh xạ sang hai tông
-     * mực (SkyTextMaterial.POSTER), lượt cuối ghi depth. Sau đó khối đùn tím đậm và viền tối vẽ lùi ra sau mặt
-     * chữ — depth của lòng chữ che phần nằm dưới nó, chỉ còn lộ ở mép như khối nổi thật. Vẽ ngược thứ tự này thì
-     * lòng chữ đảo màu của khối chứ không phải của trời.
+     * Chữ poster "trong suốt": lòng chữ không có màu riêng mà là cảnh phía sau (bản chụp SceneCopy) bị đảo rồi ánh
+     * xạ lên dải màu đo từ ảnh mẫu — trời sáng ra tím đậm, cây tối ra hồng rực, vân lá/mây/núi vẫn hiện trong chữ.
+     * Lòng chữ vẽ TRƯỚC (ghi depth); bóng mờ vẽ sau, lùi ra sau mặt chữ nên chỉ lộ ở mép.
      */
     private static void posterPass(Font font, int n, LyricMotion.Pose[] poses, Letter[] glyphs, float[] cx, float[] cy, Matrix4f base, MultiBufferSource buffers) {
         int inkColor = 0xFF000000 | SceneConfig.INSTANCE.lyricsInk;
-        int side = ThemePalette.mix(inkColor, 0x2A0B3D, 0.62);
-        int outline = 0x1A0626;
-        // Mỗi lượt đọc framebuffer mà lượt trước để lại, nên xả bộ đệm giữa các lượt.
+        int shadow = 0x14061A;
+        // Chụp cảnh trước khi có chữ: lòng chữ lấy mẫu bản chụp này (vẽ đè lên chính framebuffer đang đọc thì GL
+        // cấm). Xả bộ đệm trước để cảnh đã đủ mọi thứ vẽ trước chữ.
         flush(buffers);
-
-        for (int pass = 0; pass < 3; pass++) {
-            int stage = pass;
-            MultiBufferSource staged = type -> buffers.getBuffer(SkyTextMaterial.remap(type, stage));
-
-            for (int k = 0; k < n; k++) {
-                LyricMotion.Pose p = poses[k];
-                float alpha = Math.min(1.0F, p.alpha() * presence);
-                if (!(alpha < 0.03F)) {
-                    // Mực sáng dần theo nhịp hát: chưa tới lượt thì tông trầm, tới lượt thì hồng rực.
-                    int lit = Ui.lerpCol(ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000, inkColor, p.lit());
-                    font.drawInBatch(glyphs[k].glyph, 0.0F, 0.0F, Ui.alpha(lit, alpha), false, letter(base, cx[k], cy[k], p, glyphs[k].advance),
-                        staged, DisplayMode.NORMAL, 0, LIGHT);
-                }
-            }
-
-            flush(buffers);
-        }
+        SceneCopy.capture();
 
         for (int k = 0; k < n; k++) {
             LyricMotion.Pose p = poses[k];
             float alpha = Math.min(1.0F, p.alpha() * presence);
             if (!(alpha < 0.03F)) {
+                // Mực sáng dần theo nhịp hát: chưa tới lượt thì tông trầm, tới lượt thì hồng rực.
+                int lit = Ui.lerpCol(ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000, inkColor, p.lit());
                 Matrix4f m = letter(base, cx[k], cy[k], p, glyphs[k].advance);
-                // POLYGON_OFFSET = loại vẽ mềm (trong suốt thường). NORMAL của font poster là lượt CỘNG — vẽ khối
-                // tối qua đó lại làm trời sáng lên thành viền nhạt.
-                // Khối đùn: xa nhất trước để lớp gần đè lên lớp xa, lệch xuống-phải, tối dần về phía xa.
-                for (int d = DEPTH; d >= 1; d--) {
-                    float t = d / (float)DEPTH;
-                    int shade = ThemePalette.mix(side, outline, 0.55 * t);
-                    font.drawInBatch(glyphs[k].glyph, 0.32F * d, 0.32F * d, Ui.alpha(0xFF000000 | shade, alpha), false,
-                        new Matrix4f(m).translate(0.0F, 0.0F, BEHIND * (d + 1)), buffers, DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+                // Nét siêu đậm như ảnh mẫu: Black đã là nét dày nhất của font, nên dày thêm bằng cách in chồng vài bản
+                // lệch ngang rất nhỏ (cùng depth, cùng màu — lòng chữ lấy mẫu cảnh nên chồng không làm đậm màu).
+                for (float dx : BOLDEN) {
+                    font.drawInBatch(glyphs[k].glyph, dx, 0.0F, Ui.alpha(lit, alpha), false, m, buffers, DisplayMode.NORMAL, 0, LIGHT);
                 }
+            }
+        }
 
-                for (float[] e : EDGE) {
-                    font.drawInBatch(glyphs[k].glyph, e[0] * 1.6F, e[1] * 1.6F, Ui.alpha(0xFF000000 | outline, alpha * 0.9F), false,
-                        new Matrix4f(m).translate(0.0F, 0.0F, BEHIND), buffers, DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+        flush(buffers);
+
+        // Quầng tối mềm quanh chữ (không khối đùn, không viền cứng — ảnh mẫu chỉ có bóng mờ): nhiều bản lệch
+        // vòng tròn, rất nhạt, lùi sau mặt chữ nên chỉ lộ ở mép. POLYGON_OFFSET = loại vẽ trong suốt thường;
+        // NORMAL của font poster là lượt CỘNG, vẽ bóng qua đó sẽ làm trời sáng lên.
+        for (int k = 0; k < n; k++) {
+            LyricMotion.Pose p = poses[k];
+            float alpha = Math.min(1.0F, p.alpha() * presence);
+            if (!(alpha < 0.03F)) {
+                Matrix4f m = new Matrix4f(letter(base, cx[k], cy[k], p, glyphs[k].advance)).translate(0.0F, 0.0F, BEHIND);
+                for (float[] d : SHADOW) {
+                    font.drawInBatch(glyphs[k].glyph, d[0], d[1] + 0.35F, Ui.alpha(0xFF000000 | shadow, alpha * d[2]), false, m, buffers,
+                        DisplayMode.POLYGON_OFFSET, 0, LIGHT);
                 }
             }
         }

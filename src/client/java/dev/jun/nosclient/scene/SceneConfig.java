@@ -116,7 +116,7 @@ public final class SceneConfig {
     public boolean lyricsFollow = true;
     /** 0 = Poster (chữ khối in hoa, lòng đảo màu cảnh), 1 = Thanh mảnh (bản cũ). */
     public int lyricsStyle = 0;
-    public int lyricsInk = 16731316;
+    public int lyricsInk = 0xF826BE;
 
     private static Path file() {
         return FabricLoader.getInstance().getConfigDir().resolve("nosclient.properties");
@@ -213,6 +213,10 @@ public final class SceneConfig {
         this.lyricsMotion = Math.min(2, Math.max(0, this.lyricsMotion));
         this.lyricsStyle = Math.min(1, Math.max(0, this.lyricsStyle));
         this.lyricsInk &= 16777215;
+        if (this.lyricsInk == 0xFF4DB4) {
+            // Mặc định của bản thử v9 — đưa về tông đo từ ảnh mẫu của jun.
+            this.lyricsInk = 0xF826BE;
+        }
         this.lyricsDuration = Math.min(1200, Math.max(180, this.lyricsDuration));
         this.lyricsWidth = ConfigValues.bounded(this.lyricsWidth, 1.0, 1.8, 1.18);
         this.lyricsHeight = ConfigValues.bounded(this.lyricsHeight, 1.0, 2.0, 1.2);
