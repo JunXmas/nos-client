@@ -20,7 +20,8 @@
 		"PrecipitationMixin",
 		"ContainerTooltipMixin",
 		"FontTextureMixin",
-		"SkyGlyphRenderTypesMixin"
+		"SkyGlyphRenderTypesMixin",
+		"CosmeticCapeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

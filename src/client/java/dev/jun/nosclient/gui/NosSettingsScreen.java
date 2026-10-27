@@ -536,14 +536,18 @@ public final class NosSettingsScreen extends Screen {
     }
 
     private void dock(GuiGraphics g, int x, int y, int w) {
-        String[] keys = new String[]{"nosclient.dock.search", "nosclient.dock.look", "nosclient.dock.edit", "gui.done"};
-        String[] icons = new String[]{"search", "look", "edit", "back"};
+        String[] keys = new String[]{"nosclient.dock.search", "nosclient.dock.look", "nosclient.dock.edit", "nosclient.cosmetic.title", "gui.done"};
+        String[] icons = new String[]{"search", "look", "edit", "armor", "back"};
         Runnable[] actions = new Runnable[]{
-            this::openSearch, this::toggleAppearance, () -> this.motion.exit(() -> this.mc.setScreen(new HudEditScreen(this))), this::onClose
+            this::openSearch,
+            this::toggleAppearance,
+            () -> this.motion.exit(() -> this.mc.setScreen(new HudEditScreen(this))),
+            () -> this.motion.exit(() -> this.mc.setScreen(new CosmeticScreen(this))),
+            this::onClose
         };
-        int bw = (w - 18) / 4;
+        int bw = (w - 24) / 5;
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             int cx = x + i * (bw + 6);
             boolean enabled = i != 2 || this.mc.player != null;
             boolean hover = enabled && this.hov(cx, y, cx + bw, y + 27);

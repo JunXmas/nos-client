@@ -81,6 +81,10 @@ public final class NosTitleScreen extends Screen {
                 )
                 .delayed(0.4F)
         );
+        this.addRenderableWidget(
+            new GlassButton(12, this.height - 30, 86, 18, Component.translatable("nosclient.cosmetic.title"), () -> this.navigate(new CosmeticScreen(this)))
+                .delayed(0.45F)
+        );
     }
 
     @Override
@@ -139,7 +143,7 @@ public final class NosTitleScreen extends Screen {
             }
 
             String version = FabricLoader.getInstance().getModContainer("nosclient").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
-            Ui.text(g, Ui.small(Component.literal("Nos " + version + " · " + SharedConstants.getCurrentVersion().name())), 12, this.height - 14, Ui.MUTED);
+            Ui.text(g, Ui.small(Component.literal("Nos " + version + " · " + SharedConstants.getCurrentVersion().name())), 12, this.height - 10, Ui.MUTED);
         } finally {
             UiOpacity.value = 1.0F;
         }

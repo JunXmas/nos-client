@@ -357,5 +357,17 @@
 	"nosclient.opt.lyrics.tracking": "Letter spacing",
 	"nosclient.opt.lyrics.height": "Letter height",
 	"nosclient.lyrics.place": "Place lyrics where I look",
-	"nosclient.opt.lyrics.glow": "Glow strength"
+	"nosclient.opt.lyrics.glow": "Glow strength",
+	"nosclient.cosmetic.title": "Cosmetics",
+	"nosclient.cosmetic.angel": "Angel",
+	"nosclient.cosmetic.crimson": "Red demon",
+	"nosclient.cosmetic.wings": "Wings",
+	"nosclient.cosmetic.cape": "Cape",
+	"nosclient.cosmetic.headband": "Headband",
+	"nosclient.cosmetic.rotate": "Change view",
+	"nosclient.cosmetic.clear": "Clear",
+	"nosclient.cosmetic.apply": "Try on",
+	"nosclient.cosmetic.local": "Local try-on on your device",
+	"nosclient.cosmetic.needworld": "Enter a world to try these on your player.",
+	"nosclient.cosmetic.drag": "Drag to rotate"
 }

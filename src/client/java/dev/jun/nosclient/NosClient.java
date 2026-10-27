@@ -8,6 +8,7 @@ import dev.jun.nosclient.gui.IntroScreen;
 import dev.jun.nosclient.gui.NosSettingsScreen;
 import dev.jun.nosclient.gui.NosTitleScreen;
 import dev.jun.nosclient.hud.Hud;
+import dev.jun.nosclient.cosmetic.Cosmetics;
 import dev.jun.nosclient.media.SkyLyrics;
 import dev.jun.nosclient.media.SkyTextMaterial;
 import dev.jun.nosclient.scene.SceneConfig;
@@ -43,6 +44,7 @@ public final class NosClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register((EndTick)mc -> Theme.palette());
         Feats.init();
         SkyLyrics.init();
+        Cosmetics.init();
         RecipeAuto.init();
         HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, Identifier.fromNamespaceAndPath("nosclient", "hud"), Hud.INSTANCE::render);
         HudElementRegistry.replaceElement(VanillaHudElements.STATUS_EFFECTS, old -> (g, dt) -> {

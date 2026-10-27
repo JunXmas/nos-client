@@ -357,5 +357,17 @@
 	"nosclient.opt.lyrics.tracking": "Giãn ký tự",
 	"nosclient.opt.lyrics.height": "Chiều cao chữ",
 	"nosclient.lyrics.place": "Đặt lời nhạc theo hướng nhìn",
-	"nosclient.opt.lyrics.glow": "Độ sáng quầng"
+	"nosclient.opt.lyrics.glow": "Độ sáng quầng",
+	"nosclient.cosmetic.title": "Cosmetic",
+	"nosclient.cosmetic.angel": "Thiên thần",
+	"nosclient.cosmetic.crimson": "Quỷ đỏ",
+	"nosclient.cosmetic.wings": "Cánh",
+	"nosclient.cosmetic.cape": "Cape",
+	"nosclient.cosmetic.headband": "Đai đầu",
+	"nosclient.cosmetic.rotate": "Đổi góc nhìn",
+	"nosclient.cosmetic.clear": "Tắt thử",
+	"nosclient.cosmetic.apply": "Mặc thử",
+	"nosclient.cosmetic.local": "Xem thử trên máy bạn",
+	"nosclient.cosmetic.needworld": "Vào thế giới để thử trên nhân vật của bạn.",
+	"nosclient.cosmetic.drag": "Kéo để xoay"
 }
