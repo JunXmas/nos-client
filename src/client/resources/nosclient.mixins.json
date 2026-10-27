@@ -14,7 +14,13 @@
 		"AbstractContainerScreenAccessor",
 		"MultiPlayerGameModeAccessor",
 		"LevelRendererMixin",
-		"GlyphRenderStateMixin"
+		"GlyphRenderStateMixin",
+		"SkyAttributeMixin",
+		"VisualWeatherMixin",
+		"PrecipitationMixin",
+		"ContainerTooltipMixin",
+		"FontTextureMixin",
+		"SkyGlyphRenderTypesMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

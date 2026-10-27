@@ -2,6 +2,10 @@ package dev.jun.nosclient.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import dev.jun.nosclient.typography.FontSampling;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.font.TextRenderable;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.gui.render.state.GlyphRenderState;
@@ -12,19 +16,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Chữ TTF của Nos client lấy mẫu tuyến tính thay vì NEAREST: game vẽ glyph đúng 1:1 chỉ khi tỉ lệ vẽ khớp oversample;
- * HUD co nhỏ / intro phóng to lệch tỉ lệ thì NEAREST bỏ sót hoặc nhân đôi cột pixel → chữ răng cưa, vỡ nét.
- * Chỉ đụng atlas font của mod (nhãn "nosclient:"), font pixel của game giữ nguyên nét vuông.
- */
+@Environment(EnvType.CLIENT)
 @Mixin(GlyphRenderState.class)
 public abstract class GlyphRenderStateMixin {
-	@Shadow @Final private TextRenderable renderable;
+    @Shadow
+    @Final
+    private TextRenderable renderable;
 
-	@Inject(method = "textureSetup", at = @At("RETURN"), cancellable = true)
-	private void nosclient$linear(CallbackInfoReturnable<TextureSetup> cir) {
-		var view = renderable.textureView();
-		if (view == null || !view.texture().getLabel().contains("nosclient:")) return;
-		cir.setReturnValue(TextureSetup.singleTextureWithLightmap(view, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)));
-	}
+    @Inject(method = "textureSetup", at = @At("RETURN"), cancellable = true)
+    private void nosclient$linear(CallbackInfoReturnable<TextureSetup> cir) {
+        GpuTextureView view = this.renderable.textureView();
+        if (view != null && FontSampling.smooth(view.texture())) {
+            cir.setReturnValue(TextureSetup.singleTextureWithLightmap(view, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)));
+        }
+    }
 }

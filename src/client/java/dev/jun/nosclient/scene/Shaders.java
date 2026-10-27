@@ -1,108 +1,20 @@
 package dev.jun.nosclient.scene;
 
-/** GLSL của cảnh hồ — chép từ preview (WebGL2) sang GLSL 330 core, logic giữ nguyên để ra đúng ảnh đã duyệt. */
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+
+@Environment(EnvType.CLIENT)
 final class Shaders {
-	private Shaders() {}
+    static final String WORLD_VS = "#version 330 core\nlayout(location=0)in vec3 aP;layout(location=1)in vec2 aU;layout(location=2)in float aS;layout(location=3)in vec3 aV;layout(location=4)in vec4 aA;layout(location=5)in float aW;\nuniform mat4 uVP,uM;uniform float uT;uniform vec2 uF[3];out vec2 vU;out float vS;out vec3 vW,vO;\nfloat bo(float x){x=clamp(x,0.,1.);float y=x-1.;return 1.+2.70158*y*y*y+1.70158*y*y;}   // nảy như cubic-bezier(.34,1.56,.64,1) của intro\nvoid main(){vec3 p=aP;int f=int(aA.x+.5);\n if(f>0){float g=uT-uF[f].x-aA.y,k=aA.z,s;\n  s=k>1.5?bo(g/.35)*(1.-smoothstep(.9,1.1,g)):bo(g/(k>.5?.3:.4));      // 2 = mầm: hiện rồi nhường chỗ cho thân\n  s*=1.-smoothstep(0.,.28,uT-uF[f].y-aA.w);\n  vec3 c=(k>.5&&k<1.5)?vec3(mix(.6,1.,s),s,mix(.6,1.,s))*step(.001,s):vec3(s);   // 1 = mọc dọc từ chân khối\n  p=aV+(p-aV)*c;}\n float w=sin(uT*1.7+aV.x*.6+aV.z*.4)+.5*sin(uT*2.9+aV.z);p.x+=w*aW;p.z+=w*aW*.5;\n vec4 W=uM*vec4(p,1.);vW=W.xyz;vO=p;vU=aU;vS=aS;gl_Position=uVP*W;}\n";
+    static final String WORLD_FS = "#version 330 core\nin vec2 vU;in float vS;in vec3 vW,vO;\nuniform sampler2D uA,uWt,uR;uniform sampler2DShadow uSM;uniform mat4 uLVP;\nuniform vec3 uL,uFog,uCam,uCamO,uLd,uSunC,uAmb;uniform vec2 uFr,uRes;uniform float uT,uMode,uClip,uFrame,uFx;out vec4 o;\n// bóng đổ: shadow map 2048² nhìn từ mặt trời, lọc 3×3 (mỗi mẫu đã là 2×2 nhờ so sánh phần cứng)\nfloat shadow(vec3 n){vec4 q=uLVP*vec4(vO+n*.06,1.);vec3 s=q.xyz/q.w*.5+.5;\n if(s.x<0.||s.y<0.||s.x>1.||s.y>1.)return 1.;float r=0.;\n for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)r+=texture(uSM,vec3(s.xy+vec2(i,j)/2048.,s.z-.0012));return r/9.;}\nvoid main(){if(uClip>.5&&vW.y>-.115)discard;\n float d=length(vW-uCam),fog=clamp((d-uFr.x)/(uFr.y-uFr.x),0.,1.);\n if(uMode>1.5){\n  float k=smoothstep(.55,1.,vS);vec3 lit=uL*.55+uSunC*.75,cl=uFx>.5?mix(mix(uFog,lit,.5)*.82,lit*1.08,k):uL*mix(.72,1.,k);   // đỉnh mây ăn nắng, đáy ăn màu trời\n  o=vec4(mix(cl,uFog,clamp((d-260.)/600.,0.,1.)*.7),1.);return;}\n if(uMode>.5){vec4 w=texture(uWt,vec2(vU.x,(vU.y+uFrame)/32.));                         // water_still: 32 khung\n  vec2 q=gl_FragCoord.xy/uRes+vec2(sin(uT*1.8+vW.z*2.3)*.0022,cos(uT*1.3+vW.x*1.7)*.0016);vec3 rf=texture(uR,q).rgb;\n  if(uFx>.5){vec3 V=normalize(uCam-vW),wn=normalize(vec3(sin(uT*1.8+vW.z*2.3+vW.x*.7)*.045,1.,cos(uT*1.3+vW.x*1.7)*.045));\n   float fr=.5+.5*pow(1.-max(dot(V,wn),0.),3.),sp=pow(max(dot(reflect(-uLd,wn),V),0.),220.)*shadow(vec3(0,1,0));\n   o=vec4(mix(mix(w.rgb*(uAmb+uSunC*.4)*.55,rf,fr),uFog,fog)+uSunC*sp*2.5,.94);return;}\n  o=vec4(mix(mix(w.rgb*uL,rf,.55),uFog,fog),.86);return;}\n vec4 c=texture(uA,vU);if(c.a<.5)discard;vec3 col;\n if(uFx>.5){vec3 n=normalize(cross(dFdx(vO),dFdy(vO)));if(dot(n,uCamO-vO)<0.)n=-n;   // pháp tuyến phẳng từ đạo hàm màn hình, quay về phía mắt\n  if(vS>.85&&vS<.95)n=normalize(n*.25+vec3(0,1,0));                                    // cây cỏ hai mặt chéo: coi như hướng lên\n  float nl=max(dot(n,uLd),0.),sh=nl>0.?shadow(n):0.;\n  col=c.rgb*(uAmb*vS+uSunC*nl*sh*(.6+.4*vS));}\n else col=c.rgb*vS*uL;\n o=vec4(mix(col,uFog,fog),1.);}\n";
+    static final String SHADOW_FS = "#version 330 core\nin vec2 vU;uniform sampler2D uA;out vec4 o;void main(){if(texture(uA,vU).a<.5)discard;o=vec4(1);}\n";
+    static final String FULL_VS = "#version 330 core\nout vec2 vP;void main(){vec2 p=vec2(gl_VertexID==1?3.:-1.,gl_VertexID==2?3.:-1.);vP=p;gl_Position=vec4(p,.9999,1.);}\n";
+    static final String SKY_FS = "#version 330 core\nin vec2 vP;uniform vec3 uFw,uRt,uUp,uZen,uHor,uSun,uGlow;uniform vec2 uTan;uniform float uFlip,uNight,uT;out vec4 o;\nvoid main(){vec3 d=normalize(uFw+vP.x*uTan.x*uRt+vP.y*uTan.y*uUp);d.y*=uFlip;\n vec3 c=d.y>0.?mix(uHor,uZen,pow(min(d.y*2.,1.),.6)):uHor;\n float s=max(dot(d,uSun),0.);c+=uGlow*(pow(s,9.)*.35+pow(s,60.)*.45+pow(s,600.)*3.);\n if(uNight>0.&&d.y>0.){vec3 q=floor(d*160.);float h=fract(sin(dot(q,vec3(12.9898,78.233,37.719)))*43758.5453);\n  if(h>.997)c+=uNight*(.55+.45*sin(uT*1.5+h*400.))*smoothstep(0.,.15,d.y);}\n o=vec4(c,1.);}\n";
+    static final String SPRITE_VS = "#version 330 core\nlayout(location=0)in vec3 aC;layout(location=1)in vec2 aK;layout(location=2)in vec2 aU;layout(location=3)in vec4 aCol;\nuniform mat4 uV,uP;out vec2 vU;out vec4 vC;void main(){vec4 v=uV*vec4(aC,1.);v.xy+=aK;gl_Position=uP*v;vU=aU;vC=aCol;}\n";
+    static final String SPRITE_FS = "#version 330 core\nin vec2 vU;in vec4 vC;uniform sampler2D uA;out vec4 o;void main(){vec4 c=texture(uA,vU)*vC;if(c.a<.04)discard;o=c;}\n";
+    static final String POST_FS = "#version 330 core\nin vec2 vP;uniform sampler2D uC,uD;uniform vec2 uSun;uniform float uSunV;uniform vec3 uRay;uniform float uExp;out vec4 o;\nvec3 aces(vec3 x){return clamp(x*(2.51*x+.03)/(x*(2.43*x+.59)+.14),0.,1.);}\nvoid main(){vec2 uv=vP*.5+.5,px=1./vec2(textureSize(uC,0));vec3 c=textureLod(uC,uv,0.).rgb;\n vec3 nb=(textureLod(uC,uv+vec2(px.x,0),0.).rgb+textureLod(uC,uv-vec2(px.x,0),0.).rgb+textureLod(uC,uv+vec2(0,px.y),0.).rgb+textureLod(uC,uv-vec2(0,px.y),0.).rgb)*.25;\n c+=(c-nb)*.45;\n vec3 bl=textureLod(uC,uv,3.).rgb*.3+textureLod(uC,uv,5.).rgb*.4+textureLod(uC,uv,6.5).rgb*.3;c+=max(bl-.85,0.)*.9;\n if(uSunV>0.){vec2 dd=(uSun-uv)/32.,p=uv;float r=0.,w=1.;\n  for(int i=0;i<32;i++){p+=dd;float sk=step(.99999,textureLod(uD,p,0.).r);r+=sk*max(dot(textureLod(uC,p,1.).rgb,vec3(.33))-.62,0.)*w*2.;w*=.95;}\n  float fall=exp(-length((uv-uSun)*vec2(1.78,1.))*2.2),sk0=step(.99999,textureLod(uD,uv,0.).r);c+=uRay*(r/10.)*uSunV*fall*mix(1.,.35,sk0);}\n float isSky=step(.99999,textureLod(uD,uv,0.).r);c=mix(pow(aces(pow(max(c,0.),vec3(2.2))*uExp),vec3(1./2.2)),min(c,1.),isSky);float l=dot(c,vec3(.2126,.7152,.0722));c=max(mix(vec3(l),c,1.04),0.);\n vec2 q=uv-.5;o=vec4(c*(1.-dot(q,q)*.5),1.);}\n";
+    static final String COPY_FS = "#version 330 core\nin vec2 vP;uniform sampler2D uC;out vec4 o;void main(){o=vec4(textureLod(uC,vP*.5+.5,0.).rgb,1.);}\n";
 
-	static final String WORLD_VS = """
-		#version 330 core
-		layout(location=0)in vec3 aP;layout(location=1)in vec2 aU;layout(location=2)in float aS;layout(location=3)in vec3 aV;layout(location=4)in vec4 aA;layout(location=5)in float aW;
-		uniform mat4 uVP,uM;uniform float uT;uniform vec2 uF[3];out vec2 vU;out float vS;out vec3 vW,vO;
-		float bo(float x){x=clamp(x,0.,1.);float y=x-1.;return 1.+2.70158*y*y*y+1.70158*y*y;}   // nảy như cubic-bezier(.34,1.56,.64,1) của intro
-		void main(){vec3 p=aP;int f=int(aA.x+.5);
-		 if(f>0){float g=uT-uF[f].x-aA.y,k=aA.z,s;
-		  s=k>1.5?bo(g/.35)*(1.-smoothstep(.9,1.1,g)):bo(g/(k>.5?.3:.4));      // 2 = mầm: hiện rồi nhường chỗ cho thân
-		  s*=1.-smoothstep(0.,.28,uT-uF[f].y-aA.w);
-		  vec3 c=(k>.5&&k<1.5)?vec3(mix(.6,1.,s),s,mix(.6,1.,s))*step(.001,s):vec3(s);   // 1 = mọc dọc từ chân khối
-		  p=aV+(p-aV)*c;}
-		 float w=sin(uT*1.7+aV.x*.6+aV.z*.4)+.5*sin(uT*2.9+aV.z);p.x+=w*aW;p.z+=w*aW*.5;
-		 vec4 W=uM*vec4(p,1.);vW=W.xyz;vO=p;vU=aU;vS=aS;gl_Position=uVP*W;}
-		""";
-
-	static final String WORLD_FS = """
-		#version 330 core
-		in vec2 vU;in float vS;in vec3 vW,vO;
-		uniform sampler2D uA,uWt,uR;uniform sampler2DShadow uSM;uniform mat4 uLVP;
-		uniform vec3 uL,uFog,uCam,uCamO,uLd,uSunC,uAmb;uniform vec2 uFr,uRes;uniform float uT,uMode,uClip,uFrame,uFx;out vec4 o;
-		// bóng đổ: shadow map 2048² nhìn từ mặt trời, lọc 3×3 (mỗi mẫu đã là 2×2 nhờ so sánh phần cứng)
-		float shadow(vec3 n){vec4 q=uLVP*vec4(vO+n*.06,1.);vec3 s=q.xyz/q.w*.5+.5;
-		 if(s.x<0.||s.y<0.||s.x>1.||s.y>1.)return 1.;float r=0.;
-		 for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)r+=texture(uSM,vec3(s.xy+vec2(i,j)/2048.,s.z-.0012));return r/9.;}
-		void main(){if(uClip>.5&&vW.y>-.115)discard;
-		 float d=length(vW-uCam),fog=clamp((d-uFr.x)/(uFr.y-uFr.x),0.,1.);
-		 if(uMode>1.5){
-		  float k=smoothstep(.55,1.,vS);vec3 lit=uL*.55+uSunC*.75,cl=uFx>.5?mix(mix(uFog,lit,.5)*.82,lit*1.08,k):uL*mix(.72,1.,k);   // đỉnh mây ăn nắng, đáy ăn màu trời
-		  o=vec4(mix(cl,uFog,clamp((d-260.)/600.,0.,1.)*.7),1.);return;}
-		 if(uMode>.5){vec4 w=texture(uWt,vec2(vU.x,(vU.y+uFrame)/32.));                         // water_still: 32 khung
-		  vec2 q=gl_FragCoord.xy/uRes+vec2(sin(uT*1.8+vW.z*2.3)*.0022,cos(uT*1.3+vW.x*1.7)*.0016);vec3 rf=texture(uR,q).rgb;
-		  if(uFx>.5){vec3 V=normalize(uCam-vW),wn=normalize(vec3(sin(uT*1.8+vW.z*2.3+vW.x*.7)*.045,1.,cos(uT*1.3+vW.x*1.7)*.045));
-		   float fr=.5+.5*pow(1.-max(dot(V,wn),0.),3.),sp=pow(max(dot(reflect(-uLd,wn),V),0.),220.)*shadow(vec3(0,1,0));
-		   o=vec4(mix(mix(w.rgb*(uAmb+uSunC*.4)*.55,rf,fr),uFog,fog)+uSunC*sp*2.5,.94);return;}
-		  o=vec4(mix(mix(w.rgb*uL,rf,.55),uFog,fog),.86);return;}
-		 vec4 c=texture(uA,vU);if(c.a<.5)discard;vec3 col;
-		 if(uFx>.5){vec3 n=normalize(cross(dFdx(vO),dFdy(vO)));if(dot(n,uCamO-vO)<0.)n=-n;   // pháp tuyến phẳng từ đạo hàm màn hình, quay về phía mắt
-		  if(vS>.85&&vS<.95)n=normalize(n*.25+vec3(0,1,0));                                    // cây cỏ hai mặt chéo: coi như hướng lên
-		  float nl=max(dot(n,uLd),0.),sh=nl>0.?shadow(n):0.;
-		  col=c.rgb*(uAmb*vS+uSunC*nl*sh*(.6+.4*vS));}
-		 else col=c.rgb*vS*uL;
-		 o=vec4(mix(col,uFog,fog),1.);}
-		""";
-
-	/** Chỉ ghi độ sâu cho shadow map; cắt alpha để lá thủng đổ bóng thủng. */
-	static final String SHADOW_FS = """
-		#version 330 core
-		in vec2 vU;uniform sampler2D uA;out vec4 o;void main(){if(texture(uA,vU).a<.5)discard;o=vec4(1);}
-		""";
-
-	static final String FULL_VS = """
-		#version 330 core
-		out vec2 vP;void main(){vec2 p=vec2(gl_VertexID==1?3.:-1.,gl_VertexID==2?3.:-1.);vP=p;gl_Position=vec4(p,.9999,1.);}
-		""";
-
-	static final String SKY_FS = """
-		#version 330 core
-		in vec2 vP;uniform vec3 uFw,uRt,uUp,uZen,uHor,uSun,uGlow;uniform vec2 uTan;uniform float uFlip,uNight,uT;out vec4 o;
-		void main(){vec3 d=normalize(uFw+vP.x*uTan.x*uRt+vP.y*uTan.y*uUp);d.y*=uFlip;
-		 vec3 c=d.y>0.?mix(uHor,uZen,pow(min(d.y*2.,1.),.6)):uHor;
-		 float s=max(dot(d,uSun),0.);c+=uGlow*(pow(s,9.)*.35+pow(s,60.)*.45+pow(s,600.)*3.);
-		 if(uNight>0.&&d.y>0.){vec3 q=floor(d*160.);float h=fract(sin(dot(q,vec3(12.9898,78.233,37.719)))*43758.5453);
-		  if(h>.997)c+=uNight*(.55+.45*sin(uT*1.5+h*400.))*smoothstep(0.,.15,d.y);}
-		 o=vec4(c,1.);}
-		""";
-
-	static final String SPRITE_VS = """
-		#version 330 core
-		layout(location=0)in vec3 aC;layout(location=1)in vec2 aK;layout(location=2)in vec2 aU;layout(location=3)in vec4 aCol;
-		uniform mat4 uV,uP;out vec2 vU;out vec4 vC;void main(){vec4 v=uV*vec4(aC,1.);v.xy+=aK;gl_Position=uP*v;vU=aU;vC=aCol;}
-		""";
-
-	static final String SPRITE_FS = """
-		#version 330 core
-		in vec2 vU;in vec4 vC;uniform sampler2D uA;out vec4 o;void main(){vec4 c=texture(uA,vU)*vC;if(c.a<.04)discard;o=c;}
-		""";
-
-	/**
-	 * Hậu kỳ: làm nét, bloom từ mipmap, tia nắng hướng tâm (chỉ lấy điểm trời, chia theo số mẫu và nhạt theo khoảng cách
-	 * tới mặt trời — không thì phủ trắng cả trời), tone map ACES trên giá trị tuyến tính và KHÔNG áp lên trời, viền tối.
-	 */
-	static final String POST_FS = """
-		#version 330 core
-		in vec2 vP;uniform sampler2D uC,uD;uniform vec2 uSun;uniform float uSunV;uniform vec3 uRay;uniform float uExp;out vec4 o;
-		vec3 aces(vec3 x){return clamp(x*(2.51*x+.03)/(x*(2.43*x+.59)+.14),0.,1.);}
-		void main(){vec2 uv=vP*.5+.5,px=1./vec2(textureSize(uC,0));vec3 c=textureLod(uC,uv,0.).rgb;
-		 vec3 nb=(textureLod(uC,uv+vec2(px.x,0),0.).rgb+textureLod(uC,uv-vec2(px.x,0),0.).rgb+textureLod(uC,uv+vec2(0,px.y),0.).rgb+textureLod(uC,uv-vec2(0,px.y),0.).rgb)*.25;
-		 c+=(c-nb)*.45;
-		 vec3 bl=textureLod(uC,uv,3.).rgb*.3+textureLod(uC,uv,5.).rgb*.4+textureLod(uC,uv,6.5).rgb*.3;c+=max(bl-.85,0.)*.9;
-		 if(uSunV>0.){vec2 dd=(uSun-uv)/32.,p=uv;float r=0.,w=1.;
-		  for(int i=0;i<32;i++){p+=dd;float sk=step(.99999,textureLod(uD,p,0.).r);r+=sk*max(dot(textureLod(uC,p,1.).rgb,vec3(.33))-.62,0.)*w*2.;w*=.95;}
-		  float fall=exp(-length((uv-uSun)*vec2(1.78,1.))*2.2),sk0=step(.99999,textureLod(uD,uv,0.).r);c+=uRay*(r/10.)*uSunV*fall*mix(1.,.35,sk0);}
-		 float isSky=step(.99999,textureLod(uD,uv,0.).r);c=mix(pow(aces(pow(max(c,0.),vec3(2.2))*uExp),vec3(1./2.2)),min(c,1.),isSky);float l=dot(c,vec3(.2126,.7152,.0722));c=max(mix(vec3(l),c,1.04),0.);
-		 vec2 q=uv-.5;o=vec4(c*(1.-dot(q,q)*.5),1.);}
-		""";
-
-	/** Không bật shader: chép thẳng ảnh cảnh ra màn hình. */
-	static final String COPY_FS = """
-		#version 330 core
-		in vec2 vP;uniform sampler2D uC;out vec4 o;void main(){o=vec4(textureLod(uC,vP*.5+.5,0.).rgb,1.);}
-		""";
+    private Shaders() {
+    }
 }

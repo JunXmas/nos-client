@@ -1,14 +1,14 @@
 {
- "providers": [
-  {
-   "type": "ttf",
-   "file": "nosclient:manrope-bold.ttf",
-   "size": 30,
-   "oversample": 6.0,
-   "shift": [
-    0,
-    19
-   ]
-  }
- ]
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "nosclient:nos-celestial-semibold.ttf",
+      "size": 28,
+      "oversample": 6.0,
+      "shift": [
+        0,
+        17
+      ]
+    }
+  ]
 }

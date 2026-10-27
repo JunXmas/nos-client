@@ -1,184 +1,256 @@
 package dev.jun.nosclient;
 
+import dev.jun.nosclient.gui.Glass;
+import dev.jun.nosclient.gui.UiOpacity;
+import dev.jun.nosclient.theme.Theme;
+import dev.jun.nosclient.theme.ThemePalette;
+import dev.jun.nosclient.typography.FontCoverage;
+import dev.jun.nosclient.typography.Typography;
+import java.util.Optional;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.FontDescription.Resource;
 import net.minecraft.resources.Identifier;
 
-/**
- * Bộ vẽ dùng chung theo theme của launcher (Theme.qml): nền #141821, chữ #eef1f7/#8d97ab, nhấn tím THƯ VIỆN #b06ee6.
- * Chữ dùng Inter/Manrope đóng gói trong mod (OFL), đúng font của preview.
- */
+@Environment(EnvType.CLIENT)
 public final class Ui {
-	private Ui() {}
+    public static int TEXT = -1183770;
+    public static int MUTED = -5785681;
+    public static int FAINT = -8679799;
+    public static int ACCENT = -4927299;
+    public static int ACCENT_HI = -2431272;
+    public static int BRAND = -7225463;
+    public static int ACC0 = -11107477;
+    public static int ACC1 = -5845325;
+    private static final String[] NAMES = new String[]{"ui", "ui_bold", "small", "big", "logo", "num", "hud", "hud_num", "sky"};
+    private static final int TIERS = Typography.DENSITIES.length;
+    private static final FontDescription[][] FONTS = new FontDescription[NAMES.length][TIERS];
+    public static float hint;
+    private static final Style[][] STYLES;
+    private static final Style[] SKY_STYLES;
+    private static final int UI = 0;
+    private static final int UI_BOLD = 1;
+    private static final int SMALL = 2;
+    private static final int BIG = 3;
+    private static final int LOGO = 4;
+    private static final int NUM = 5;
+    private static final int HUD = 6;
+    private static final int HUD_NUM = 7;
+    private static final int SKY = 8;
+    private static final FontDescription FALLBACK;
 
-	public static final int TEXT = 0xFFEEF1F7, MUTED = 0xFF8D97AB, FAINT = 0x998D97AB, ACCENT = 0xFFB06EE6, ACCENT_HI = 0xFFD3A8F5, BRAND = 0xFF5AC54F;
-	public static final int ACC0 = 0xFF9A5BD6, ACC1 = 0xFFBF86EF;
+    private Ui() {
+    }
 
-	/*
-	 * Chữ TTF nét: game raster glyph một lần ở (cỡ × oversample) px. Oversample lệch tỉ lệ vẽ thật là glyph bị co/giãn
-	 * → vỡ nét. Nên mỗi font có 12 bản oversample 0,5…6 (font/<tên>_<2×oversample>.json), luôn chọn bản gần nhất với
-	 * (cỡ giao diện × hint); phần lệch còn lại do lấy mẫu tuyến tính (GlyphRenderStateMixin) làm mượt.
-	 */
-	private static final String[] NAMES = {"ui", "ui_bold", "small", "big", "logo", "num", "hud"};
-	private static final FontDescription[][] FONTS = new FontDescription[NAMES.length][12];
+    private static Style style(int i) {
+        return styleAt(i, Minecraft.getInstance().getWindow().getGuiScale() * hint);
+    }
 
-	static {
-		for (int i = 0; i < NAMES.length; i++) for (int k = 0; k < 12; k++) FONTS[i][k] = new FontDescription.Resource(Identifier.fromNamespaceAndPath("nosclient", NAMES[i] + "_" + (k + 1)));
-	}
+    private static Style styleAt(int i, double pixelsPerUnit) {
+        int k2 = Typography.densityIndex(pixelsPerUnit);
+        Style st = STYLES[i][k2];
+        if (st == null) {
+            st = STYLES[i][k2] = Style.EMPTY.withFont(FONTS[i][k2]);
+        }
 
-	/** Tỉ lệ pose mà chữ sắp tạo sẽ được vẽ (HUD co 0,68, intro phóng 3×…); bên gọi đặt rồi trả về 1. */
-	public static float hint = 1;
+        return st;
+    }
 
-	private static final Style[][] STYLES = new Style[NAMES.length][12];
+    private static MutableComponent fallback(MutableComponent text) {
+        if (text.getString().codePoints().allMatch(cp -> Character.isWhitespace(cp) || FontCoverage.contains(cp))) {
+            return text;
+        }
 
-	/** Style cache theo (font, oversample) — mỗi khung HUD tạo vài chục chuỗi, không cấp phát Style mới. */
-	private static Style style(int i) {
-		int k2 = Math.max(1, Math.min(12, Math.round(Minecraft.getInstance().getWindow().getGuiScale() * hint * 2))) - 1;
-		Style st = STYLES[i][k2];
-		if (st == null) st = STYLES[i][k2] = Style.EMPTY.withFont(FONTS[i][k2]);
-		return st;
-	}
+        MutableComponent result = Component.empty().withStyle(text.getStyle());
+        text.visit((span, value) -> {
+            int start = 0;
+            int i = 0;
 
-	private static final int UI = 0, UI_BOLD = 1, SMALL = 2, BIG = 3, LOGO = 4, NUM = 5, HUD = 6;
+            while (i < value.length()) {
+                int cp = value.codePointAt(i);
+                int end = i + Character.charCount(cp);
+                if (!Character.isWhitespace(cp) && !FontCoverage.contains(cp)) {
+                    if (start < i) {
+                        result.append(Component.literal(value.substring(start, i)).withStyle(span));
+                    }
 
-	public static MutableComponent ui(Component c) {
-		return c.copy().withStyle(style(UI));
-	}
+                    result.append(Component.literal(value.substring(i, end)).withStyle(span.withFont(FALLBACK)));
+                    start = end;
+                }
 
-	public static MutableComponent ui(String s) {
-		return Component.literal(s).withStyle(style(UI));
-	}
+                i = end;
+            }
 
-	/** Chữ HUD: Inter nét ở mọi cỡ (font pixel của game co lẻ 0,68 là vỡ nét). */
-	public static MutableComponent hud(String s) {
-		return Component.literal(s).withStyle(style(HUD));
-	}
+            if (start < value.length()) {
+                result.append(Component.literal(value.substring(start)).withStyle(span));
+            }
 
-	public static MutableComponent bold(Component c) {
-		return c.copy().withStyle(style(UI_BOLD));
-	}
+            return Optional.empty();
+        }, Style.EMPTY);
+        return result;
+    }
 
-	public static MutableComponent small(Component c) {
-		return c.copy().withStyle(style(SMALL));
-	}
+    public static MutableComponent ui(Component c) {
+        return fallback(c.copy().withStyle(style(0)));
+    }
 
-	public static MutableComponent big(Component c) {
-		return c.copy().withStyle(style(BIG));
-	}
+    public static MutableComponent ui(String s) {
+        return fallback(Component.literal(s).withStyle(style(0)));
+    }
 
-	public static MutableComponent logo(String s) {
-		return Component.literal(s).withStyle(style(LOGO));
-	}
+    public static MutableComponent worldText(String text, double pixelsPerUnit) {
+        int index = Typography.worldDensityIndex(pixelsPerUnit);
+        Style style = SKY_STYLES[index];
+        if (style == null) {
+            style = SKY_STYLES[index] = Style.EMPTY
+                .withFont(new Resource(Identifier.fromNamespaceAndPath("nosclient", "sky_" + Typography.WORLD_DENSITIES[index])));
+        }
 
-	public static MutableComponent num(String s) {
-		return Component.literal(s).withStyle(style(NUM));
-	}
+        return fallback(Component.literal(text).withStyle(style));
+    }
 
-	public static MutableComponent tr(String key, Object... args) {
-		return Component.translatable(key, args);
-	}
+    public static MutableComponent hud(String s) {
+        boolean numeric = !s.isBlank() && s.codePoints().allMatch(c -> Character.isDigit(c) || "−-+.,°%| :/".indexOf(c) >= 0);
+        return fallback(Component.literal(s).withStyle(style(numeric ? 7 : 6)));
+    }
 
-	public static Font font() {
-		return Minecraft.getInstance().font;
-	}
+    public static MutableComponent bold(Component c) {
+        return fallback(c.copy().withStyle(style(1)));
+    }
 
-	public static void text(GuiGraphics g, Component c, int x, int y, int col) {
-		g.drawString(font(), c, x, y, col, false);
-	}
+    public static MutableComponent small(Component c) {
+        return fallback(c.copy().withStyle(style(2)));
+    }
 
-	public static int width(Component c) {
-		return font().width(c);
-	}
+    public static MutableComponent big(Component c) {
+        return fallback(c.copy().withStyle(style(3)));
+    }
 
-	/** Cắt chữ cho vừa bề rộng, thêm "…" — chữ không bao giờ tràn sang ô bên cạnh. */
-	public static Component fit(Component c, int maxW) {
-		Font f = font();
-		if (f.width(c) <= maxW) return c;
-		var cut = f.substrByWidth(c, Math.max(0, maxW - f.width("…")));
-		return Component.literal(cut.getString() + "…").withStyle(c.getStyle());
-	}
+    public static MutableComponent logo(String s) {
+        return fallback(Component.literal(s).withStyle(style(4)));
+    }
 
-	// ---------- hình ----------
-	/*
-	 * Góc vuông, mỗi hình chỉ vài quad: bản bo góc vẽ mỗi góc bằng hàng chục dải fill (cả trăm quad cho một viên HUD)
-	 * và làm tụt FPS trong game. Vẻ đẹp giữ bằng lớp: nền trong, vệt sáng chuyển màu dọc, viền mảnh, gờ sáng mép trên.
-	 */
-	/** Viền 1 px: 4 quad. */
-	public static void frame(GuiGraphics g, int x0, int y0, int x1, int y1, int col) {
-		g.fill(x0, y0, x1, y0 + 1, col);
-		g.fill(x0, y1 - 1, x1, y1, col);
-		g.fill(x0, y0 + 1, x0 + 1, y1 - 1, col);
-		g.fill(x1 - 1, y0 + 1, x1, y1 - 1, col);
-	}
+    public static MutableComponent num(String s) {
+        return fallback(Component.literal(s).withStyle(style(5)));
+    }
 
-	/**
-	 * Tấm mica phẳng kiểu Lunar: nền tối trong suốt + viền sáng 1 px. Không bóng đổ, không vệt sáng, không gờ — 5 quad.
-	 * tint = nền ARGB riêng (vd. tím cho nút đang chọn), 0 = nền mặc định.
-	 */
-	public static void panel(GuiGraphics g, int x0, int y0, int x1, int y1, int tint) {
-		g.fill(x0, y0, x1, y1, tint != 0 ? tint : 0x99101218);
-		frame(g, x0, y0, x1, y1, 0x14FFFFFF);
-		// gờ sáng mép trên như ánh trăng trên kính: sáng ở giữa, tan về hai đầu (2 quad)
-		dev.jun.nosclient.gui.Fx.hairline(g, x0 + 1, x1 - 1, y0, 0x40E9D5FF);
-	}
+    public static MutableComponent tr(String key, Object... args) {
+        return Component.translatable(key, args);
+    }
 
-	public static int lerpCol(int a, int b, float k) {
-		int r = 0;
-		for (int s = 0; s < 32; s += 8) r |= Math.round(((a >>> s) & 255) + (((b >>> s) & 255) - ((a >>> s) & 255)) * k) << s;
-		return r;
-	}
+    public static Font font() {
+        return Minecraft.getInstance().font;
+    }
 
-	public static int alpha(int col, float a) {
-		return Math.round(((col >>> 24) & 255) * a) << 24 | col & 0xFFFFFF;
-	}
+    public static void text(GuiGraphics g, Component c, int x, int y, int col) {
+        col = UiOpacity.tint(col);
+        if (col >>> 24 > 3) {
+            g.pose().pushMatrix();
+            g.pose().translate(x, y);
+            snapText(g);
+            g.drawString(font(), c, 0, 0, col, false);
+            g.pose().popMatrix();
+        }
+    }
 
-	/**
-	 * Công tắc phẳng: rãnh + núm vuông; k = 0 tắt … 1 bật (đã làm mượt bên gọi), accent = màu danh mục của mục đang
-	 * bật — mỗi mục "bật" sáng đúng màu phe của nó (teal HUD, tím Túi đồ, xanh lá Thế giới, cam PvP, xanh dương Hệ
-	 * thống), nên chỉ liếc màu là biết mục đó thuộc nhóm nào, không cần đọc nhãn.
-	 */
-	public static void toggle(GuiGraphics g, int x, int y, float k, int accent) {
-		int w = 24, h = 12;
-		g.fill(x, y, x + w, y + h, lerpCol(0x24FFFFFF, accent, k));
-		frame(g, x, y, x + w, y + h, lerpCol(0x14FFFFFF, (accent & 0xFFFFFF) | 0xCC000000, k));
-		int kx = Math.round(x + 2 + k * (w - 12));
-		// bật = được phù phép: quầng màu phe quanh núm (bỏ vệt sáng trôi qua rãnh theo yêu cầu, rối mắt khi nhiều ô)
-		if (k > .02f) dev.jun.nosclient.gui.Fx.glow(g, kx + 4, y + h / 2f, 30, 24, alpha(accent, .62f * k));
-		g.fill(kx, y + 2, kx + 8, y + h - 2, lerpCol(0xFFC9CFDB, 0xFFFFFFFF, k));
-	}
+    public static void snapText(GuiGraphics g) {
+        if (!(Math.abs(g.pose().m01()) > 1.0E-4F) && !(Math.abs(g.pose().m10()) > 1.0E-4F)) {
+            double scale = Minecraft.getInstance().getWindow().getGuiScale();
+            g.pose().setTranslation((float)Typography.snap(g.pose().m20(), scale), (float)Typography.snap(g.pose().m21(), scale));
+        }
+    }
 
-	/** Công tắc không gắn danh mục (tuỳ chọn giao diện chung): màu tím trung tính mặc định. */
-	public static void toggle(GuiGraphics g, int x, int y, float k) {
-		toggle(g, x, y, k, ACC0);
-	}
+    public static int width(Component c) {
+        return font().width(c);
+    }
 
-	/**
-	 * Bốn góc kiểu bảng điều khiển phi thuyền: mỗi góc một cặp vạch ngắn (8 quad cả khung). Dùng thay viền đều khi
-	 * muốn nhấn một khối đang chọn/rê chuột mà không vẽ thêm khung — rẻ hơn frame() và là chữ ký thị giác của Nos
-	 * client (không bo góc được vì tốn FPS, nên "góc" trở thành một hoạ tiết riêng thay vì một thứ bị thiếu).
-	 */
-	public static void brackets(GuiGraphics g, int x0, int y0, int x1, int y1, int len, int col) {
-		g.fill(x0, y0, x0 + len, y0 + 1, col);
-		g.fill(x0, y0, x0 + 1, y0 + len, col);
-		g.fill(x1 - len, y0, x1, y0 + 1, col);
-		g.fill(x1 - 1, y0, x1, y0 + len, col);
-		g.fill(x0, y1 - 1, x0 + len, y1, col);
-		g.fill(x0, y1 - len, x0 + 1, y1, col);
-		g.fill(x1 - len, y1 - 1, x1, y1, col);
-		g.fill(x1 - 1, y1 - len, x1, y1, col);
-	}
+    public static Component fit(Component c, int maxW) {
+        Font f = font();
+        if (f.width(c) <= maxW) {
+            return c;
+        }
 
-	public static float ease(float x) {
-		return 1 - (1 - x) * (1 - x) * (1 - x);
-	}
+        FormattedText cut = f.substrByWidth(c, Math.max(0, maxW - f.width(Component.literal("…").withStyle(c.getStyle()))));
+        return fallback(Component.literal(cut.getString() + "…").withStyle(c.getStyle()));
+    }
 
-	/** Làm mượt về đích theo thời gian như InertialMotion của launcher. */
-	public static float approach(float v, float target, float dt, float speed) {
-		return v + (target - v) * (1 - (float) Math.exp(-dt * speed));
-	}
+    public static void frame(GuiGraphics g, int x0, int y0, int x1, int y1, int col) {
+        col = UiOpacity.tint(col);
+        g.fill(x0, y0, x1, y0 + 1, col);
+        g.fill(x0, y1 - 1, x1, y1, col);
+        g.fill(x0, y0 + 1, x0 + 1, y1 - 1, col);
+        g.fill(x1 - 1, y0 + 1, x1, y1 - 1, col);
+    }
+
+    public static void panel(GuiGraphics g, int x0, int y0, int x1, int y1, int tint) {
+        Glass.panel(g, x0, y0, x1 - x0, y1 - y0, tint != 0 ? tint : -720367335, 1560281087);
+    }
+
+    public static int lerpCol(int a, int b, float k) {
+        int r = 0;
+
+        for (int s = 0; s < 32; s += 8) {
+            r |= Math.round((a >>> s & 0xFF) + ((b >>> s & 0xFF) - (a >>> s & 0xFF)) * k) << s;
+        }
+
+        return r;
+    }
+
+    public static int alpha(int col, float a) {
+        return Math.round((col >>> 24 & 0xFF) * a) << 24 | col & 16777215;
+    }
+
+    public static void toggle(GuiGraphics g, int x, int y, float k, int accent) {
+        int w = 24;
+        int h = 12;
+        ThemePalette p = Theme.palette();
+        Glass.fill(g, x, y, w, h, lerpCol(p.raised(), p.accent(), k));
+        Glass.outline(g, x, y, w, h, lerpCol(alpha(p.text(), 0.15F), alpha(p.accent(), 0.6F), k));
+        int kx = Math.round(x + 2 + k * (w - 12));
+        Glass.fill(g, kx, y + 2, 8, h - 4, lerpCol(p.muted(), p.ink(), k));
+    }
+
+    public static void toggle(GuiGraphics g, int x, int y, float k) {
+        toggle(g, x, y, k, ACC0);
+    }
+
+    public static void brackets(GuiGraphics g, int x0, int y0, int x1, int y1, int len, int col) {
+        g.fill(x0, y0, x0 + len, y0 + 1, col);
+        g.fill(x0, y0, x0 + 1, y0 + len, col);
+        g.fill(x1 - len, y0, x1, y0 + 1, col);
+        g.fill(x1 - 1, y0, x1, y0 + len, col);
+        g.fill(x0, y1 - 1, x0 + len, y1, col);
+        g.fill(x0, y1 - len, x0 + 1, y1, col);
+        g.fill(x1 - len, y1 - 1, x1, y1, col);
+        g.fill(x1 - 1, y1 - len, x1, y1, col);
+    }
+
+    public static float ease(float x) {
+        return 1.0F - (1.0F - x) * (1.0F - x) * (1.0F - x);
+    }
+
+    public static float approach(float v, float target, float dt, float speed) {
+        return v + (target - v) * (1.0F - (float)Math.exp(-dt * speed));
+    }
+
+    static {
+        for (int i = 0; i < NAMES.length; i++) {
+            for (int k = 0; k < TIERS; k++) {
+                FONTS[i][k] = new Resource(Identifier.fromNamespaceAndPath("nosclient", NAMES[i] + "_" + Typography.DENSITIES[k]));
+            }
+        }
+
+        hint = 1.0F;
+        STYLES = new Style[NAMES.length][TIERS];
+        SKY_STYLES = new Style[Typography.WORLD_DENSITIES.length];
+        FALLBACK = new Resource(Identifier.withDefaultNamespace("default"));
+    }
 }

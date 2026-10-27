@@ -3,253 +3,348 @@ package dev.jun.nosclient.gui;
 import dev.jun.nosclient.Ui;
 import dev.jun.nosclient.hud.Hud;
 import dev.jun.nosclient.hud.HudLayout;
+import dev.jun.nosclient.scene.SceneConfig;
+import dev.jun.nosclient.typography.Typography;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
-/**
- * Sửa bố cục HUD (preview 10): HUD thật vẽ ngay bên dưới; kéo ô để dời, lăn chuột trên ô để đổi cỡ,
- * thanh dưới đáy chỉnh cỡ + độ đục của ô đang chọn. Kéo hít vào mép màn hình, đường giữa và lưới 4 px; giữ Shift để thả tự do.
- */
+@Environment(EnvType.CLIENT)
 public final class HudEditScreen extends Screen {
-	private final Screen parent;
-	private final Hud hud = Hud.INSTANCE;
-	private final Minecraft mc = Minecraft.getInstance();
-	private String sel, drag;
-	private double offX, offY;
-	/** 0 = thanh cỡ, 1 = thanh độ đục đang kéo; -1 = không. */
-	private int slider = -1;
-	private int barX, barY, barW;
+    private final Screen parent;
+    private final Hud hud = Hud.INSTANCE;
+    private final Minecraft mc = Minecraft.getInstance();
+    private String sel;
+    private String drag;
+    private double offX;
+    private double offY;
+    private int slider = -1;
+    private int barX;
+    private int barY;
+    private int barW;
+    private int barStride;
+    private int toolbarTop;
+    private final MenuMotion motion = new MenuMotion();
+    private final List<HudEditScreen.Btn> btns = new ArrayList<>();
 
-	public HudEditScreen(Screen parent) {
-		super(Component.translatable("nosclient.edit.title"));
-		this.parent = parent;
-		hud.editing = true;
-	}
+    public HudEditScreen(Screen parent) {
+        super(Component.translatable("nosclient.edit.title"));
+        this.parent = parent;
+    }
 
-	@Override
-	public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
-		// không làm mờ: phải thấy đúng HUD đang sửa. Chỉ một lớp tối nhẹ + lưới thưa để căn.
-		g.fill(0, 0, width, height, 0x33000000);
-		for (int x = width / 12; x < width; x += Math.max(1, width / 12)) g.fill(x, 0, x + 1, height, 0x0FFFFFFF);
-		for (int y = height / 8; y < height; y += Math.max(1, height / 8)) g.fill(0, y, width, y + 1, 0x0FFFFFFF);
-		g.fill(width / 2, 0, width / 2 + 1, height, 0x1FD3A8F5);
-	}
+    @Override
+    protected void init() {
+        this.hud.editing = true;
+        this.motion.enter();
+        this.drag = null;
+        this.slider = -1;
+        this.btns.clear();
+        this.setDragging(false);
+    }
 
-	private String at(double mx, double my) {
-		String hit = null;
-		for (var e : hud.rects.entrySet()) {
-			float[] r = e.getValue();
-			if (mx >= r[0] - 2 && mx < r[2] + 2 && my >= r[1] - 2 && my < r[3] + 2) hit = e.getKey(); // ô vẽ sau nằm trên
-		}
-		return hit;
-	}
+    @Override
+    public void tick() {
+        this.motion.tick();
+    }
 
-	@Override
-	public void render(GuiGraphics g, int mx, int my, float pt) {
-		super.render(g, mx, my, pt);
-		if (mc.player == null) {
-			Component n = Ui.ui(Component.translatable("nosclient.edit.noworld"));
-			Ui.text(g, n, (width - Ui.width(n)) / 2, height / 2, Ui.TEXT);
-			return;
-		}
-		String hov = drag != null ? drag : at(mx, my);
-		for (var e : hud.rects.entrySet()) {
-			float[] r = e.getValue();
-			boolean on = e.getKey().equals(sel), hv = e.getKey().equals(hov);
-			int x0 = (int) Math.floor(r[0]) - 2, y0 = (int) Math.floor(r[1]) - 2, x1 = (int) Math.ceil(r[2]) + 2, y1 = (int) Math.ceil(r[3]) + 2;
-			if (on || hv) g.fill(x0, y0, x1, y1, on ? 0x265E3A8A : 0x14FFFFFF);
-			dashed(g, x0, y0, x1, y1, on ? 0xFFD3A8F5 : hv ? 0xCCFFFFFF : 0x66FFFFFF);
-			if (hv && drag == null) {
-				Component n = Ui.small(Component.translatable("nosclient.mod." + e.getKey()));
-				int ty = y0 - 10 < 2 ? y1 + 3 : y0 - 10;
-				Ui.text(g, n, x0, ty, 0xFFEAD4FB);
-			}
-		}
-		toolbar(g, mx, my);
-	}
+    @Override
+    public void removed() {
+        this.hud.editing = false;
+    }
 
-	/** Viền nét đứt 3/2 px như preview. */
-	private static void dashed(GuiGraphics g, int x0, int y0, int x1, int y1, int col) {
-		for (int x = x0; x < x1; x += 5) {
-			g.fill(x, y0, Math.min(x + 3, x1), y0 + 1, col);
-			g.fill(x, y1 - 1, Math.min(x + 3, x1), y1, col);
-		}
-		for (int y = y0; y < y1; y += 5) {
-			g.fill(x0, y, x0 + 1, Math.min(y + 3, y1), col);
-			g.fill(x1 - 1, y, x1, Math.min(y + 3, y1), col);
-		}
-	}
+    @Override
+    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
+        g.fill(0, 0, this.width, this.height, 855638016);
 
-	// ---------- thanh công cụ dưới đáy ----------
-	private record Btn(int x0, int x1, Runnable run) {}
+        for (int x = this.width / 12; x < this.width; x += Math.max(1, this.width / 12)) {
+            g.fill(x, 0, x + 1, this.height, 150994943);
+        }
 
-	private final java.util.List<Btn> btns = new java.util.ArrayList<>();
+        for (int y = this.height / 8; y < this.height; y += Math.max(1, this.height / 8)) {
+            g.fill(0, y, this.width, y + 1, 150994943);
+        }
 
-	private void toolbar(GuiGraphics g, int mx, int my) {
-		btns.clear();
-		var s = sel == null ? null : HudLayout.get(sel);
-		Component hint = Ui.small(Component.translatable(sel == null ? "nosclient.edit.hint" : "nosclient.edit.hint.sel"));
-		Component reset = Ui.bold(Component.translatable(sel == null ? "nosclient.edit.resetAll" : "nosclient.edit.reset")), done = Ui.bold(Component.translatable("nosclient.edit.done"));
-		int sliders = sel == null ? 0 : 2 * 110 + 16;
-		int w = 16 + Ui.width(hint) + 12 + sliders + Ui.width(reset) + 16 + 8 + Ui.width(done) + 16 + 12, h = 26;
-		int x = (width - w) / 2, y = height - 78;
-		Ui.panel(g, x, y, x + w, y + h, 0xE0161A23);
-		int cx = x + 12;
-		Ui.text(g, hint, cx, y + 10, Ui.MUTED);
-		cx += Ui.width(hint) + 12;
-		if (s != null) {
-			barY = y + 13;
-			barW = 70;
-			for (int i = 0; i < 2; i++) {
-				double v = i == 0 ? (s.scale - .5) / 1.5 : (s.alpha - .2) / .8;
-				Component l = Ui.small(Component.literal(i == 0 ? Math.round(s.scale * 100) + "%" : I18n(i) + " " + Math.round(s.alpha * 100) + "%"));
-				Ui.text(g, l, cx, y + 4, Ui.TEXT);
-				int tx = cx, kx = (int) Math.round(tx + v * barW);
-				g.fill(tx, barY + 3, tx + barW, barY + 5, 0x33FFFFFF);
-				g.fill(tx, barY + 3, kx, barY + 5, Ui.ACC1);
-				g.fill(kx - 2, barY, kx + 2, barY + 8, 0xFFFFFFFF);
-				if (i == 0) barX = tx;
-				int si = i;
-				btns.add(new Btn(tx - 4, tx + barW + 4, () -> {
-					slider = si;
-					slide(mx);
-				}));
-				cx += 110 + (i == 0 ? 8 : 0);
-			}
-		}
-		int rw = Ui.width(reset) + 16;
-		btn(g, reset, cx, y + 4, rw, mx, my, false, () -> {
-			if (sel == null) HudLayout.resetAll();
-			else HudLayout.reset(sel);
-			HudLayout.save();
-		});
-		cx += rw + 8;
-		btn(g, done, cx, y + 4, Ui.width(done) + 16, mx, my, true, this::onClose);
-	}
+        g.fill(this.width / 2, 0, this.width / 2 + 1, this.height, Ui.alpha(Ui.ACCENT, 0.15F));
+    }
 
-	private static String I18n(int i) {
-		return net.minecraft.client.resources.language.I18n.get(i == 0 ? "nosclient.edit.size" : "nosclient.edit.alpha");
-	}
+    private String at(double mx, double my) {
+        String hit = null;
 
-	private void btn(GuiGraphics g, Component l, int x, int y, int w, int mx, int my, boolean primary, Runnable r) {
-		boolean hv = mx >= x && mx < x + w && my >= y && my < y + 18;
-		g.fill(x, y, x + w, y + 18, primary ? (hv ? 0xFF9A5BD6 : 0xFF8A4BC6) : hv ? 0x33FFFFFF : 0x1AFFFFFF);
-		Ui.text(g, l, x + 8, y + 6, Ui.TEXT);
-		btns.add(new Btn(x, x + w, r));
-	}
+        for (Entry<String, float[]> e : this.hud.rects.entrySet()) {
+            float[] r = e.getValue();
+            if (mx >= r[0] - 2.0F && mx < r[2] + 2.0F && my >= r[1] - 2.0F && my < r[3] + 2.0F) {
+                hit = e.getKey();
+            }
+        }
 
-	private void slide(double mx) {
-		if (sel == null || slider < 0) return;
-		int x0 = barX + slider * (110 + 8);
-		double k = Math.min(1, Math.max(0, (mx - x0) / barW));
-		var s = HudLayout.edit(sel);
-		if (slider == 0) s.scale = Math.round((.5 + k * 1.5) * 20) / 20.0;
-		else s.alpha = Math.round((.2 + k * .8) * 20) / 20.0;
-	}
+        return hit;
+    }
 
-	// ---------- nhập ----------
-	@Override
-	public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
-		if (e.y() >= height - 78 && e.y() < height - 52) {
-			for (Btn b : btns) if (e.x() >= b.x0 && e.x() < b.x1) {
-				b.run.run();
-				setDragging(slider >= 0); // Screen chỉ chuyển mouseDragged về khi cờ kéo bật
-				return true;
-			}
-		}
-		String id = at(e.x(), e.y());
-		sel = id;
-		if (id != null) {
-			float[] r = hud.rects.get(id);
-			drag = id;
-			offX = e.x() - r[0];
-			offY = e.y() - r[1];
-			setDragging(true);
-		}
-		return true;
-	}
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float pt) {
+        UiOpacity.value = this.motion.opacity();
 
-	@Override
-	public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
-		if (slider >= 0) {
-			slide(e.x());
-			return true;
-		}
-		if (drag == null) return true;
-		float[] r = hud.rects.get(drag);
-		if (r == null) return true;
-		double w = r[2] - r[0], h = r[3] - r[1], nx = e.x() - offX, ny = e.y() - offY;
-		boolean free = (e.modifiers() & GLFW.GLFW_MOD_SHIFT) != 0;
-		if (!free) { // hít mép (lề 4), đường giữa, rồi lưới 4 px
-			double m = 4, t = 6;
-			if (Math.abs(nx - m) < t) nx = m;
-			else if (Math.abs(nx + w - (width - m)) < t) nx = width - m - w;
-			else if (Math.abs(nx + w / 2 - width / 2.0) < t) nx = width / 2.0 - w / 2;
-			else nx = Math.round(nx / 4) * 4;
-			if (Math.abs(ny - m) < t) ny = m;
-			else if (Math.abs(ny + h - (height - m)) < t) ny = height - m - h;
-			else ny = Math.round(ny / 4) * 4;
-		}
-		nx = Math.max(0, Math.min(width - w, nx));
-		ny = Math.max(0, Math.min(height - h, ny));
-		// neo theo vùng: ô ở phần ba bên phải neo mép phải (lớn lên sang trái), giữa neo tâm; nửa dưới neo đáy
-		double cx = nx + w / 2;
-		var s = HudLayout.edit(drag);
-		s.ax = cx < width / 3.0 ? 0 : cx > width * 2 / 3.0 ? 2 : 1;
-		s.ay = ny + h / 2 < height / 2.0 ? 0 : 1;
-		s.x = (s.ax == 0 ? nx : s.ax == 1 ? cx : nx + w) / width;
-		s.y = (s.ay == 0 ? ny : ny + h) / height;
-		return true;
-	}
+        try {
+            this.renderEditor(g, mx, my, pt);
+        } finally {
+            UiOpacity.value = 1.0F;
+        }
+    }
 
-	@Override
-	public boolean mouseReleased(MouseButtonEvent e) {
-		if (drag != null || slider >= 0) HudLayout.save();
-		drag = null;
-		slider = -1;
-		setDragging(false);
-		return true;
-	}
+    private void renderEditor(GuiGraphics g, int mx, int my, float pt) {
+        super.render(g, mx, my, pt);
+        if (this.mc.player == null) {
+            Component n = Ui.ui(Component.translatable("nosclient.edit.noworld"));
+            Ui.text(g, n, (this.width - Ui.width(n)) / 2, this.height / 2, Ui.TEXT);
+        } else {
+            String hov = this.drag != null ? this.drag : this.at(mx, my);
 
-	@Override
-	public boolean mouseScrolled(double mx, double my, double sx, double sy) {
-		String id = at(mx, my);
-		if (id == null) return false;
-		sel = id;
-		var s = HudLayout.edit(id);
-		s.scale = Math.min(2, Math.max(.5, Math.round((s.scale + Math.signum(sy) * .05) * 20) / 20.0));
-		HudLayout.save();
-		return true;
-	}
+            for (Entry<String, float[]> e : this.hud.rects.entrySet()) {
+                float[] r = e.getValue();
+                boolean on = e.getKey().equals(this.sel);
+                boolean hv = e.getKey().equals(hov);
+                int x0 = (int)Math.floor(r[0]) - 2;
+                int y0 = (int)Math.floor(r[1]) - 2;
+                int x1 = (int)Math.ceil(r[2]) + 2;
+                int y1 = (int)Math.ceil(r[3]) + 2;
+                if (on || hv) {
+                    Glass.fill(g, x0, y0, x1 - x0, y1 - y0, Ui.alpha(Ui.ACCENT, on ? 0.13F : 0.06F));
+                }
 
-	@Override
-	public boolean keyPressed(KeyEvent e) {
-		if (e.key() == GLFW.GLFW_KEY_ESCAPE && sel != null) {
-			sel = null;
-			return true;
-		}
-		if ((e.key() == GLFW.GLFW_KEY_DELETE || e.key() == GLFW.GLFW_KEY_BACKSPACE) && sel != null) {
-			HudLayout.reset(sel);
-			HudLayout.save();
-			return true;
-		}
-		return super.keyPressed(e);
-	}
+                Glass.outline(g, x0, y0, x1 - x0, y1 - y0, Ui.alpha(Ui.ACCENT, on ? 0.8F : (hv ? 0.45F : 0.1F)));
+            }
 
-	@Override
-	public void onClose() {
-		hud.editing = false;
-		HudLayout.save();
-		mc.setScreen(parent);
-	}
+            this.toolbar(g, mx, my);
+        }
+    }
 
-	@Override
-	public boolean isPauseScreen() {
-		return false;
-	}
+    private void toolbar(GuiGraphics g, int mx, int my) {
+        this.btns.clear();
+        HudLayout.Slot slot = this.sel == null ? null : HudLayout.get(this.sel);
+        int w = Math.min(392, this.width - 24);
+        int x = (this.width - w) / 2;
+        int y = this.toolbarTop = this.height - 74;
+        Glass.panel(g, x, y, w, 64, -266852567, 1705362355);
+        Component reset = Ui.small(Component.translatable(this.sel == null ? "nosclient.edit.resetAll" : "nosclient.edit.reset"));
+        Component done = Ui.small(Component.translatable("nosclient.edit.done"));
+        Component theme = Ui.small(Component.translatable("nosclient.theme.short"));
+        int doneW = Ui.width(done) + 18;
+        int resetW = Ui.width(reset) + 18;
+        int themeW = Ui.width(theme) + 18;
+        Component heading = Ui.fit(
+            Ui.small(Component.translatable(this.sel == null ? "nosclient.edit.hint.short" : "nosclient.mod." + this.sel)), w - doneW - resetW - themeW - 47
+        );
+        Ui.text(g, heading, x + 12, y + 12, Ui.TEXT);
+        int right = x + w - 10;
+        this.btn(g, done, right - doneW, y + 6, doneW, mx, my, true, this::onClose);
+        this.btn(g, reset, right - doneW - 5 - resetW, y + 6, resetW, mx, my, false, () -> {
+            if (this.sel == null) {
+                HudLayout.resetAll();
+            } else {
+                HudLayout.reset(this.sel);
+            }
+
+            HudLayout.save();
+        });
+        this.btn(g, theme, right - doneW - resetW - themeW - 10, y + 6, themeW, mx, my, false, () -> this.mc.setScreen(new ThemeScreen(this)));
+        if (slot == null) {
+            Ui.text(g, Ui.fit(Ui.small(Component.translatable("nosclient.edit.hint")), w - 24), x + 12, y + 40, Ui.MUTED);
+        } else {
+            this.barStride = (w - 24) / 2;
+            this.barX = x + 12;
+            this.barW = this.barStride - 12;
+            this.barY = y + 49;
+
+            for (int i = 0; i < 2; i++) {
+                int left = this.barX + i * this.barStride;
+                double value = i == 0 ? (slot.scale - 0.5) / 1.5 : (slot.alpha - 0.2) / 0.8;
+                boolean floor = i == 0
+                    && Typography.hudScale(SceneConfig.INSTANCE.hudScale * slot.scale, this.mc.getWindow().getGuiScale(), SceneConfig.INSTANCE.hudReadable)
+                        > SceneConfig.INSTANCE.hudScale * slot.scale + 0.001;
+                Component label = Ui.small(
+                    Component.translatable(i == 0 ? "nosclient.edit.scale" : "nosclient.edit.opacity")
+                        .append(" " + Math.round((i == 0 ? slot.scale : slot.alpha) * 100.0) + "%")
+                        .append(floor ? Component.translatable("nosclient.edit.readable") : Component.empty())
+                );
+                Ui.text(g, label, left, y + 31, Ui.MUTED);
+                int knob = left + (int)Math.round(value * this.barW);
+                g.fill(left, this.barY, left + this.barW, this.barY + 2, Ui.alpha(Ui.ACCENT, 0.2F));
+                g.fill(left, this.barY, knob, this.barY + 2, Ui.ACCENT);
+                Glass.fill(g, knob - 2, this.barY - 3, 4, 8, Ui.TEXT);
+                int index = i;
+                this.btns.add(new HudEditScreen.Btn(left - 4, this.barY - 8, left + this.barW + 4, this.barY + 9, () -> {
+                    this.slider = index;
+                    this.slide(mx);
+                }));
+            }
+        }
+    }
+
+    private void btn(GuiGraphics g, Component l, int x, int y, int w, int mx, int my, boolean primary, Runnable r) {
+        boolean hv = mx >= x && mx < x + w && my >= y && my < y + 18;
+        Glass.panel(g, x, y, w, 18, hv ? -12955320 : (primary ? -14072261 : -736481749), hv ? -1513365296 : 1001243575);
+        Ui.text(g, l, x + 8, y + 6, Ui.TEXT);
+        this.btns.add(new HudEditScreen.Btn(x, y, x + w, y + 18, r));
+    }
+
+    private void slide(double mx) {
+        if (this.sel != null && this.slider >= 0) {
+            int x0 = this.barX + this.slider * this.barStride;
+            double k = Math.min(1.0, Math.max(0.0, (mx - x0) / this.barW));
+            HudLayout.Slot s = HudLayout.edit(this.sel);
+            if (this.slider == 0) {
+                s.scale = Math.round((0.5 + k * 1.5) * 20.0) / 20.0;
+            } else {
+                s.alpha = Math.round((0.2 + k * 0.8) * 20.0) / 20.0;
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
+        if (!this.motion.closing() && e.button() == 0) {
+            for (HudEditScreen.Btn button : this.btns) {
+                if (e.x() >= button.x0 && e.x() < button.x1 && e.y() >= button.y0 && e.y() < button.y1) {
+                    button.run.run();
+                    this.setDragging(this.slider >= 0);
+                    return true;
+                }
+            }
+
+            if (e.y() >= this.toolbarTop) {
+                return true;
+            }
+
+            String id = this.at(e.x(), e.y());
+            this.sel = id;
+            if (id != null) {
+                float[] r = this.hud.rects.get(id);
+                this.drag = id;
+                this.offX = e.x() - r[0];
+                this.offY = e.y() - r[1];
+                this.setDragging(true);
+            }
+
+            return true;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+        if (this.slider >= 0) {
+            this.slide(e.x());
+            return true;
+        }
+
+        if (this.drag == null) {
+            return true;
+        }
+
+        float[] r = this.hud.rects.get(this.drag);
+        if (r == null) {
+            return true;
+        }
+
+        double w = r[2] - r[0];
+        double h = r[3] - r[1];
+        double nx = e.x() - this.offX;
+        double ny = e.y() - this.offY;
+        boolean free = (e.modifiers() & 1) != 0;
+        if (!free) {
+            double m = 4.0;
+            double t = 6.0;
+            if (Math.abs(nx - m) < t) {
+                nx = m;
+            } else if (Math.abs(nx + w - (this.width - m)) < t) {
+                nx = this.width - m - w;
+            } else if (Math.abs(nx + w / 2.0 - this.width / 2.0) < t) {
+                nx = this.width / 2.0 - w / 2.0;
+            } else {
+                nx = Math.round(nx / 4.0) * 4L;
+            }
+
+            if (Math.abs(ny - m) < t) {
+                ny = m;
+            } else if (Math.abs(ny + h - (this.height - m)) < t) {
+                ny = this.height - m - h;
+            } else {
+                ny = Math.round(ny / 4.0) * 4L;
+            }
+        }
+
+        nx = Math.max(0.0, Math.min(this.width - w, nx));
+        ny = Math.max(0.0, Math.min(this.height - h, ny));
+        double cx = nx + w / 2.0;
+        HudLayout.Slot s = HudLayout.edit(this.drag);
+        s.ax = cx < this.width / 3.0 ? 0 : (cx > this.width * 2 / 3.0 ? 2 : 1);
+        s.ay = ny + h / 2.0 < this.height / 2.0 ? 0 : 1;
+        s.x = (s.ax == 0 ? nx : (s.ax == 1 ? cx : nx + w)) / this.width;
+        s.y = (s.ay == 0 ? ny : ny + h) / this.height;
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent e) {
+        if (this.drag != null || this.slider >= 0) {
+            HudLayout.save();
+        }
+
+        this.drag = null;
+        this.slider = -1;
+        this.setDragging(false);
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+        String id = this.at(mx, my);
+        if (id == null) {
+            return false;
+        }
+
+        this.sel = id;
+        HudLayout.Slot s = HudLayout.edit(id);
+        s.scale = Math.min(2.0, Math.max(0.5, Math.round((s.scale + Math.signum(sy) * 0.05) * 20.0) / 20.0));
+        HudLayout.save();
+        return true;
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent e) {
+        if (e.key() == 256 && this.sel != null) {
+            this.sel = null;
+            return true;
+        } else if ((e.key() == 261 || e.key() == 259) && this.sel != null) {
+            HudLayout.reset(this.sel);
+            HudLayout.save();
+            return true;
+        } else {
+            return super.keyPressed(e);
+        }
+    }
+
+    @Override
+    public void onClose() {
+        HudLayout.save();
+        this.motion.exit(() -> this.mc.setScreen(this.parent));
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Environment(EnvType.CLIENT)
+    private record Btn(int x0, int y0, int x1, int y1, Runnable run) {
+    }
 }

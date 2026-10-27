@@ -1,0 +1,41 @@
+{
+  "license": "SIL OFL 1.1",
+  "sources": {
+    "be-vietnam-pro": "https://github.com/google/fonts/tree/main/ofl/bevietnampro",
+    "space-grotesk": "https://github.com/google/fonts/tree/main/ofl/spacegrotesk",
+    "jetbrains-mono": "https://github.com/google/fonts/tree/main/ofl/jetbrainsmono"
+  },
+  "derived_faces": "Static instances renamed Nos Celestial and Nos Mono; source copyright and OFL notices retained.",
+  "files": [
+    {
+      "file": "be-vietnam-medium.ttf",
+      "source": "bevietnampro-BeVietnamPro-Medium.ttf",
+      "weight": null,
+      "sha256": "b60832bfa0fcd015158112c64d7e3fdad3b0c6287d1823f85a3103636e845268"
+    },
+    {
+      "file": "be-vietnam-semibold.ttf",
+      "source": "bevietnampro-BeVietnamPro-SemiBold.ttf",
+      "weight": null,
+      "sha256": "bd8e27eb02720b9d91e59e4f10a90878643219f25ce6a8d9a4f06a8a88d3bb71"
+    },
+    {
+      "file": "nos-celestial-semibold.ttf",
+      "source": "spacegrotesk.ttf",
+      "weight": 600,
+      "sha256": "c7f014615a73483b78817217679ee358af091a33f758ec5da915dca7364bd0a3"
+    },
+    {
+      "file": "nos-celestial-bold.ttf",
+      "source": "spacegrotesk.ttf",
+      "weight": 700,
+      "sha256": "b20ff092234d3aed37675d724ea3c0aa8e31463f81e156bd37da3584fe3bfcb2"
+    },
+    {
+      "file": "nos-mono-medium.ttf",
+      "source": "jetbrainsmono-JetBrainsMono[wght].ttf",
+      "weight": 500,
+      "sha256": "4daec435d0478366606e419560cc26f3c1020655a78c22431899db8db2e5a25e"
+    }
+  ]
+}

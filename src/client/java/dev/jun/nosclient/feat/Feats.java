@@ -1,153 +1,238 @@
 package dev.jun.nosclient.feat;
 
+import com.mojang.blaze3d.platform.Window;
+import dev.jun.nosclient.Mods;
+import dev.jun.nosclient.gui.HudEditScreen;
+import dev.jun.nosclient.gui.IntroScreen;
+import dev.jun.nosclient.gui.NosSettingsScreen;
+import dev.jun.nosclient.gui.NosTitleScreen;
+import dev.jun.nosclient.gui.WaypointScreen;
+import dev.jun.nosclient.gui.WorldMapScreen;
+import dev.jun.nosclient.hud.Minimap;
+import dev.jun.nosclient.map.MapCache;
 import dev.jun.nosclient.scene.SceneConfig;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.ClientStopping;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.client.KeyMapping.Category;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
+import org.slf4j.LoggerFactory;
 
-/**
- * Tính năng chạy theo tick, không vẽ gì: Toggle Sprint, Zoom, Freelook, Dynamic FPS. Gamma nằm ở LightTextureMixin.
- * Trạng thái để mixin đọc nằm ở các field static — đọc một biến, không tra cứu gì mỗi khung.
- */
+@Environment(EnvType.CLIENT)
 public final class Feats {
-	private Feats() {}
+    private static final SceneConfig c = SceneConfig.INSTANCE;
+    public static KeyMapping ZOOM;
+    public static KeyMapping FREELOOK;
+    public static KeyMapping WAYPOINT;
+    public static KeyMapping WAYPOINTS;
+    public static KeyMapping HUD_EDIT;
+    public static KeyMapping WORLD_MAP;
+    public static KeyMapping MAP_IN;
+    public static KeyMapping MAP_OUT;
+    private static final boolean PROBE = Boolean.getBoolean("nosclient.probe");
+    private static int probeTicks;
+    public static boolean sprintOn;
+    public static boolean sneakOn;
+    public static double zoomNow = 1.0;
+    public static double zoomTarget = 1.0;
+    public static double zoomMul;
+    public static boolean looking;
+    public static float lookYaw;
+    public static float lookPitch;
+    private static CameraType lookPrev;
+    private static boolean lookToggled;
+    public static volatile float lastFov = 70.0F;
+    public static volatile long lastInput = System.currentTimeMillis();
 
-	private static final SceneConfig c = SceneConfig.INSTANCE;
-	public static KeyMapping ZOOM, FREELOOK, WAYPOINT, WAYPOINTS, HUD_EDIT, WORLD_MAP, MAP_IN, MAP_OUT;
-	private static final boolean PROBE = Boolean.getBoolean("nosclient.probe");
-	private static int probeTicks;
+    private Feats() {
+    }
 
-	// ---- Toggle Sprint ----
-	public static boolean sprintOn, sneakOn;
+    public static void init() {
+        Category cat = Category.register(Identifier.fromNamespaceAndPath("nosclient", "feat"));
+        ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", Mods.ZOOM_OWNED ? -1 : 67, cat));
+        FREELOOK = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.freelook", 342, cat));
+        WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", 66, cat));
+        WAYPOINTS = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoints", 74, cat));
+        HUD_EDIT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.hudedit", 72, cat));
+        WORLD_MAP = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.worldmap", 77, cat));
+        MAP_IN = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapin", 61, cat));
+        MAP_OUT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapout", 45, cat));
+        ClientChunkEvents.CHUNK_LOAD.register(MapCache::onChunkLoad);
+        ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)mc -> MapCache.flush(true));
+        zoomMul = c.zoomLevel;
+        ClientTickEvents.END_CLIENT_TICK.register(Feats::tick);
+    }
 
-	// ---- Zoom ----
-	/** Hệ số chia FOV đang áp (1 = không zoom), làm mượt mỗi khung. */
-	public static double zoomNow = 1, zoomTarget = 1;
-	/** Bội zoom người chơi đang chọn, chỉnh bằng cuộn chuột khi giữ phím. */
-	public static double zoomMul;
+    private static void tick(Minecraft mc) {
+        if (PROBE && ++probeTicks % 100 == 0) {
+            LoggerFactory.getLogger("nosclient")
+                .info(
+                    "probe fps-limit={} reason={} gamma-opt={} gamma-nos={} screen={}",
+                    new Object[]{
+                        mc.getFramerateLimitTracker().getFramerateLimit(),
+                        mc.getFramerateLimitTracker().getThrottleReason(),
+                        mc.options.gamma().get(),
+                        c.gamma,
+                        mc.screen == null ? "-" : mc.screen.getClass().getSimpleName()
+                    }
+                );
+        }
 
-	// ---- Freelook ----
-	public static boolean looking;
-	public static float lookYaw, lookPitch;
-	private static CameraType lookPrev;
-	private static boolean lookToggled;
+        DynLight.tick(mc);
+        Minimap.tick(mc);
+        if (mc.player == null) {
+            looking = false;
+        } else {
+            sprint(mc);
 
-	/** FOV dọc của khung vừa vẽ (độ), đã tính zoom. */
-	public static volatile float lastFov = 70;
+            while (WAYPOINTS.consumeClick()) {
+                if (mc.screen == null) {
+                    mc.setScreen(new WaypointScreen(null));
+                }
+            }
 
-	public static void init() {
-		KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nosclient", "feat"));
-		// Zoomify cũng mặc định phím C: có nó thì phím zoom của ta để trống, khỏi một phím hai việc
-		ZOOM = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.zoom", dev.jun.nosclient.Mods.ZOOM_OWNED ? GLFW.GLFW_KEY_UNKNOWN : GLFW.GLFW_KEY_C, cat));
-		FREELOOK = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.freelook", GLFW.GLFW_KEY_LEFT_ALT, cat));
-		WAYPOINT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoint", GLFW.GLFW_KEY_B, cat));
-		WAYPOINTS = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.waypoints", GLFW.GLFW_KEY_J, cat));
-		HUD_EDIT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.hudedit", GLFW.GLFW_KEY_H, cat));
-		WORLD_MAP = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.worldmap", GLFW.GLFW_KEY_M, cat));
-		MAP_IN = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapin", GLFW.GLFW_KEY_EQUAL, cat));
-		MAP_OUT = KeyBindingHelper.registerKeyBinding(new KeyMapping("nosclient.key.mapout", GLFW.GLFW_KEY_MINUS, cat));
-		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents.CHUNK_LOAD.register(dev.jun.nosclient.map.MapCache::onChunkLoad);
-		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> dev.jun.nosclient.map.MapCache.flush(true));
-		zoomMul = c.zoomLevel;
-		ClientTickEvents.END_CLIENT_TICK.register(Feats::tick);
-	}
+            while (WORLD_MAP.consumeClick()) {
+                if (mc.screen == null) {
+                    mc.setScreen(new WorldMapScreen(null));
+                }
+            }
 
-	private static void tick(Minecraft mc) {
-		if (PROBE && ++probeTicks % 100 == 0) // chỉ để đo: -Dnosclient.probe=true in giới hạn FPS, gamma đang áp, màn hiện tại mỗi 5 giây
-			org.slf4j.LoggerFactory.getLogger("nosclient").info("probe fps-limit={} reason={} gamma-opt={} gamma-nos={} screen={}",
-				mc.getFramerateLimitTracker().getFramerateLimit(), mc.getFramerateLimitTracker().getThrottleReason(), mc.options.gamma().get(), c.gamma,
-				mc.screen == null ? "-" : mc.screen.getClass().getSimpleName());
-		DynLight.tick(mc);
-		dev.jun.nosclient.hud.Minimap.tick(mc);
-		if (mc.player == null) {
-			looking = false;
-			return;
-		}
-		sprint(mc);
-		while (WAYPOINTS.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.WaypointScreen(null));
-		while (WORLD_MAP.consumeClick()) if (mc.screen == null && c.minimap) mc.setScreen(new dev.jun.nosclient.gui.WorldMapScreen(null));
-		while (MAP_IN.consumeClick()) if (c.minimap) { c.minimapZoom = Math.min(3, c.minimapZoom + 1); c.save(); }
-		while (MAP_OUT.consumeClick()) if (c.minimap) { c.minimapZoom = Math.max(0, c.minimapZoom - 1); c.save(); }
-		while (HUD_EDIT.consumeClick()) if (mc.screen == null) mc.setScreen(new dev.jun.nosclient.gui.HudEditScreen(null));
-		while (WAYPOINT.consumeClick()) if (c.waypoint) {
-			// B chỉ THÊM. Bản cũ "đứng gần thì xoá" làm mất waypoint khi bấm hai lần gần nhau; xoá/sửa ở màn quản lý (J)
-			if (Waypoints.near(mc, 2) != null) mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.exists", WAYPOINTS.getTranslatedKeyMessage()), false);
-			else {
-				var wp = Waypoints.addHere(mc);
-				mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.translatable("nosclient.wp.added", wp.name(), wp.x(), wp.y(), wp.z()), false);
-			}
-		}
-		boolean z = c.zoom && !dev.jun.nosclient.Mods.ZOOM_OWNED && ZOOM.isDown() && mc.screen == null;
-		if (!z) zoomMul = c.zoomLevel; // thả phím: lần sau zoom lại từ mức đã chọn
-		zoomTarget = z ? zoomMul : 1;
-		freelook(mc);
-	}
+            while (MAP_IN.consumeClick()) {
+                if (c.minimap) {
+                    c.minimapZoom = Math.min(3, c.minimapZoom + 1);
+                    c.save();
+                }
+            }
 
-	/** Bấm phím chạy (Ctrl) một lần để bật, bấm lần nữa để tắt; giữ trạng thái bằng cách giữ phím hộ. */
-	private static void sprint(Minecraft mc) {
-		var o = mc.options;
-		if (!c.sprint) {
-			if (sprintOn || sneakOn) {
-				sprintOn = sneakOn = false;
-				o.keySprint.setDown(false);
-			}
-			return;
-		}
-		// đếm cú bấm thật (consumeClick): cú bấm nhanh giữa hai tick vẫn được tính, và setDown của ta không tạo cú bấm
-		while (o.keySprint.consumeClick()) sprintOn = !sprintOn;
-		if (sprintOn) o.keySprint.setDown(true);
-		if (c.sprintSneak) {
-			while (o.keyShift.consumeClick()) sneakOn = !sneakOn;
-			if (sneakOn) o.keyShift.setDown(true);
-		} else sneakOn = false;
-	}
+            while (MAP_OUT.consumeClick()) {
+                if (c.minimap) {
+                    c.minimapZoom = Math.max(0, c.minimapZoom - 1);
+                    c.save();
+                }
+            }
 
-	/** Giữ phím: camera xoay quanh người chơi, hướng chạy giữ nguyên; thả ra thì về góc nhìn cũ. */
-	private static void freelook(Minecraft mc) {
-		// kiểu "bấm bật/tắt": mỗi cú bấm đổi trạng thái; kiểu "giữ": giữ phím mới nhìn quanh
-		if (c.freelookToggle) while (FREELOOK.consumeClick()) lookToggled = !lookToggled;
-		else lookToggled = false;
-		boolean want = c.freelook && (c.freelookToggle ? lookToggled : FREELOOK.isDown()) && mc.screen == null;
-		if (want && !looking) {
-			looking = true;
-			lookYaw = mc.player.getYRot();
-			lookPitch = mc.player.getXRot();
-			lookPrev = mc.options.getCameraType();
-			if (lookPrev.isFirstPerson()) mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-		} else if (!want && looking) {
-			looking = false;
-			if (lookPrev != null) mc.options.setCameraType(lookPrev);
-		}
-	}
+            while (HUD_EDIT.consumeClick()) {
+                if (mc.screen == null) {
+                    mc.setScreen(new HudEditScreen(null));
+                }
+            }
 
-	/** Lần cuối có phím/chuột (cho Dynamic FPS AFK). */
-	public static volatile long lastInput = System.currentTimeMillis();
+            while (WAYPOINT.consumeClick()) {
+                if (c.waypoint) {
+                    if (Waypoints.near(mc, 2) != null) {
+                        mc.gui.setOverlayMessage(Component.translatable("nosclient.wp.exists", WAYPOINTS.getTranslatedKeyMessage()), false);
+                    } else {
+                        Waypoints.Wp wp = Waypoints.addHere(mc);
+                        mc.gui.setOverlayMessage(Component.translatable("nosclient.wp.added", wp.name(), wp.x(), wp.y(), wp.z()), false);
+                    }
+                }
+            }
 
-	/** Lăn chuột khi đang zoom: đổi mức 1.5× – 50×. @return true nếu đã nuốt cú lăn. */
-	public static boolean scroll(double dy) {
-		if (zoomTarget <= 1 || dy == 0 || !c.zoomScroll) return false;
-		zoomMul = Math.min(50, Math.max(1.5, zoomMul * (dy > 0 ? 1.25 : 0.8)));
-		zoomTarget = zoomMul;
-		return true;
-	}
+            boolean z = c.zoom && !Mods.ZOOM_OWNED && ZOOM.isDown() && mc.screen == null;
+            if (!z) {
+                zoomMul = c.zoomLevel;
+            }
 
-	/** Màn do Nos client vẽ cảnh động (cần đủ FPS, không phải menu tĩnh). */
-	public static boolean nosScreen(net.minecraft.client.gui.screens.Screen s) {
-		return s instanceof dev.jun.nosclient.gui.NosTitleScreen || s instanceof dev.jun.nosclient.gui.IntroScreen || s instanceof dev.jun.nosclient.gui.NosSettingsScreen;
-	}
+            zoomTarget = z ? zoomMul : 1.0;
+            freelook(mc);
+        }
+    }
 
-	/** Dynamic FPS: game ở nền thì hạ FPS, bị thu nhỏ thì gần như dừng vẽ. -1 = để game tự quyết. */
-	public static int fpsCap(Minecraft mc) {
-		if (!c.dfps || dev.jun.nosclient.Mods.DFPS_OWNED) return -1;
-		var w = mc.getWindow();
-		if (c.dfpsMin && (w.isMinimized() || w.isIconified())) return 1;
-		if (!mc.isWindowActive()) return c.dfpsBg;
-		// AFK 5 phút (không chạm phím/chuột) thì hạ còn 10 FPS
-		if (c.dfpsAfk && mc.screen == null && System.currentTimeMillis() - lastInput > 300_000) return 10;
-		return -1;
-	}
+    private static void sprint(Minecraft mc) {
+        Options o = mc.options;
+        if (!c.sprint) {
+            if (sprintOn || sneakOn) {
+                sneakOn = false;
+                sprintOn = false;
+                o.keySprint.setDown(false);
+            }
+        } else {
+            while (o.keySprint.consumeClick()) {
+                sprintOn = !sprintOn;
+            }
+
+            if (sprintOn) {
+                o.keySprint.setDown(true);
+            }
+
+            if (!c.sprintSneak) {
+                sneakOn = false;
+            } else {
+                while (o.keyShift.consumeClick()) {
+                    sneakOn = !sneakOn;
+                }
+
+                if (sneakOn) {
+                    o.keyShift.setDown(true);
+                }
+            }
+        }
+    }
+
+    private static void freelook(Minecraft mc) {
+        if (c.freelookToggle) {
+            while (FREELOOK.consumeClick()) {
+                lookToggled = !lookToggled;
+            }
+        } else {
+            lookToggled = false;
+        }
+
+        boolean want = c.freelook && (c.freelookToggle ? lookToggled : FREELOOK.isDown()) && mc.screen == null;
+        if (want && !looking) {
+            looking = true;
+            lookYaw = mc.player.getYRot();
+            lookPitch = mc.player.getXRot();
+            lookPrev = mc.options.getCameraType();
+            if (lookPrev.isFirstPerson()) {
+                mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            }
+        } else if (!want && looking) {
+            looking = false;
+            if (lookPrev != null) {
+                mc.options.setCameraType(lookPrev);
+            }
+        }
+    }
+
+    public static boolean scroll(double dy) {
+        if (!(zoomTarget <= 1.0) && dy != 0.0 && c.zoomScroll) {
+            zoomMul = Math.min(50.0, Math.max(1.5, zoomMul * (dy > 0.0 ? 1.25 : 0.8)));
+            zoomTarget = zoomMul;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean nosScreen(Screen s) {
+        return s instanceof NosTitleScreen || s instanceof IntroScreen || s instanceof NosSettingsScreen;
+    }
+
+    public static int fpsCap(Minecraft mc) {
+        if (c.dfps && !Mods.DFPS_OWNED) {
+            Window w = mc.getWindow();
+            if (!c.dfpsMin || !w.isMinimized() && !w.isIconified()) {
+                if (!mc.isWindowActive()) {
+                    return c.dfpsBg;
+                } else {
+                    return c.dfpsAfk && mc.screen == null && System.currentTimeMillis() - lastInput > 300000L ? 10 : -1;
+                }
+            } else {
+                return 1;
+            }
+        } else {
+            return -1;
+        }
+    }
 }

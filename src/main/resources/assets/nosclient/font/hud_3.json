@@ -1,14 +1,14 @@
 {
- "providers": [
-  {
-   "type": "ttf",
-   "file": "nosclient:inter-medium.ttf",
-   "size": 8.0,
-   "oversample": 1.5,
-   "shift": [
-    0,
-    0
-   ]
-  }
- ]
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "nosclient:be-vietnam-semibold.ttf",
+      "size": 9,
+      "oversample": 1.5,
+      "shift": [
+        0,
+        0
+      ]
+    }
+  ]
 }
