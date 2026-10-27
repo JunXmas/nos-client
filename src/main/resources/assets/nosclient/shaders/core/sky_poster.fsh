@@ -9,20 +9,19 @@ out vec4 fragColor;
 // Lòng chữ poster "trong suốt": lấy cảnh phía sau từ bản chụp khung hình (Sampler1, toạ độ màn hình), đảo độ sáng,
 // tăng tương phản rồi ánh xạ lên dải màu đo từ ảnh mẫu của jun: tím đậm ← trời/mây sáng, hồng rực ← cây/vật tối,
 // đỏ-hồng ở dải giữa. Vân lá, mây, núi vẫn hiện rõ trong chữ, chữ đổi màu theo cảnh khi quay đầu.
-// Dải màu đo thẳng từ ảnh mẫu (phân vị độ sáng các pixel chữ): tím đậm → đỏ-hồng → hồng → magenta → hồng nhạt.
-// Mực (lyricsInk) xoay cả dải: mặc định trùng ảnh mẫu, đổi mực thì dải đổi theo.
+// Dải màu dựng từ mực (màu người chơi chọn), theo đúng cấu trúc đo từ ảnh mẫu của jun:
+// tối sâu → mực đậm → mực → mực sáng → gần trắng ánh mực. Mặc định hồng F826BE ra đúng dải tím→magenta của ảnh mẫu;
+// chọn cam thì ra nâu→cam→vàng nhạt, chọn xanh thì ra navy→xanh→trắng xanh.
 vec3 ramp(float t, vec3 ink) {
-    vec3 shift = ink / vec3(0.973, 0.149, 0.745);
-    vec3 c0 = vec3(0.40, 0.04, 0.40);
-    vec3 c1 = vec3(0.82, 0.05, 0.43);
-    vec3 c2 = vec3(0.94, 0.13, 0.65);
-    vec3 c3 = vec3(0.98, 0.23, 0.97);
-    vec3 c4 = vec3(0.97, 0.54, 0.99);
-    vec3 c = t < 0.25 ? mix(c0, c1, t * 4.0)
-           : t < 0.5 ? mix(c1, c2, (t - 0.25) * 4.0)
-           : t < 0.75 ? mix(c2, c3, (t - 0.5) * 4.0)
-           : mix(c3, c4, (t - 0.75) * 4.0);
-    return clamp(c * mix(vec3(1.0), shift, 0.5), 0.0, 1.0);
+    vec3 c0 = ink * 0.38;
+    vec3 c1 = ink * 0.72;
+    vec3 c2 = ink;
+    vec3 c3 = mix(ink, vec3(1.0), 0.28);
+    vec3 c4 = mix(ink, vec3(1.0), 0.6);
+    return t < 0.25 ? mix(c0, c1, t * 4.0)
+         : t < 0.5 ? mix(c1, c2, (t - 0.25) * 4.0)
+         : t < 0.75 ? mix(c2, c3, (t - 0.5) * 4.0)
+         : mix(c3, c4, (t - 0.75) * 4.0);
 }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 void main() {

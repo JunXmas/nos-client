@@ -8,6 +8,7 @@ import dev.jun.nosclient.media.LyricsService;
 import dev.jun.nosclient.media.SkyLyrics;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.theme.Theme;
+import dev.jun.nosclient.theme.ThemePalette;
 import java.nio.file.Path;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -599,6 +600,8 @@ public final class NosSettingsScreen extends Screen {
                 this.c.save();
             });
             y += 24;
+            // Màu chữ đặt ngay đầu trang: thứ người chơi muốn chỉnh nhất, không bắt cuộn xuống tìm.
+            y = this.lyricsInk(g, px, y + 2, pw);
         }
 
         List<Opt> opts = Opt.BY_MOD.getOrDefault(m.id(), List.of());
@@ -629,6 +632,45 @@ public final class NosSettingsScreen extends Screen {
         boolean hv = this.hov(x1 - 18, y0 + 4, x1 - 4, y0 + 18);
         Ui.text(g, Ui.ui(Component.literal("×")), x1 - 14, y0 + 7, hv ? Ui.TEXT : Ui.MUTED);
         this.hit(x1 - 20, y0 + 2, x1 - 2, y0 + 20, this::closeDetail);
+    }
+
+    /** Màu mực lời nhạc: vài tông có sẵn bấm là đổi, ô cuối mở bảng chọn màu tự do. */
+    private static final int[] LYRICS_INKS = {0xF826BE, 0xFF4D6D, 0xFFB347, 0x4DD9FF, 0x7CFF6B, 0xB98CFF, 0xFFFFFF};
+
+    private int lyricsInk(GuiGraphics g, int x, int y, int w) {
+        Ui.text(g, Ui.ui(tr("nosclient.opt.lyrics.ink")), x + 2, y + 4, Ui.TEXT);
+        int size = 16;
+        int gap = 5;
+        int sx = x + w - (LYRICS_INKS.length + 1) * (size + gap) + gap;
+
+        for (int i = 0; i <= LYRICS_INKS.length; i++) {
+            int cx = sx + i * (size + gap);
+            boolean custom = i == LYRICS_INKS.length;
+            int rgb = custom ? this.c.lyricsInk : LYRICS_INKS[i];
+            boolean chosen = custom ? Arrays.stream(LYRICS_INKS).noneMatch(v -> v == this.c.lyricsInk) : this.c.lyricsInk == rgb;
+            boolean hover = this.hov(cx, y, cx + size, y + size);
+            if (chosen || hover) {
+                Glass.glow(g, cx, y, size, size, Ui.alpha(0xFF000000 | rgb, chosen ? 0.5F : 0.3F));
+            }
+
+            Glass.fill(g, cx, y, size, size, 0xFF000000 | rgb);
+            Glass.outline(g, cx, y, size, size, chosen ? -1 : 0x40FFFFFF);
+            if (custom) {
+                // Ô tuỳ chọn: dấu + trên nền màu hiện tại.
+                int mark = ThemePalette.luminance(rgb) > 0.4 ? 0xFF1A1A1A : -1;
+                fill(g, cx + 5, y + size / 2 - 1, cx + size - 5, y + size / 2 + 1, mark);
+                fill(g, cx + size / 2 - 1, y + 5, cx + size / 2 + 1, y + size - 5, mark);
+                this.hit(cx, y, cx + size, y + size, () -> this.motion.exit(() -> this.mc.setScreen(new InkPickerScreen(this))));
+            } else {
+                int pick = rgb;
+                this.hit(cx, y, cx + size, y + size, () -> {
+                    this.c.lyricsInk = pick;
+                    this.c.save();
+                });
+            }
+        }
+
+        return y + size + 10;
     }
 
     private Component optLabel(String key) {

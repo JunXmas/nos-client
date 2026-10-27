@@ -336,37 +336,14 @@ public final class SkyLyrics {
         return top + rows.size() * ROW;
     }
 
-    private static final float[] BOLDEN = {-0.32F, 0.0F, 0.32F};
-
-    /** Bóng mờ: hai vòng 8 hướng (gần đậm, xa nhạt) — đủ mềm mà chỉ 16 lần vẽ mỗi chữ. */
-    private static final float[][] SHADOW = shadowRing();
-
-    private static float[][] shadowRing() {
-        float[][] ring = new float[16][];
-        for (int i = 0; i < 16; i++) {
-            double angle = Math.PI * 2.0 * (i % 8) / 8.0;
-            float r = i < 8 ? 0.7F : 1.5F;
-            ring[i] = new float[]{(float)Math.cos(angle) * r, (float)Math.sin(angle) * r, i < 8 ? 0.07F : 0.03F};
-        }
-
-        return ring;
-    }
-
-    /**
-     * Một bậc lùi ra sau mặt chữ (đơn vị chữ; −z là xa camera trên mặt phẳng chữ). Phải lớn hơn bước depth ở
-     * ~180 khối (≈ d²/(near·2²⁴) ≈ 0.04 khối) cộng phần bù của POLYGON_OFFSET (kéo lớp mềm về phía camera),
-     * kẻo khối và mặt chữ z-fight thành sọc ngang.
-     */
-    private static final float BEHIND = -0.25F;
-
     /**
      * Chữ poster "trong suốt": lòng chữ không có màu riêng mà là cảnh phía sau (bản chụp SceneCopy) bị đảo rồi ánh
      * xạ lên dải màu đo từ ảnh mẫu — trời sáng ra tím đậm, cây tối ra hồng rực, vân lá/mây/núi vẫn hiện trong chữ.
-     * Lòng chữ vẽ TRƯỚC (ghi depth); bóng mờ vẽ sau, lùi ra sau mặt chữ nên chỉ lộ ở mép.
+     * Không vẽ bóng: lớp bóng lùi sau mặt chữ qua polygon offset thò ra thành viền sáng-mờ lởm chởm khi nhìn gần;
+     * ảnh mẫu gần như không có bóng, đường viền đã có sẵn nhờ cảnh tối ở mép do lòng chữ đảo màu.
      */
     private static void posterPass(Font font, int n, LyricMotion.Pose[] poses, Letter[] glyphs, float[] cx, float[] cy, Matrix4f base, MultiBufferSource buffers) {
         int inkColor = 0xFF000000 | SceneConfig.INSTANCE.lyricsInk;
-        int shadow = 0x14061A;
         // Chụp cảnh trước khi có chữ: lòng chữ lấy mẫu bản chụp này (vẽ đè lên chính framebuffer đang đọc thì GL
         // cấm). Xả bộ đệm trước để cảnh đã đủ mọi thứ vẽ trước chữ.
         flush(buffers);
@@ -379,30 +356,13 @@ public final class SkyLyrics {
                 // Mực sáng dần theo nhịp hát: chưa tới lượt thì tông trầm, tới lượt thì hồng rực.
                 int lit = Ui.lerpCol(ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000, inkColor, p.lit());
                 Matrix4f m = letter(base, cx[k], cy[k], p, glyphs[k].advance);
-                // Nét siêu đậm như ảnh mẫu: Black đã là nét dày nhất của font, nên dày thêm bằng cách in chồng vài bản
-                // lệch ngang rất nhỏ (cùng depth, cùng màu — lòng chữ lấy mẫu cảnh nên chồng không làm đậm màu).
-                for (float dx : BOLDEN) {
-                    font.drawInBatch(glyphs[k].glyph, dx, 0.0F, Ui.alpha(lit, alpha), false, m, buffers, DisplayMode.NORMAL, 0, LIGHT);
-                }
+                // Một bản duy nhất: in chồng nhiều bản cùng mặt phẳng thì chúng tranh depth với nhau, mép nét lởm
+                // chởm và hở sáng (jun chụp được ở cự ly gần).
+                font.drawInBatch(glyphs[k].glyph, 0.0F, 0.0F, Ui.alpha(lit, alpha), false, m, buffers, DisplayMode.NORMAL, 0, LIGHT);
             }
         }
 
         flush(buffers);
-
-        // Quầng tối mềm quanh chữ (không khối đùn, không viền cứng — ảnh mẫu chỉ có bóng mờ): nhiều bản lệch
-        // vòng tròn, rất nhạt, lùi sau mặt chữ nên chỉ lộ ở mép. POLYGON_OFFSET = loại vẽ trong suốt thường;
-        // NORMAL của font poster là lượt CỘNG, vẽ bóng qua đó sẽ làm trời sáng lên.
-        for (int k = 0; k < n; k++) {
-            LyricMotion.Pose p = poses[k];
-            float alpha = Math.min(1.0F, p.alpha() * presence);
-            if (!(alpha < 0.03F)) {
-                Matrix4f m = new Matrix4f(letter(base, cx[k], cy[k], p, glyphs[k].advance)).translate(0.0F, 0.0F, BEHIND);
-                for (float[] d : SHADOW) {
-                    font.drawInBatch(glyphs[k].glyph, d[0], d[1] + 0.35F, Ui.alpha(0xFF000000 | shadow, alpha * d[2]), false, m, buffers,
-                        DisplayMode.POLYGON_OFFSET, 0, LIGHT);
-                }
-            }
-        }
     }
 
     private static void flush(MultiBufferSource buffers) {

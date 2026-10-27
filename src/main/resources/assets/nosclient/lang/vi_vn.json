@@ -369,5 +369,7 @@
 	"nosclient.cosmetic.apply": "Mặc thử",
 	"nosclient.cosmetic.local": "Xem thử trên máy bạn",
 	"nosclient.cosmetic.needworld": "Vào thế giới để thử trên nhân vật của bạn.",
-	"nosclient.cosmetic.drag": "Kéo để xoay"
+	"nosclient.cosmetic.drag": "Kéo để xoay",
+	"nosclient.opt.lyrics.ink": "Màu chữ",
+	"nosclient.lyrics.ink.hint": "Chữ khối lấy cảnh phía sau tô theo màu này."
 }
