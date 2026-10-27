@@ -371,5 +371,6 @@
 	"nosclient.cosmetic.needworld": "Vào thế giới để thử trên nhân vật của bạn.",
 	"nosclient.cosmetic.drag": "Kéo để xoay",
 	"nosclient.opt.lyrics.ink": "Màu chữ",
-	"nosclient.lyrics.ink.hint": "Chữ khối lấy cảnh phía sau tô theo màu này."
+	"nosclient.lyrics.ink.hint": "Chữ khối lấy cảnh phía sau tô theo màu này.",
+	"nosclient.opt.lyrics.aurora": "Cực quang nhịp theo lời nhạc"
 }

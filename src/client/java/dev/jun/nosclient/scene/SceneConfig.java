@@ -116,6 +116,8 @@ public final class SceneConfig {
     public boolean lyricsFollow = true;
     /** 0 = Poster (chữ khối in hoa, lòng đảo màu cảnh), 1 = Thanh mảnh (bản cũ). */
     public int lyricsStyle = 0;
+    /** Cực quang nhịp theo lời nhạc trên trời đêm. */
+    public boolean lyricsAurora = true;
     public int lyricsInk = 0xF826BE;
 
     private static Path file() {

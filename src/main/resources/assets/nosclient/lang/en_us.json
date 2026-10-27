@@ -371,5 +371,6 @@
 	"nosclient.cosmetic.needworld": "Enter a world to try these on your player.",
 	"nosclient.cosmetic.drag": "Drag to rotate",
 	"nosclient.opt.lyrics.ink": "Lyric colour",
-	"nosclient.lyrics.ink.hint": "Poster letters tint the scene behind with this."
+	"nosclient.lyrics.ink.hint": "Poster letters tint the scene behind with this.",
+	"nosclient.opt.lyrics.aurora": "Aurora pulsing with the lyrics"
 }

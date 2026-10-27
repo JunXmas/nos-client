@@ -72,6 +72,7 @@ public final class SkyLyrics {
         });
         ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> service.close());
         WorldRenderEvents.END_EXTRACTION.register(context -> extract());
+        AuroraSky.init();
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             PoseStack matrices = context.matrices();
             if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
@@ -130,6 +131,12 @@ public final class SkyLyrics {
                 if (s.died == 0L) {
                     s.died = now;
                 }
+            }
+
+            if (line.isBlank()) {
+                AuroraSky.calm();
+            } else {
+                AuroraSky.kick(line.length(), length);
             }
 
             if (!line.isBlank()) {

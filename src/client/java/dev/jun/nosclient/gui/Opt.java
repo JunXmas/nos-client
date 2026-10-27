@@ -49,6 +49,7 @@ record Opt(String type, String field, String label, String[] choices, double min
             List.of(
                 seg("lyricsStyle", "opt.lyrics.style", "opt.lyrics.style.poster", "opt.lyrics.style.thin"),
                 chk("lyricsFollow", "opt.lyrics.follow"),
+                chk("lyricsAurora", "opt.lyrics.aurora"),
                 chk("lyricsCinematic", "opt.lyrics.cinematic"),
                 chk("lyricsBlendSky", "opt.lyrics.blend"),
                 rng("lyricsHeight", "opt.lyrics.height", 1.0, 2.0, "×"),
