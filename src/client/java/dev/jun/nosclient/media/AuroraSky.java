@@ -45,6 +45,8 @@ public final class AuroraSky {
     private static final int RIBBONS = 3;
     private static final int SEGMENTS = 72;
     private static RenderType type;
+    /** Thời gian CPU vẽ cực quang (cộng dồn) — chỉ để probe. */
+    public static long renderNanos;
     private static float pulse;
     private static float energy;
     private static float targetEnergy;
@@ -66,7 +68,9 @@ public final class AuroraSky {
         ShaderPacks.assign(PIPELINE, "BEACON_BEAM");
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             if (context.matrices() != null) {
+                long t0 = System.nanoTime();
                 render(context.matrices(), context.consumers());
+                renderNanos += System.nanoTime() - t0;
             }
         });
     }

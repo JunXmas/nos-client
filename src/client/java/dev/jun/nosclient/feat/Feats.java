@@ -10,6 +10,8 @@ import dev.jun.nosclient.gui.WaypointScreen;
 import dev.jun.nosclient.gui.WorldMapScreen;
 import dev.jun.nosclient.hud.Minimap;
 import dev.jun.nosclient.map.MapCache;
+import dev.jun.nosclient.media.AuroraSky;
+import dev.jun.nosclient.media.SkyLyrics;
 import dev.jun.nosclient.scene.SceneConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -77,8 +79,12 @@ public final class Feats {
         if (PROBE && ++probeTicks % 100 == 0) {
             LoggerFactory.getLogger("nosclient")
                 .info(
-                    "probe fps-limit={} reason={} gamma-opt={} gamma-nos={} screen={}",
+                    "probe fps={} lyrics-cpu-us={} aurora-cpu-us={} lyric-frames={} fps-limit={} reason={} gamma-opt={} gamma-nos={} screen={}",
                     new Object[]{
+                        mc.getFps(),
+                        SkyLyrics.renderFrames == 0 ? 0 : SkyLyrics.renderNanos / SkyLyrics.renderFrames / 1000,
+                        SkyLyrics.renderFrames == 0 ? 0 : AuroraSky.renderNanos / SkyLyrics.renderFrames / 1000,
+                        SkyLyrics.renderFrames,
                         mc.getFramerateLimitTracker().getFramerateLimit(),
                         mc.getFramerateLimitTracker().getThrottleReason(),
                         mc.options.gamma().get(),

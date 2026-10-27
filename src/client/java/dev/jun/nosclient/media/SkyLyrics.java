@@ -37,6 +37,9 @@ import org.joml.Matrix4f;
 @Environment(EnvType.CLIENT)
 public final class SkyLyrics {
     public static LyricsService service;
+    /** Thời gian CPU vẽ lời nhạc (cộng dồn) — chỉ để probe đo chi phí khung hình. */
+    public static long renderNanos;
+    public static long renderFrames;
     private static final int LIGHT = 15728880;
     private static final int ROW = 13;
     private static final int DUST = 5;
@@ -77,7 +80,10 @@ public final class SkyLyrics {
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             PoseStack matrices = context.matrices();
             if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
+                long t0 = System.nanoTime();
                 render(matrices, context.consumers());
+                renderNanos += System.nanoTime() - t0;
+                renderFrames++;
             }
         });
     }
