@@ -38,9 +38,23 @@ public class LyricChunksCheck {
                 double d = Math.hypot(((p[0] - old[0]) % 360 + 540) % 360 - 180, (p[1] - old[1]) * 1.6);
                 assert d > 6 : "cụm chồng lên cụm vừa hiện: " + d;
             }
+            if (!recent.isEmpty()) {
+                float[] prev = recent.getLast();
+                double d = Math.hypot(((p[0] - prev[0]) % 360 + 540) % 360 - 180, (p[1] - prev[1]) * 1.6);
+                assert d < 40 : "cụm sau nhảy quá xa cụm trước, mắt không theo kịp: " + d;
+            }
             recent.add(p);
             if (recent.size() > 2) recent.removeFirst();
         }
+        // Cụm trước nằm sát mép trái: cụm sau không được vọt sang tận mép phải (mắt mất dấu câu).
+        int far = 0;
+        for (long seed = 0; seed < 200; seed++) {
+            float[] edge = {90 - 24, 30};
+            float[] p = LyricChunks.place(90, 0, 70, 16.0 / 9.0, seed, List.of(edge));
+            double d = Math.hypot(((p[0] - edge[0]) % 360 + 540) % 360 - 180, (p[1] - edge[1]) * 1.6);
+            if (d > 32) far++;
+        }
+        assert far < 20 : "cụm sau hay nhảy xa cụm trước: " + far + "/200";
         // Nhìn xuống đất: vẫn trên trời.
         assert LyricChunks.place(0, -60, 70, 16.0 / 9.0, 7L, List.of())[1] >= 22;
         System.out.println("LyricChunks OK " + chunks);

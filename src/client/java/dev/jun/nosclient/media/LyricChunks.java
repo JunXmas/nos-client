@@ -103,7 +103,9 @@ public final class LyricChunks {
         // Chừa nửa bề ngang cụm (~15°) ở hai bên để cụm dài không bị mép màn hình cắt.
         double spread = Math.max(6.0, halfH * 0.5 - 6.0);
         float[] best = null;
-        double bestGap = -1.0;
+        double bestGap = -Double.MAX_VALUE;
+
+        float[] last = recent.isEmpty() ? null : recent.getLast();
 
         for (int k = 0; k < 8; k++) {
             float bearing = (float)(((yaw + (LyricMotion.hash(seed, k, 40) * 2.0 - 1.0) * spread) % 360.0 + 360.0) % 360.0);
@@ -115,8 +117,17 @@ public final class LyricChunks {
                 gap = Math.min(gap, Math.hypot(db, (elevation - old[1]) * 1.6));
             }
 
-            if (gap > bestGap) {
-                bestGap = gap;
+            // Mắt phải đi theo được: cụm sau nhảy quá xa cụm vừa hát thì khó đọc liền câu. Đủ thoáng (≥ 10°) là
+            // tốt, xa hơn ~26° thì bị trừ điểm — ưu tiên chỗ vừa tách khỏi cụm trước vừa gần nó.
+            double score = Math.min(gap, 26.0);
+            if (last != null) {
+                double db = ((bearing - last[0]) % 360.0 + 540.0) % 360.0 - 180.0;
+                double far = Math.hypot(db, (elevation - last[1]) * 1.6);
+                score -= Math.max(0.0, far - 26.0) * 0.8;
+            }
+
+            if (score > bestGap) {
+                bestGap = score;
                 best = new float[]{bearing, elevation};
             }
         }

@@ -18,7 +18,7 @@ record Opt(String type, String field, String label, String[] choices, double min
         Map.entry("day", List.of(chk("dayTime", "opt.day.time"))),
         Map.entry("invhud", List.of(chk("invhudBg", "opt.invhud.bg"))),
         Map.entry("fps", List.of(chk("fpsLow", "opt.fps.low"))),
-        Map.entry("effects", List.of(chk("fxTime", "opt.fx.time"))),
+        Map.entry("effects", List.of(chk("fxTime", "opt.fx.time"), chk("hideOwnEffectParticles", "opt.fx.particles"))),
         Map.entry("cps", List.of(chk("cpsRight", "opt.cps.right"))),
         Map.entry("shulker", List.of(chk("shulkerColor", "opt.shulker.color"))),
         Map.entry(

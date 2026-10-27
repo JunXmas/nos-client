@@ -21,7 +21,8 @@
 		"ContainerTooltipMixin",
 		"FontTextureMixin",
 		"SkyGlyphRenderTypesMixin",
-		"CosmeticCapeMixin"
+		"CosmeticCapeMixin",
+		"OwnEffectParticlesMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

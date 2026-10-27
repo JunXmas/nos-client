@@ -372,5 +372,6 @@
 	"nosclient.cosmetic.drag": "Kéo để xoay",
 	"nosclient.opt.lyrics.ink": "Màu chữ",
 	"nosclient.lyrics.ink.hint": "Chữ khối lấy cảnh phía sau tô theo màu này.",
-	"nosclient.opt.lyrics.aurora": "Cực quang nhịp theo lời nhạc"
+	"nosclient.opt.lyrics.aurora": "Cực quang nhịp theo lời nhạc",
+	"nosclient.opt.fx.particles": "Ẩn hạt thuốc của mình (góc nhìn 1)"
 }

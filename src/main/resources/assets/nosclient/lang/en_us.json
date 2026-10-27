@@ -372,5 +372,6 @@
 	"nosclient.cosmetic.drag": "Drag to rotate",
 	"nosclient.opt.lyrics.ink": "Lyric colour",
 	"nosclient.lyrics.ink.hint": "Poster letters tint the scene behind with this.",
-	"nosclient.opt.lyrics.aurora": "Aurora pulsing with the lyrics"
+	"nosclient.opt.lyrics.aurora": "Aurora pulsing with the lyrics",
+	"nosclient.opt.fx.particles": "Hide own potion particles (first person)"
 }

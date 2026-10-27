@@ -118,6 +118,8 @@ public final class SceneConfig {
     public int lyricsStyle = 0;
     /** Cực quang nhịp theo lời nhạc trên trời đêm. */
     public boolean lyricsAurora = true;
+    /** Ẩn hạt hiệu ứng thuốc của chính mình ở góc nhìn thứ nhất. */
+    public boolean hideOwnEffectParticles = true;
     public int lyricsInk = 0xF826BE;
 
     private static Path file() {
