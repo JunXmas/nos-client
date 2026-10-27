@@ -276,6 +276,9 @@ public final class NosSettingsScreen extends Screen {
 
             this.renderBlurredBackground(g);
             g.fill(0, 0, this.width, this.height, 604507411);
+            // Tối dần về mép trên/dưới để mắt dồn vào khung giữa.
+            g.fillGradient(0, 0, this.width, this.height / 3, 0x70000000, 0);
+            g.fillGradient(0, this.height * 2 / 3, this.width, this.height, 0, 0x80000000);
         } else {
             super.renderBackground(g, mouseX, mouseY, pt);
         }
@@ -335,7 +338,11 @@ public final class NosSettingsScreen extends Screen {
         Component resetLabel = Ui.small(tr("nosclient.settings.reset"));
         this.button(g, resetLabel, this.width - Ui.width(resetLabel) - 28, 12, 18, true, this::askReset);
         Component brand = Ui.big(Component.literal("Nos Client"));
-        Ui.text(g, brand, (this.width - Ui.width(brand)) / 2, y - (this.width >= 600 ? 28 : 45), Ui.TEXT);
+        int brandY = y - (this.width >= 600 ? 28 : 45);
+        Ui.text(g, brand, (this.width - Ui.width(brand)) / 2, brandY, Ui.TEXT);
+        int line = Math.round(Ui.width(brand) * (0.35F + 0.1F * (float)Math.sin(this.t * 1.4F)));
+        Glass.glow(g, (this.width - line) / 2, brandY + 20, line, 1, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.45F));
+        Glass.fill(g, (this.width - line) / 2, brandY + 20, line, 1, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.9F));
         float opacity = UiOpacity.value;
         HubCarousel.Frame orbit = this.carousel.frame(System.nanoTime(), this.c.animations);
         this.paneOpen = orbit.open();
@@ -359,11 +366,27 @@ public final class NosSettingsScreen extends Screen {
             int ci = Math.max(0, this.cat);
             boolean compact = h < 150;
             if (!compact) {
-                Icons.draw(g, CAT_ICON[ci], x + 10, y + 7, 26.0F);
+                // Ô biểu tượng có nền accent mờ + quầng: tiêu đề có điểm nhấn thay vì icon trôi lơ lửng.
+                int accent = Theme.palette().accent() | 0xFF000000;
+                Glass.glow(g, x + 9, y + 6, 28, 28, Ui.alpha(accent, 0.25F));
+                Glass.fill(g, x + 9, y + 6, 28, 28, Ui.alpha(accent, 0.16F));
+                Glass.outline(g, x + 9, y + 6, 28, 28, Ui.alpha(accent, 0.45F));
+                Icons.draw(g, this.tab == 1 ? "look" : CAT_ICON[ci], x + 10, y + 7, 26.0F);
             }
 
             Component title = Ui.bold(tr(this.tab == 1 ? "nosclient.look.title" : "nosclient.cat." + CATS[ci]));
             Ui.text(g, title, compact ? x + (w - Ui.width(title)) / 2 : x + 43, y + (compact ? 10 : 16), Ui.TEXT);
+            if (!compact && this.tab == 0 && !this.searching()) {
+                // Chip đếm số tính năng đang bật trong nhóm.
+                List<Mods.Mod> mods = Mods.of(CATS[ci]);
+                long active = mods.stream().filter(NosSettingsScreen::on).count();
+                Component chip = Ui.small(Component.literal(active + " / " + mods.size()));
+                int cw = Ui.width(chip) + 12;
+                int chipX = x + w - 14 - cw;
+                Glass.fill(g, chipX, y + 13, cw, 13, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.18F));
+                Glass.outline(g, chipX, y + 13, cw, 13, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.5F));
+                Ui.text(g, chip, chipX + 6, y + 16, Ui.TEXT);
+            }
             this.scroll = this.c.animations ? Ui.approach(this.scroll, (float)this.scrollTarget, this.dt, 16.0F) : (float)this.scrollTarget;
             if (this.tab == 1 && !this.searching()) {
                 this.clipOn(g, x + 10, y + (compact ? 25 : 46), x + w - 10, y + h - 10);
@@ -449,6 +472,10 @@ public final class NosSettingsScreen extends Screen {
                     cy += Math.round(bob - 4.0F * glow) - grow;
                     ch += grow * 2;
                 }
+                if (glow > 0.01F) {
+                    Glass.glow(g, cx, cy, cw, ch, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.4F * glow));
+                }
+
                 Glass.panel(g, cx, cy, cw, ch, Ui.lerpCol(-653124319, -315603652, glow), Ui.lerpCol(1539167944, -858134051, glow));
                 float labelOpacity = 1.0F - (float)Math.clamp(card.open() / 0.6, 0.0, 1.0);
                 UiOpacity.value *= labelOpacity;
@@ -493,6 +520,14 @@ public final class NosSettingsScreen extends Screen {
         boolean hover = this.hov(x, y, x + w, y + 19);
         float glow = this.k("hover.row." + m.id(), hover);
         Glass.panel(g, x, y, w, 19, Ui.lerpCol(-585488345, -14075337, glow), Ui.lerpCol(385875967, 1509949439, glow));
+        if (glow > 0.01F) {
+            int bar = Math.round(11.0F * glow);
+            Glass.fill(g, x + 1, y + 9 - bar / 2, 2, bar, Ui.alpha(Theme.palette().accent() | 0xFF000000, glow));
+        }
+        if (on(m)) {
+            Glass.fill(g, x + 3, y + 1, 18, 17, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.12F + 0.1F * glow));
+        }
+
         Icons.draw(g, m.id(), x + 3, y, 18.0F);
         Ui.text(g, Ui.fit(Ui.ui(name(m)), w - 64), x + 27, y + 6, Ui.TEXT);
         Ui.toggle(g, x + w - 30, y + 3, this.k(Opt.field(m), on(m)));
@@ -513,6 +548,10 @@ public final class NosSettingsScreen extends Screen {
             boolean enabled = i != 2 || this.mc.player != null;
             boolean hover = enabled && this.hov(cx, y, cx + bw, y + 27);
             float glow = this.k("hover.dock." + i, hover);
+            if (glow > 0.01F) {
+                Glass.glow(g, cx, y, bw, 27, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.35F * glow));
+            }
+
             Glass.panel(g, cx, y, bw, 27, Ui.lerpCol(-569106654, -265272260, glow), Ui.lerpCol(1303692988, -1277564451, glow));
             Icons.draw(g, icons[i], cx + bw / 2.0F - 9.0F, y, 18.0F);
             Component label = Ui.fit(Ui.small(tr(keys[i])), bw - 6);

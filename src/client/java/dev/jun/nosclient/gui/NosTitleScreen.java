@@ -2,6 +2,7 @@ package dev.jun.nosclient.gui;
 
 import dev.jun.nosclient.Ui;
 import dev.jun.nosclient.scene.SceneConfig;
+import dev.jun.nosclient.theme.Theme;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -57,9 +58,9 @@ public final class NosTitleScreen extends Screen {
         this.x = (this.width - this.w) / 2;
         this.h = this.height >= 280 ? 24 : 21;
         this.gap = 5;
-        int content = 5 * this.h + 4 * this.gap + 46;
+        int content = 5 * this.h + 4 * this.gap + 50;
         this.logoY = Math.max(12, (this.height - content) / 2);
-        this.y = this.logoY + 46;
+        this.y = this.logoY + 50;
         this.button(this.x, this.y, this.w, "nosclient.menu.single", () -> this.navigate(new SelectWorldScreen(this)));
         this.button(this.x, this.y + this.h + this.gap, this.w, "nosclient.menu.multi", () -> this.navigate(new JoinMultiplayerScreen(this)));
         this.button(this.x, this.y + 2 * (this.h + this.gap), this.w, "nosclient.menu.nos", () -> this.navigate(new NosSettingsScreen(this)));
@@ -94,6 +95,10 @@ public final class NosTitleScreen extends Screen {
         } else {
             this.renderPanorama(g, pt);
         }
+
+        // Tối nhẹ phía dưới cho chữ phiên bản/nút Phong cảnh đọc rõ, phía trên để logo nổi.
+        g.fillGradient(0, 0, this.width, this.height / 4, 0x50000000, 0);
+        g.fillGradient(0, this.height * 3 / 4, this.width, this.height, 0, 0x60000000);
     }
 
     @Override
@@ -121,6 +126,11 @@ public final class NosTitleScreen extends Screen {
             g.pose().popMatrix();
             UiOpacity.value = opacity * (animated ? Ui.ease(Math.clamp((age - 0.12F) / 0.5F, 0.0F, 1.0F)) : 1.0F);
             Ui.text(g, title, tx, this.logoY, Ui.TEXT);
+            // Gạch accent dưới logo, giãn vào cùng lúc chữ hiện.
+            int line = Math.round(46.0F * enter);
+            int lx = (this.width - line) / 2 + 13;
+            Glass.glow(g, lx, this.logoY + 31, line, 1, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.5F * enter));
+            Glass.fill(g, lx, this.logoY + 31, line, 1, Ui.alpha(Theme.palette().accent() | 0xFF000000, 0.9F * enter));
             g.pose().popMatrix();
             UiOpacity.value = opacity;
             if (this.width >= 440) {

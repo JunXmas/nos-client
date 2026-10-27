@@ -212,10 +212,17 @@ public final class Ui {
         int w = 24;
         int h = 12;
         ThemePalette p = Theme.palette();
+        // Viên thuốc bo tròn hẳn, núm tròn trượt qua; bật thì toả quầng accent nhẹ.
+        if (k > 0.01F) {
+            Glass.glow(g, x, y, w, h, alpha(p.accent() | 0xFF000000, 0.32F * k));
+        }
+
         Glass.fill(g, x, y, w, h, lerpCol(p.raised(), p.accent(), k));
         Glass.outline(g, x, y, w, h, lerpCol(alpha(p.text(), 0.15F), alpha(p.accent(), 0.6F), k));
         int kx = Math.round(x + 2 + k * (w - 12));
-        Glass.fill(g, kx, y + 2, 8, h - 4, lerpCol(p.muted(), p.ink(), k));
+        Glass.glow(g, kx, y + 2, 8, 8, alpha(0xFF000000, 0.35F));
+        Glass.fill(g, kx, y + 2, 8, 8, lerpCol(p.muted(), p.ink(), k));
+        Glass.sheen(g, kx, y + 2, 8, 8, alpha(0xFFFFFFFF, 0.25F));
     }
 
     public static void toggle(GuiGraphics g, int x, int y, float k) {
