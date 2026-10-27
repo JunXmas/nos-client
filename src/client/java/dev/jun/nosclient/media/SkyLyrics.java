@@ -291,6 +291,11 @@ public final class SkyLyrics {
             }
         }
 
+        if (poster()) {
+            posterPass(font, n, poses, glyphs, cx, cy, base, buffers);
+            return top + rows.size() * ROW;
+        }
+
         int dim = ThemePalette.mix(body, ink.halo(), 0.5);
         // Lượt mềm (quầng + viền) cho mọi chữ rồi mới tới lượt lõi: gom theo loại vẽ để bộ đệm không xả liên tục.
         for (int k = 0; k < n; k++) {
@@ -328,6 +333,75 @@ public final class SkyLyrics {
         }
 
         return top + rows.size() * ROW;
+    }
+
+    /** Lớp đổ khối: chồng các bản lệch xuống-phải, tối dần, như chữ đùn ra khỏi mặt phẳng. */
+    private static final int DEPTH = 5;
+    /**
+     * Một bậc lùi ra sau mặt chữ (đơn vị chữ; −z là xa camera trên mặt phẳng chữ). Phải lớn hơn bước depth ở
+     * ~180 khối (≈ d²/(near·2²⁴) ≈ 0.04 khối) cộng phần bù của POLYGON_OFFSET (kéo lớp mềm về phía camera),
+     * kẻo khối và mặt chữ z-fight thành sọc ngang.
+     */
+    private static final float BEHIND = -0.25F;
+
+    /**
+     * Chữ khối kiểu poster. Lòng chữ vẽ TRƯỚC, thẳng lên cảnh: ba lượt blend đảo màu cảnh rồi ánh xạ sang hai tông
+     * mực (SkyTextMaterial.POSTER), lượt cuối ghi depth. Sau đó khối đùn tím đậm và viền tối vẽ lùi ra sau mặt
+     * chữ — depth của lòng chữ che phần nằm dưới nó, chỉ còn lộ ở mép như khối nổi thật. Vẽ ngược thứ tự này thì
+     * lòng chữ đảo màu của khối chứ không phải của trời.
+     */
+    private static void posterPass(Font font, int n, LyricMotion.Pose[] poses, Letter[] glyphs, float[] cx, float[] cy, Matrix4f base, MultiBufferSource buffers) {
+        int inkColor = 0xFF000000 | SceneConfig.INSTANCE.lyricsInk;
+        int side = ThemePalette.mix(inkColor, 0x2A0B3D, 0.62);
+        int outline = 0x1A0626;
+        // Mỗi lượt đọc framebuffer mà lượt trước để lại, nên xả bộ đệm giữa các lượt.
+        flush(buffers);
+
+        for (int pass = 0; pass < 3; pass++) {
+            int stage = pass;
+            MultiBufferSource staged = type -> buffers.getBuffer(SkyTextMaterial.remap(type, stage));
+
+            for (int k = 0; k < n; k++) {
+                LyricMotion.Pose p = poses[k];
+                float alpha = Math.min(1.0F, p.alpha() * presence);
+                if (!(alpha < 0.03F)) {
+                    // Mực sáng dần theo nhịp hát: chưa tới lượt thì tông trầm, tới lượt thì hồng rực.
+                    int lit = Ui.lerpCol(ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000, inkColor, p.lit());
+                    font.drawInBatch(glyphs[k].glyph, 0.0F, 0.0F, Ui.alpha(lit, alpha), false, letter(base, cx[k], cy[k], p, glyphs[k].advance),
+                        staged, DisplayMode.NORMAL, 0, LIGHT);
+                }
+            }
+
+            flush(buffers);
+        }
+
+        for (int k = 0; k < n; k++) {
+            LyricMotion.Pose p = poses[k];
+            float alpha = Math.min(1.0F, p.alpha() * presence);
+            if (!(alpha < 0.03F)) {
+                Matrix4f m = letter(base, cx[k], cy[k], p, glyphs[k].advance);
+                // POLYGON_OFFSET = loại vẽ mềm (trong suốt thường). NORMAL của font poster là lượt CỘNG — vẽ khối
+                // tối qua đó lại làm trời sáng lên thành viền nhạt.
+                // Khối đùn: xa nhất trước để lớp gần đè lên lớp xa, lệch xuống-phải, tối dần về phía xa.
+                for (int d = DEPTH; d >= 1; d--) {
+                    float t = d / (float)DEPTH;
+                    int shade = ThemePalette.mix(side, outline, 0.55 * t);
+                    font.drawInBatch(glyphs[k].glyph, 0.32F * d, 0.32F * d, Ui.alpha(0xFF000000 | shade, alpha), false,
+                        new Matrix4f(m).translate(0.0F, 0.0F, BEHIND * (d + 1)), buffers, DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+                }
+
+                for (float[] e : EDGE) {
+                    font.drawInBatch(glyphs[k].glyph, e[0] * 1.6F, e[1] * 1.6F, Ui.alpha(0xFF000000 | outline, alpha * 0.9F), false,
+                        new Matrix4f(m).translate(0.0F, 0.0F, BEHIND), buffers, DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+                }
+            }
+        }
+    }
+
+    private static void flush(MultiBufferSource buffers) {
+        if (buffers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch();
+        }
     }
 
     private static void upcoming(Font font, double raster, float age, float bottom, Matrix4f base, MultiBufferSource buffers) {
@@ -379,20 +453,27 @@ public final class SkyLyrics {
         }
     }
 
-    private static List<Line> wrap(Font font, String text, double raster) {
+    private static boolean poster() {
+        return SceneConfig.INSTANCE.lyricsStyle == 0;
+    }
+
+    private static List<Line> wrap(Font font, String raw, double raster) {
         SceneConfig c = SceneConfig.INSTANCE;
-        Key key = new Key(text, Typography.worldDensityIndex(raster), c.lyricsWidth, c.lyricsTracking);
+        boolean poster = poster();
+        // Chữ khối in hoa như poster; toLowerCase/UpperCase theo locale gốc để giữ dấu tiếng Việt.
+        String text = poster ? raw.toUpperCase(java.util.Locale.ROOT) : raw;
+        Key key = new Key(text, Typography.worldDensityIndex(raster) + (poster ? 100 : 0), c.lyricsWidth, c.lyricsTracking);
         List<Line> cached = layouts.get(key);
         if (cached != null) {
             return cached;
         }
 
         List<String> rows = CelestialTypography.wrap(
-            text, part -> font.getSplitter().stringWidth(Ui.worldText(part, raster)), c.lyricsTracking, 170.0 / c.lyricsWidth
+            text, part -> font.getSplitter().stringWidth(Ui.worldText(part, raster, poster)), c.lyricsTracking, 170.0 / c.lyricsWidth
         );
         List<Line> built = rows.stream().map(row -> {
             List<Letter> letters = CelestialTypography.clusters(row).stream().map(part -> {
-                MutableComponent component = Ui.worldText(part, raster);
+                MutableComponent component = Ui.worldText(part, raster, poster);
                 return new Letter(component.getVisualOrderText(), font.getSplitter().stringWidth(component), part.isBlank());
             }).toList();
             return new Line(letters, (float)(letters.stream().mapToDouble(Letter::advance).sum() + Math.max(0, letters.size() - 1) * c.lyricsTracking));

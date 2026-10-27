@@ -36,6 +36,12 @@
       "source": "jetbrainsmono-JetBrainsMono[wght].ttf",
       "weight": 500,
       "sha256": "4daec435d0478366606e419560cc26f3c1020655a78c22431899db8db2e5a25e"
+    },
+    {
+      "file": "be-vietnam-black.ttf",
+      "source": "bevietnampro-BeVietnamPro-Black.ttf",
+      "weight": null,
+      "sha256": "dd0ec461782da7f4a58698b431a67c455ced7c09deb9c40d7b47e61975d3ffdb"
     }
   ]
 }

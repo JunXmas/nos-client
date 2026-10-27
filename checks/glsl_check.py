@@ -66,7 +66,7 @@ def compile_one(src, kind):
 bad = 0
 for f in sorted(core.glob("*.[fv]sh")):
     src = expand(f.read_text())
-    defines = sorted(set(re.findall(r"#ifdef (\w+)", src))) or [None]
+    defines = sorted({a or b for a, b in re.findall(r"#ifdef (\w+)|defined\((\w+)\)", src)}) or [None]
     for d in [None] + [x for x in defines if x]:
         s = src if d is None else src.replace("\n", f"\n#define {d}\n", 1)
         ok, log = compile_one(s, f.suffix[1:])

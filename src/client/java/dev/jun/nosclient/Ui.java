@@ -36,6 +36,7 @@ public final class Ui {
     public static float hint;
     private static final Style[][] STYLES;
     private static final Style[] SKY_STYLES;
+    private static final Style[] POSTER_STYLES;
     private static final int UI = 0;
     private static final int UI_BOLD = 1;
     private static final int SMALL = 2;
@@ -107,11 +108,17 @@ public final class Ui {
     }
 
     public static MutableComponent worldText(String text, double pixelsPerUnit) {
+        return worldText(text, pixelsPerUnit, false);
+    }
+
+    /** poster = Be Vietnam Pro Black cho lời nhạc kiểu chữ khối; còn lại Nos Celestial. */
+    public static MutableComponent worldText(String text, double pixelsPerUnit, boolean poster) {
         int index = Typography.worldDensityIndex(pixelsPerUnit);
-        Style style = SKY_STYLES[index];
+        Style[] styles = poster ? POSTER_STYLES : SKY_STYLES;
+        Style style = styles[index];
         if (style == null) {
-            style = SKY_STYLES[index] = Style.EMPTY
-                .withFont(new Resource(Identifier.fromNamespaceAndPath("nosclient", "sky_" + Typography.WORLD_DENSITIES[index])));
+            style = styles[index] = Style.EMPTY
+                .withFont(new Resource(Identifier.fromNamespaceAndPath("nosclient", (poster ? "sky_poster_" : "sky_") + Typography.WORLD_DENSITIES[index])));
         }
 
         return fallback(Component.literal(text).withStyle(style));
@@ -258,6 +265,7 @@ public final class Ui {
         hint = 1.0F;
         STYLES = new Style[NAMES.length][TIERS];
         SKY_STYLES = new Style[Typography.WORLD_DENSITIES.length];
+        POSTER_STYLES = new Style[Typography.WORLD_DENSITIES.length];
         FALLBACK = new Resource(Identifier.withDefaultNamespace("default"));
     }
 }

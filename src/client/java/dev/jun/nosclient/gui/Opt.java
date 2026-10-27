@@ -47,6 +47,7 @@ record Opt(String type, String field, String label, String[] choices, double min
         Map.entry(
             "lyrics",
             List.of(
+                seg("lyricsStyle", "opt.lyrics.style", "opt.lyrics.style.poster", "opt.lyrics.style.thin"),
                 chk("lyricsFollow", "opt.lyrics.follow"),
                 chk("lyricsCinematic", "opt.lyrics.cinematic"),
                 chk("lyricsBlendSky", "opt.lyrics.blend"),
