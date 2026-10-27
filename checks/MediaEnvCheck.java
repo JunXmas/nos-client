@@ -3,7 +3,7 @@ package dev.jun.nosclient.media;
 /**
  * Lời nhạc phải đọc được bài đang phát cả khi game được launcher đóng gói (PyInstaller) mở — launcher để lại
  * LD_LIBRARY_PATH trỏ vào glib riêng làm gdbus hệ thống chết. Cần một trình phát MPRIS đang chạy (Spotify…).
- * Chạy: LD_LIBRARY_PATH=/opt/nostalgia/_internal java -cp build/classes/java/client:<fabric-loader.jar> checks/MediaEnvCheck.java
+ * Chạy: javac -d /tmp/mec -cp build/classes/java/client checks/MediaEnvCheck.java && LD_LIBRARY_PATH=/opt/nostalgia/_internal java -cp /tmp/mec:build/classes/java/client dev.jun.nosclient.media.MediaEnvCheck
  */
 public class MediaEnvCheck {
     public static void main(String[] args) throws Exception {
