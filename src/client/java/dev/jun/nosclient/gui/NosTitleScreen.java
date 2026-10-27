@@ -1,6 +1,7 @@
 package dev.jun.nosclient.gui;
 
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.cosmetic.Cosmetics;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.theme.Theme;
 import net.fabricmc.api.EnvType;
@@ -81,10 +82,12 @@ public final class NosTitleScreen extends Screen {
                 )
                 .delayed(0.4F)
         );
-        this.addRenderableWidget(
-            new GlassButton(12, this.height - 30, 86, 18, Component.translatable("nosclient.cosmetic.title"), () -> this.navigate(new CosmeticScreen(this)))
-                .delayed(0.45F)
-        );
+        if (Cosmetics.ENABLED) {
+            this.addRenderableWidget(
+                new GlassButton(12, this.height - 30, 86, 18, Component.translatable("nosclient.cosmetic.title"), () -> this.navigate(new CosmeticScreen(this)))
+                    .delayed(0.45F)
+            );
+        }
     }
 
     @Override

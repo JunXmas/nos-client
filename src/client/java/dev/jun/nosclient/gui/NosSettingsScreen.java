@@ -2,6 +2,7 @@ package dev.jun.nosclient.gui;
 
 import dev.jun.nosclient.Mods;
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.cosmetic.Cosmetics;
 import dev.jun.nosclient.feat.Waypoints;
 import dev.jun.nosclient.hud.HudSurface;
 import dev.jun.nosclient.media.LyricsService;
@@ -537,18 +538,24 @@ public final class NosSettingsScreen extends Screen {
     }
 
     private void dock(GuiGraphics g, int x, int y, int w) {
-        String[] keys = new String[]{"nosclient.dock.search", "nosclient.dock.look", "nosclient.dock.edit", "nosclient.cosmetic.title", "gui.done"};
-        String[] icons = new String[]{"search", "look", "edit", "armor", "back"};
-        Runnable[] actions = new Runnable[]{
+        List<String> keys = new ArrayList<>(List.of("nosclient.dock.search", "nosclient.dock.look", "nosclient.dock.edit", "gui.done"));
+        List<String> icons = new ArrayList<>(List.of("search", "look", "edit", "back"));
+        List<Runnable> actions = new ArrayList<>(List.of(
             this::openSearch,
             this::toggleAppearance,
             () -> this.motion.exit(() -> this.mc.setScreen(new HudEditScreen(this))),
-            () -> this.motion.exit(() -> this.mc.setScreen(new CosmeticScreen(this))),
             this::onClose
-        };
-        int bw = (w - 24) / 5;
+        ));
+        if (Cosmetics.ENABLED) {
+            keys.add(3, "nosclient.cosmetic.title");
+            icons.add(3, "armor");
+            actions.add(3, () -> this.motion.exit(() -> this.mc.setScreen(new CosmeticScreen(this))));
+        }
 
-        for (int i = 0; i < 5; i++) {
+        int count = keys.size();
+        int bw = (w - 6 * (count - 1)) / count;
+
+        for (int i = 0; i < count; i++) {
             int cx = x + i * (bw + 6);
             boolean enabled = i != 2 || this.mc.player != null;
             boolean hover = enabled && this.hov(cx, y, cx + bw, y + 27);
@@ -558,8 +565,8 @@ public final class NosSettingsScreen extends Screen {
             }
 
             Glass.panel(g, cx, y, bw, 27, Ui.lerpCol(-569106654, -265272260, glow), Ui.lerpCol(1303692988, -1277564451, glow));
-            Icons.draw(g, icons[i], cx + bw / 2.0F - 9.0F, y, 18.0F);
-            Component label = Ui.fit(Ui.small(tr(keys[i])), bw - 6);
+            Icons.draw(g, icons.get(i), cx + bw / 2.0F - 9.0F, y, 18.0F);
+            Component label = Ui.fit(Ui.small(tr(keys.get(i))), bw - 6);
             Ui.text(g, label, cx + (bw - Ui.width(label)) / 2, y + 18, enabled ? Ui.TEXT : Ui.FAINT);
             if (!enabled && this.hov(cx, y, cx + bw, y + 27)) {
                 Component why = Ui.fit(Ui.small(tr("nosclient.edit.noworld")), w);
@@ -567,7 +574,7 @@ public final class NosSettingsScreen extends Screen {
             }
 
             if (enabled) {
-                this.hit(cx, y, cx + bw, y + 27, actions[i]);
+                this.hit(cx, y, cx + bw, y + 27, actions.get(i));
             }
         }
     }

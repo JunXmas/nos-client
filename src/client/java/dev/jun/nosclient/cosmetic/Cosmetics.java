@@ -25,7 +25,13 @@ public final class Cosmetics {
 	private static Map<String, CosmeticMesh> models = Map.of();
 	private static CosmeticLook applied = CosmeticLook.NONE;
 	private Cosmetics() {}
+	/**
+	 * Tạm tắt cho bản phát hành (jun, 28/10): cosmetic mới là mặc thử cục bộ, chưa có sở hữu/đồng bộ. Tắt thì không
+	 * đăng ký gì cả — không lớp vẽ, không nạp model, không ẩn cape vanilla, không nút vào. Bật lại: đổi thành true.
+	 */
+	public static final boolean ENABLED = false;
 	public static void init() {
+		if (!ENABLED) return;
 		CosmeticMaterials.init();
 		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
 			@Override public Identifier getFabricId() { return Identifier.fromNamespaceAndPath("nosclient", "cosmetics"); }
