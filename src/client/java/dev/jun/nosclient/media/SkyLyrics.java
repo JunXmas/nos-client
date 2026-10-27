@@ -148,7 +148,9 @@ public final class SkyLyrics {
         }
 
         next = upcoming;
-        radius = Math.min(120.0, Math.max(24.0, mc.options.getEffectiveRenderDistance() * 16 * 0.35));
+        // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
+        // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
+        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * 0.92);
         ThemePalette palette = Theme.palette();
         int sky = camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F);
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);
