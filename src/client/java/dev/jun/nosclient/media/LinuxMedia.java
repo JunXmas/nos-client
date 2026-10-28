@@ -56,7 +56,7 @@ final class LinuxMedia implements SystemMedia {
                         "org.mpris.MediaPlayer2.Player"
                     )
                 );
-                MediaTrack track = parse(text, System.nanoTime());
+                MediaTrack track = parse(text, player, System.nanoTime());
                 if (track.playing() && !track.title().isBlank()) {
                     return track;
                 }
@@ -72,6 +72,10 @@ final class LinuxMedia implements SystemMedia {
     }
 
     static MediaTrack parse(String text, long now) {
+        return parse(text, "", now);
+    }
+
+    static MediaTrack parse(String text, String player, long now) {
         String title = string(text, "xesam:title");
         String artist = string(text, "xesam:artist");
         return new MediaTrack(
@@ -81,7 +85,8 @@ final class LinuxMedia implements SystemMedia {
             number(text, "Position") / 1000L,
             "Playing".equals(string(text, "PlaybackStatus")),
             rate(text),
-            now
+            now,
+            MediaSource.detect(player)
         );
     }
 

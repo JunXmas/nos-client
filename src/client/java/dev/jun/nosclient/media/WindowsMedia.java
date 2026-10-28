@@ -126,7 +126,8 @@ final class WindowsMedia implements SystemMedia {
                 data.get("position_ms").getAsLong(),
                 data.get("playing").getAsBoolean(),
                 data.get("rate").getAsDouble(),
-                now
+                now,
+                MediaSource.detect(data.has("source") && !data.get("source").isJsonNull() ? data.get("source").getAsString() : "")
             );
     }
 

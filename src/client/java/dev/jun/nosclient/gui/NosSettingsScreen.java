@@ -821,6 +821,7 @@ public final class NosSettingsScreen extends Screen {
                 y += 24;
             }
 
+            y += this.lines(g, Ui.small(tr("nosclient.lyrics.youtube")), x + 2, y, w - 4, Ui.MUTED) + 5;
             y += this.lines(g, Ui.small(tr("nosclient.lyrics.drop")), x + 2, y, w - 4, Ui.MUTED) + 5;
             if (this.c.lyricsAutoFetch) {
                 y += this.lines(g, Ui.small(tr("nosclient.lyrics.privacy")), x + 2, y, w - 4, Ui.MUTED) + 5;

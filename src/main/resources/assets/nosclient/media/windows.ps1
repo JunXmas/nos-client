@@ -24,8 +24,14 @@ while (Get-Process -Id $GamePid -ErrorAction SilentlyContinue) {
             $refreshAt = [DateTimeOffset]::UtcNow.AddSeconds(30)
         }
         $session = $manager.GetCurrentSession()
-        foreach ($candidate in $manager.GetSessions()) {
-            if ($candidate.GetPlaybackInfo().PlaybackStatus.ToString() -eq 'Playing') { $session = $candidate; break }
+        # Keep Windows' current playing session (e.g. the active YouTube tab).
+        # Enumerating Spotify first must not replace it with another playing app.
+        if ($null -eq $session -or $session.GetPlaybackInfo().PlaybackStatus.ToString() -ne 'Playing') {
+            foreach ($candidate in $manager.GetSessions()) {
+                try {
+                    if ($candidate.GetPlaybackInfo().PlaybackStatus.ToString() -eq 'Playing') { $session = $candidate; break }
+                } catch { } # A tab may close while sessions are being enumerated.
+            }
         }
         if ($null -eq $session) { [Console]::WriteLine('{}') }
         else {
@@ -39,6 +45,7 @@ while (Get-Process -Id $GamePid -ErrorAction SilentlyContinue) {
             if ($playing) { $position += [Math]::Max(0, ([DateTimeOffset]::UtcNow - $timeline.LastUpdatedTime).TotalMilliseconds) * $rate }
             $document = @{
                 title = $media.Title; artist = $media.Artist; playing = $playing; rate = $rate
+                source = $session.SourceAppUserModelId
                 duration_ms = [long]$timeline.EndTime.TotalMilliseconds; position_ms = [long]$position
             }
             [Console]::WriteLine(($document | ConvertTo-Json -Compress))

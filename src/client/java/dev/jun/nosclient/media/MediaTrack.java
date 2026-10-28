@@ -5,8 +5,12 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public record MediaTrack(String title, String artist, long durationMs, long positionMs, boolean playing, double rate, long sampledAt) {
+public record MediaTrack(String title, String artist, long durationMs, long positionMs, boolean playing, double rate, long sampledAt, MediaSource source) {
     public static final MediaTrack NONE = new MediaTrack("", "", 0L, 0L, false, 1.0, 0L);
+
+    public MediaTrack(String title, String artist, long durationMs, long positionMs, boolean playing, double rate, long sampledAt) {
+        this(title, artist, durationMs, positionMs, playing, rate, sampledAt, MediaSource.UNKNOWN);
+    }
 
     public MediaTrack {
         title = clean(title);
@@ -14,6 +18,7 @@ public record MediaTrack(String title, String artist, long durationMs, long posi
         durationMs = Math.max(0L, durationMs);
         positionMs = Math.max(0L, positionMs);
         rate = Double.isFinite(rate) && rate > 0.0 && rate <= 4.0 ? rate : 1.0;
+        source = source == null ? MediaSource.UNKNOWN : source;
     }
 
     private static String clean(String text) {
