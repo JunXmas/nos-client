@@ -99,7 +99,8 @@ public final class SkyLyrics {
             key = "";
         }
 
-        boolean active = c.lyrics && mc.level != null && !mc.options.hideGui && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
+        // F1 (ẩn giao diện) vẫn giữ lời nhạc: chữ là một phần cảnh trời, và là thứ người chơi muốn có trong ảnh chụp.
+        boolean active = c.lyrics && mc.level != null && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
         String line = "";
         String upcoming = "";
         String id = "";

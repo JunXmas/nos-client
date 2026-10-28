@@ -110,7 +110,7 @@ public final class AuroraSky {
         long now = System.nanoTime();
         float dt = last == 0L ? 0.0F : Math.min(0.1F, (now - last) / 1.0E9F);
         last = now;
-        boolean on = c.lyricsAurora && mc.level != null && !mc.options.hideGui && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
+        boolean on = c.lyricsAurora && mc.level != null && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
         shown = c.animations ? Ui.approach(shown, on ? 1.0F : 0.0F, dt, 1.5F) : (on ? 1.0F : 0.0F);
         if (shown < 0.01F || mc.level == null) {
             return;
