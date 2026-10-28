@@ -51,6 +51,15 @@ class YouTubeLyricsTest {
 		assertEquals("", pick("MONO - Waiting For You (Official Music Video)", "Mono Official", 266_000, entry("MONO", "Waiting For You (Remix)", 266)));
 	}
 
+	@Test void titleWithoutDiacriticsAndGuestArtistStillFindsTheSong() {
+		// Bài jun mở 28/10/2026: tìm nguyên tiêu đề ra 0 kết quả trên lrclib, phải có lượt "mảnh + tên kênh".
+		var video = LyricsLookup.Video.of("SON TUNG M-TP x TYGA | COME MY WAY | OFFICIAL MUSIC VIDEO", "Sơn Tùng M-TP Official");
+		assertTrue(video.searches().contains("COME MY WAY Sơn Tùng M-TP"), video.searches().toString());
+		assertTrue(video.searches().size() <= 3);
+		assertEquals(LRC, pick("SON TUNG M-TP x TYGA | COME MY WAY | OFFICIAL MUSIC VIDEO", "Sơn Tùng M-TP Official", 235_000,
+			entry("Sơn Tùng M-TP", "Come My Way", 258), entry("Sơn Tùng M-TP", "Come My Way", 235)));
+	}
+
 	@Test void closestDurationWinsBecauseMvIntrosShiftTheTimeline() {
 		String near = "{\"artistName\":\"Vũ.\",\"trackName\":\"Lạ Lùng\",\"duration\":262,\"syncedLyrics\":\"[00:02.00]gần\"}";
 		assertEquals("[00:02.00]gần", pick("LẠ LÙNG (Strange) / Vũ. (Original)", "Vũ Official", 262_000, entry("Vũ.", "Lạ Lùng", 268), near));

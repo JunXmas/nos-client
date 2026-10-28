@@ -79,10 +79,17 @@ final class LyricsLookup {
             return "";
         }
 
-        JsonElement found = request("search?q=" + encode(String.join(" ", video.parts()) + (video.parts().size() == 1 ? " " + video.channel() : "")), deadline);
-        return found != null && found.isJsonArray()
-            ? pick(found.getAsJsonArray(), video, track.durationMs(), track.source() == MediaSource.BROWSER ? 8000L : 3000L)
-            : "";
+        for (String search : video.searches()) {
+            JsonElement found = request("search?q=" + encode(search), deadline);
+            String lrc = found != null && found.isJsonArray()
+                ? pick(found.getAsJsonArray(), video, track.durationMs(), track.source() == MediaSource.BROWSER ? 8000L : 3000L)
+                : "";
+            if (!lrc.isBlank()) {
+                return lrc;
+            }
+        }
+
+        return "";
     }
 
     private static String parameters(LyricsLookup.Query query) {
@@ -159,6 +166,23 @@ final class LyricsLookup {
             }
 
             return new Video(List.copyOf(parts), CHANNEL.matcher(channel).replaceFirst("").strip(), VERSION.matcher(title).find());
+        }
+
+        /**
+         * Chuỗi tìm, lần lượt tới khi trúng. lrclib tìm theo đúng dấu: tiêu đề "SON TUNG M-TP x TYGA | COME MY WAY"
+         * (không dấu, kèm người hát cùng) ra 0 kết quả, còn "COME MY WAY Sơn Tùng M-TP" (mảnh + tên kênh) thì trúng.
+         */
+        List<String> searches() {
+            List<String> searches = new ArrayList<>();
+            searches.add(String.join(" ", this.parts) + (this.parts.size() == 1 ? " " + this.channel : ""));
+            for (String part : this.parts) {
+                String search = (part + " " + this.channel).strip();
+                if (!this.channel.isBlank() && !searches.contains(search) && searches.size() < 3) {
+                    searches.add(search);
+                }
+            }
+
+            return searches;
         }
 
         /** Một mảnh trùng tên bài, và ca sĩ khớp một mảnh còn lại hoặc tên kênh (thứ tự nào cũng được). */
