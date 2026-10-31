@@ -1,0 +1,114 @@
+{
+  "ui.click": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/click",
+        "stream": false
+      }
+    ]
+  },
+  "ui.close": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/close",
+        "stream": false
+      }
+    ]
+  },
+  "ui.hover": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/hover",
+        "stream": false
+      }
+    ]
+  },
+  "ui.open": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/open",
+        "stream": false
+      }
+    ]
+  },
+  "ui.slider": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/slider",
+        "stream": false
+      }
+    ]
+  },
+  "ui.song": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/song",
+        "stream": false
+      }
+    ]
+  },
+  "ui.tab": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/tab",
+        "stream": false
+      }
+    ]
+  },
+  "ui.toggle_off": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/toggle_off",
+        "stream": false
+      }
+    ]
+  },
+  "ui.toggle_on": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui/toggle_on",
+        "stream": false
+      }
+    ]
+  },
+  "ui.serious.click": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui_serious/click",
+        "stream": false
+      }
+    ]
+  },
+  "ui.serious.tab": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui_serious/tab",
+        "stream": false
+      }
+    ]
+  },
+  "ui.serious.toggle_on": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui_serious/toggle_on",
+        "stream": false
+      }
+    ]
+  },
+  "ui.serious.toggle_off": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui_serious/toggle_off",
+        "stream": false
+      }
+    ]
+  },
+  "ui.serious.song": {
+    "sounds": [
+      {
+        "name": "lyricsflow:ui_serious/song",
+        "stream": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.jun.nosclient.lyricsflow.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FontTextureMixin",
+    "GameRendererAccessor",
+    "GameRendererMixin",
+    "GuiHotbarMixin",
+    "KeyboardHandlerMixin",
+    "LevelRendererMixin",
+    "PackRepositoryMixin",
+    "PostChainAccessor",
+    "PostPassAccessor",
+    "DeathHideMixin",
+    "FogRendererMixin",
+    "CustomCrosshairCompatMixin",
+    "ClientPacketListenerAccessor",
+    "PingDebugMonitorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

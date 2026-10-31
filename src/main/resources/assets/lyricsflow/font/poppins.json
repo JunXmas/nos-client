@@ -1,0 +1,32 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "lyricsflow:ttf/poppins.ttf",
+      "size": 16.0,
+      "oversample": 8.0,
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "ttf",
+      "file": "lyricsflow:ttf/arabic.ttf",
+      "size": 16.0,
+      "oversample": 8.0,
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/default"
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/unifont"
+    }
+  ]
+}

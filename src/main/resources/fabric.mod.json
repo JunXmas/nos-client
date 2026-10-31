@@ -11,12 +11,17 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"dev.jun.nosclient.NosClient"
+			"dev.jun.nosclient.NosClient",
+			"dev.jun.nosclient.lyricsflow.LyricsFlowClient"
 		]
 	},
 	"mixins": [
 		{
 			"config": "nosclient.mixins.json",
+			"environment": "client"
+		},
+		{
+			"config": "lyricsflow.mixins.json",
 			"environment": "client"
 		}
 	],
