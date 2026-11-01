@@ -1,7 +1,7 @@
 package dev.jun.nosclient.lyricsflow;
 
 import com.mojang.blaze3d.platform.InputConstants.Type;
-import dev.jun.nosclient.lyricsflow.app.cosmetic.PhoneMenu;
+import dev.jun.nosclient.lyricsflow.gui.LyricsFlowScreen;
 import dev.jun.nosclient.lyricsflow.config.ConfigManager;
 import dev.jun.nosclient.lyricsflow.config.LFConfig;
 import dev.jun.nosclient.lyricsflow.gui.PlayerScreen;
@@ -77,7 +77,7 @@ public final class Keys {
 
       while (openMenu.consumeClick()) {
          if (mc.screen == null) {
-            PhoneMenu.open(mc);
+            mc.setScreen(new LyricsFlowScreen());
          }
       }
 

@@ -30,12 +30,12 @@ fi
 cp "$JAR" "$G/mods/"
 mkdir -p "$G/config"
 # Preset config files: NOS_CONFIG="<file in config/>=<local path> ..."
-for pair in ${NOS_CONFIG:-}; do cp "${pair#*=}" "$G/config/${pair%%=*}"; done
+for pair in ${NOS_CONFIG:-}; do mkdir -p "$(dirname "$G/config/${pair%%=*}")"; cp "${pair#*=}" "$G/config/${pair%%=*}"; done
 printf 'onboardAccessibility:false\nskipMultiplayerWarning:true\npauseOnLostFocus:false\nnarrator:0\n' > "$G/options.txt"
 if [ -n "$WORLD" ]; then cp -r "$WORLD" "$G/saves/"; EXTRA+=(--quickPlaySingleplayer "$(basename "$WORLD")"); fi
 DISPLAY_NO=${DISPLAY_NO:-97}
 Xvfb ":$DISPLAY_NO" -screen 0 1280x720x24 >/dev/null 2>&1 & XV=$!
-cleanup() { kill "${GP:-}" 2>/dev/null || true; sleep 2; kill -9 "${GP:-}" 2>/dev/null || true; kill $XV 2>/dev/null || true; cp "$G/logs/latest.log" "$OUT/" 2>/dev/null || true; rm -rf "$G" "$FAKEHOME"; }
+cleanup() { kill "${GP:-}" 2>/dev/null || true; sleep 2; kill -9 "${GP:-}" 2>/dev/null || true; kill $XV 2>/dev/null || true; cp "$G/logs/latest.log" "$OUT/" 2>/dev/null || true; cp -r "$G/config" "$OUT/config" 2>/dev/null || true; cp "$G/options.txt" "$OUT/options.txt" 2>/dev/null || true; rm -rf "$G" "$FAKEHOME"; }
 trap cleanup EXIT
 sleep 1
 mapfile -t ARGV < <(python3 "$ROOT/checks/fabric_argv.py" "$G" "${EXTRA[@]}" | python3 -c 'import json,sys; print("\n".join(json.load(sys.stdin)))')

@@ -2,7 +2,6 @@ package dev.jun.nosclient.lyricsflow;
 
 import dev.jun.nosclient.lyricsflow.app.Core;
 import dev.jun.nosclient.lyricsflow.config.ConfigManager;
-import dev.jun.nosclient.lyricsflow.media.CosmeticSync;
 import dev.jun.nosclient.lyricsflow.media.MediaManager;
 import dev.jun.nosclient.lyricsflow.perf.AutoPerf;
 import dev.jun.nosclient.lyricsflow.render.Chroma;
@@ -29,11 +28,9 @@ public class LyricsFlowClient implements ClientModInitializer {
       ConfigManager.load();
       Keys.register();
       Core.init();
-      HudElementRegistry.attachElementBefore(VanillaHudElements.MISC_OVERLAYS, LyricsFlow.id("world_lyrics"), Hud::renderWorldLayer);
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, LyricsFlow.id("top_bar"), Hud::renderTopLayer);
       ClientTickEvents.END_CLIENT_TICK.register(Keys::tick);
       ClientTickEvents.END_CLIENT_TICK.register(LivePing::tick);
-      ClientTickEvents.END_CLIENT_TICK.register(CosmeticSync::tick);
       ClientTickEvents.END_CLIENT_TICK.register(AutoPerf::tick);
       WorldRenderEvents.AFTER_ENTITIES.register(ctx -> {
          if (!Chroma.drawsLate() && !WorldLyrics.lateForShaders()) {

@@ -64,9 +64,6 @@ public class LFConfig {
    public boolean autoPerf = true;
    public int targetFps = 60;
    public int quality = 1;
-   public int profile = 0;
-   public boolean fpsBoost = false;
-   public String boostBefore = "";
    public boolean fxSkyColor = true;
    public boolean fxWeather = true;
    public boolean fxAurora = true;
@@ -105,13 +102,10 @@ public class LFConfig {
    public float topBarScale = 1.0F;
    public float topBarX = 0.5F;
    public float topBarY = 0.02F;
-   public float screenLyricsX = 0.5F;
-   public float screenLyricsY = 0.32F;
    public boolean showOnlyWhenPlaying = true;
    public boolean hideWhenStopped = false;
    public boolean dimWhenIdle = true;
    public boolean mediaKeys = true;
-   public boolean hideInScreenshots = true;
    public Map<String, String> profiles = new LinkedHashMap<>();
 
    public enum EnterAnim {
@@ -129,9 +123,7 @@ public class LFConfig {
 
    public enum LyricsStyle {
       SKY,
-      FLOATING,
-      SCREEN,
-      WALL;
+      FLOATING;
    }
 
    public enum Source {

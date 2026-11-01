@@ -3,7 +3,6 @@ package dev.jun.nosclient.lyricsflow.mixin;
 import com.mojang.blaze3d.resource.CrossFrameResourcePool;
 import dev.jun.nosclient.lyricsflow.render.Chroma;
 import dev.jun.nosclient.lyricsflow.render.Proj;
-import dev.jun.nosclient.lyricsflow.render.ScreenshotHelper;
 import dev.jun.nosclient.lyricsflow.util.Anim;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -52,8 +51,4 @@ public abstract class GameRendererMixin {
       Anim.beginFrame();
    }
 
-   @Inject(method = "render", at = @At("TAIL"))
-   private void lyricsflow$afterRender(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
-      ScreenshotHelper.afterFrame();
-   }
 }

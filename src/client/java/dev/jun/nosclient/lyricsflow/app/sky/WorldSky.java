@@ -11,8 +11,7 @@ import dev.jun.nosclient.lyricsflow.app.hud.Anim;
 import dev.jun.nosclient.lyricsflow.app.hud.Gfx;
 import dev.jun.nosclient.lyricsflow.app.hud.Theme;
 import dev.jun.nosclient.lyricsflow.app.lyrics.NowPlaying;
-import dev.jun.nosclient.lyricsflow.app.lyrics.SpotifyClient;
-import dev.jun.nosclient.lyricsflow.app.util.AutoPerf;
+import dev.jun.nosclient.lyricsflow.perf.AutoPerf;
 import dev.jun.nosclient.lyricsflow.config.ConfigManager;
 import dev.jun.nosclient.lyricsflow.config.LFConfig;
 import dev.jun.nosclient.lyricsflow.mixin.GameRendererAccessor;
@@ -103,10 +102,6 @@ public final class WorldSky {
       {{250.0, 30.0}, {254.0, 36.0}, {258.0, 30.0}, {251.0, 25.0}, {257.0, 24.0}, {254.0, 36.0}, {254.0, 43.0}},
       {{320.0, 55.0}, {326.0, 58.0}, {331.0, 55.0}, {326.0, 52.0}, {320.0, 55.0}}
    };
-   private static String introTrack = "";
-   private static long introStart = 0L;
-   private static double introAz = 0.0;
-   private static double introEl = 0.0;
    private static final int PF = 11;
    private static final double[] TEX_EL = new double[]{-8.0, -3.0, 2.0, 8.0, 15.0, 24.0, 35.0, 48.0, 62.0, 76.0, 90.0};
    private static final float MESH_EL0 = -4.0F;
@@ -236,7 +231,7 @@ public final class WorldSky {
          PoseStack ps = ctx.matrices();
          base = new Matrix4f(ps.last().pose());
          MultiBufferSource buffers = ctx.consumers();
-         NowPlaying npm = SpotifyClient.now();
+         NowPlaying npm = NowPlaying.now();
          float beat = 0.0F;
          float calm = 1.0F;
          if (c.fxSkyMusic && npm.hasTrack() && npm.playing) {
@@ -321,7 +316,7 @@ public final class WorldSky {
          }
 
          LFConfig lf = ConfigManager.get();
-         if (lf.enabled && lf.showLyrics && lf.lyricsStyle == LFConfig.LyricsStyle.SKY && !mc.options.hideGui && !Hud.hideForScreenshot) {
+         if (lf.enabled && lf.showLyrics && lf.lyricsStyle == LFConfig.LyricsStyle.SKY && !mc.options.hideGui) {
             c.lyricsOpacity = Math.max(0.2F, Math.min(1.0F, lf.textOpacity));
             c.lyricsUnderground = lf.showUnderground;
             c.lyricsGlow = lf.glow;
@@ -635,74 +630,6 @@ public final class WorldSky {
             }
          }
       }
-   }
-
-   private static void drawSongIntro(Minecraft mc, Config c, MultiBufferSource buffers, int color) {
-      NowPlaying np = SpotifyClient.now();
-      if (np.hasTrack()) {
-         String id = String.valueOf(np.trackId);
-         long now = System.currentTimeMillis();
-         if (!id.equals(introTrack)) {
-            introTrack = id;
-            introStart = now;
-            introAz = camYaw;
-            introEl = Math.max(8.0F, Math.min(50.0F, -camPitch + 10.0F));
-         }
-
-         long age = now - introStart;
-         if (age <= 3800L) {
-            float a = Math.min(1.0F, (float)age / 500.0F) * (age > 3000L ? 1.0F - (float)(age - 3000L) / 800.0F : 1.0F) * c.lyricsOpacity;
-            if (!(a <= 0.03F)) {
-               double d = dist * 0.88;
-               double dpp = degPerPx(mc, c);
-               float k = (float)(Math.toRadians(dpp) * d);
-               Font font = mc.font;
-               String title = np.title.length() > 32 ? np.title.substring(0, 31) + "…" : np.title;
-               drawFlat(font, buffers, title, introAz, introEl + 2.0 + (1.0F - Math.min(1.0F, (float)age / 700.0F)) * 2.0F, d, k * 1.6F, color, a);
-               if (!np.artist.isBlank()) {
-                  drawFlat(font, buffers, np.artist, introAz, introEl - 4.0, d, k * 0.9F, 16777215, a * 0.75F);
-               }
-            }
-         }
-      }
-   }
-
-   private static void drawFlat(Font font, MultiBufferSource buffers, String text, double azDeg, double elDeg, double d, float k, int col, float a) {
-      double az = Math.toRadians(azDeg);
-      double el = Math.toRadians(elDeg);
-      double dx = -Math.sin(az) * Math.cos(el);
-      double dy = Math.sin(el);
-      double dz = Math.cos(az) * Math.cos(el);
-      double r0x = -Math.cos(az);
-      double r0z = -Math.sin(az);
-      double ux0 = -r0z * dy;
-      double uy0 = r0z * dx - r0x * dz;
-      double uz0 = r0x * dy;
-      Matrix4f m = new Matrix4f(base)
-         .mul(
-            new Matrix4f(
-               (float)r0x * k,
-               0.0F,
-               (float)r0z * k,
-               0.0F,
-               (float)(-ux0) * k,
-               (float)(-uy0) * k,
-               (float)(-uz0) * k,
-               0.0F,
-               (float)(-dx) * k,
-               (float)(-dy) * k,
-               (float)(-dz) * k,
-               0.0F,
-               (float)(dx * d),
-               (float)(dy * d),
-               (float)(dz * d),
-               1.0F
-            )
-         );
-      int w = Gfx.w(text, Gfx.LYRICS);
-      m.translate(-w / 2.0F, -4.5F, 0.0F);
-      word(font, buffers, m, text, 0.0F, 1.0F, 0.0F, Gfx.lerpColor(col, 656916, 0.7F), a * 0.6F, false);
-      word(font, buffers, m, text, 0.0F, 0.0F, 0.1F, col, a, false);
    }
 
    private static void drawShooting(float vis, float dt) {
@@ -1738,7 +1665,7 @@ public final class WorldSky {
       if (pl != null && !pl.isInvisible()) {
          Vec3 pos = pl.getPosition(pt);
          long now = System.currentTimeMillis();
-         NowPlaying np = SpotifyClient.now();
+         NowPlaying np = NowPlaying.now();
          float beat = np.playing ? np.beatPulse(np.progressNow(c.lyricsOffsetMs)) : 0.0F;
          int acc = Theme.accent();
          int skyCol = p != null ? aurora1(p) : acc;
@@ -1830,7 +1757,7 @@ public final class WorldSky {
    }
 
    private static void drawLyrics(Minecraft mc, Config c, MultiBufferSource buffers, int color, float dt) {
-      NowPlaying np = SpotifyClient.now();
+      NowPlaying np = NowPlaying.now();
       long now = System.currentTimeMillis();
       int li = -1;
       long prog = 0L;
@@ -1900,7 +1827,7 @@ public final class WorldSky {
          int space = Gfx.w(" ", Gfx.LYRICS);
          int shadow = Gfx.lerpColor(color, 656916, 0.75F);
          long startDelay = !exiting.isEmpty() && s.exitAt == 0L ? 420L : 0L;
-         NowPlaying npB = SpotifyClient.now();
+         NowPlaying npB = NowPlaying.now();
          float beat = c.fxBeatPulse ? npB.beatPulse(npB.progressNow(c.lyricsOffsetMs)) : 0.0F;
          boolean through = c.lyricsUnderground && !skyOpen;
          int glowCol = c.lyricsGlowColor < 0 ? color : LYRIC_COLORS[Math.floorMod(c.lyricsGlowColor, LYRIC_COLORS.length)];

@@ -217,7 +217,7 @@ public final class ConfigManager {
                   c.syncOffsetMs = 0;
                }
 
-               if (c.lyricsStyle == LFConfig.LyricsStyle.SCREEN || c.lyricsStyle == LFConfig.LyricsStyle.WALL || c.lyricsStyle == null) {
+               if (c.lyricsStyle == null) {
                   c.lyricsStyle = LFConfig.LyricsStyle.FLOATING;
                }
 
@@ -367,7 +367,7 @@ public final class ConfigManager {
    }
 
    static {
-      GROUPS.put("general", new String[]{"enabled", "uiSounds", "uiVolume", "soundStyle", "songChime", "mediaKeys", "hideInScreenshots"});
+      GROUPS.put("general", new String[]{"enabled", "uiSounds", "uiVolume", "soundStyle", "songChime", "mediaKeys"});
       GROUPS.put("music", new String[]{"source", "syncOffsetMs"});
       GROUPS.put(
          "lyrics",
@@ -469,8 +469,8 @@ public final class ConfigManager {
       );
       GROUPS.put(
          "performance",
-         new String[]{"autoPerf", "targetFps", "quality", "profile", "fpsBoost", "boostBefore", "fxSkyColor", "fxWeather", "fxAurora", "fxStars", "lastSky"}
+         new String[]{"autoPerf", "targetFps", "quality", "fxSkyColor", "fxWeather", "fxAurora", "fxStars", "lastSky"}
       );
-      GROUPS.put("positions", new String[]{"topBarX", "topBarY", "screenLyricsX", "screenLyricsY"});
+      GROUPS.put("positions", new String[]{"topBarX", "topBarY"});
    }
 }

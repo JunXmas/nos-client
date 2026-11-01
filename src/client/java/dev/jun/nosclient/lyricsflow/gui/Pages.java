@@ -14,8 +14,6 @@ import dev.jun.nosclient.lyricsflow.media.MediaManager;
 import dev.jun.nosclient.lyricsflow.media.SpotifyWeb;
 import dev.jun.nosclient.lyricsflow.media.Track;
 import dev.jun.nosclient.lyricsflow.perf.AutoPerf;
-import dev.jun.nosclient.lyricsflow.perf.FpsBoost;
-import dev.jun.nosclient.lyricsflow.perf.Profiles;
 import dev.jun.nosclient.lyricsflow.render.Chroma;
 import dev.jun.nosclient.lyricsflow.render.Cosmetics;
 import dev.jun.nosclient.lyricsflow.render.Fonts;
@@ -33,13 +31,10 @@ import java.util.Map.Entry;
 import java.util.function.DoubleFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
-import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ParticleStatus;
 
 final class Pages {
    private static int skyPage;
@@ -156,10 +151,6 @@ final class Pages {
                   }
                )
             )
-            .add(new Ui.Choice("lyricsflow.perf.profile", "lyricsflow.perf.profile.desc", new String[]{"Chill", "PvP"}, () -> c().profile, i -> {
-               Profiles.set(i);
-               note(i == 0 ? "lyricsflow.perf.profile.chill" : "lyricsflow.perf.profile.pvp");
-            }))
             .add(new Ui.Toggle("lyricsflow.opt.sky_follow", "lyricsflow.opt.sky_follow.desc", () -> c().skyFollow, v -> c().skyFollow = v))
             .add(new Ui.Slider("lyricsflow.opt.scale", 0.4, 2.5, 0.05, () -> c().lyricsScale, v -> c().lyricsScale = (float)v, Pages::mult))
             .add(new Ui.Toggle("lyricsflow.opt.top_bar", "lyricsflow.opt.top_bar.desc", () -> c().showTopBar, v -> c().showTopBar = v))
@@ -206,11 +197,6 @@ final class Pages {
                   }
                )
             )
-            .add(new Ui.Choice("lyricsflow.perf.profile", "lyricsflow.perf.profile.desc", new String[]{"Chill", "PvP"}, () -> c().profile, i -> {
-               Profiles.set(i);
-               note(i == 0 ? "lyricsflow.perf.profile.chill" : "lyricsflow.perf.profile.pvp");
-               screen.rebuildSoon();
-            }))
       );
       l.add(new Ui.Section("lyricsflow.section.size"));
       Ui.Card size = new Ui.Card()
@@ -937,10 +923,6 @@ final class Pages {
       l.add(
          new Ui.Card()
             .add(new Ui.Button("lyricsflow.opt.reset_all", "lyricsflow.opt.reset_all.desc", () -> Ui.tr("lyricsflow.button.reset"), "refresh", false, () -> {
-               if (c().fpsBoost) {
-                  FpsBoost.apply(false);
-               }
-
                ConfigManager.reset();
                Core.resetConfig();
                SkyImage.reload();
@@ -1038,57 +1020,6 @@ final class Pages {
                   }
                )
             )
-            .add(new Ui.Choice("lyricsflow.perf.profile", null, new String[]{"Chill", "PvP"}, () -> c().profile, i -> {
-               Profiles.set(i);
-               note(i == 0 ? "lyricsflow.perf.profile.chill" : "lyricsflow.perf.profile.pvp");
-               screen.rebuildSoon();
-            }))
-            .add(new Ui.Toggle("lyricsflow.perf.boost", "lyricsflow.perf.boost.desc", () -> c().fpsBoost, FpsBoost::apply))
-      );
-      Options o = Minecraft.getInstance().options;
-      l.add(new Ui.Section("lyricsflow.section.perf_game"));
-      l.add(
-         new Ui.Card()
-            .add(new Ui.Slider("lyricsflow.perf.render_distance", 2.0, 32.0, 1.0, () -> ((Integer)o.renderDistance().get()).intValue(), v -> {
-               o.renderDistance().set((int)Math.round(v));
-               o.save();
-            }, v -> Math.round(v) + " " + Ui.tr("lyricsflow.perf.chunks")))
-            .add(new Ui.Slider("lyricsflow.perf.max_fps", 30.0, 260.0, 10.0, () -> ((Integer)o.framerateLimit().get()).intValue(), v -> {
-               o.framerateLimit().set((int)Math.round(v));
-               o.save();
-            }, v -> v >= 260.0 ? Ui.tr("lyricsflow.perf.unlimited") : Math.round(v) + " FPS"))
-            .add(
-               new Ui.Choice(
-                  "lyricsflow.perf.clouds",
-                  null,
-                  new String[]{"lyricsflow.perf.off", "lyricsflow.perf.fast", "lyricsflow.perf.fancy"},
-                  () -> ((CloudStatus)o.cloudStatus().get()).ordinal(),
-                  i -> {
-                     o.cloudStatus().set(CloudStatus.values()[i]);
-                     o.save();
-                  }
-               )
-            )
-            .add(
-               new Ui.Choice(
-                  "lyricsflow.perf.particles",
-                  null,
-                  new String[]{"lyricsflow.perf.all", "lyricsflow.perf.decreased", "lyricsflow.perf.minimal"},
-                  () -> ((ParticleStatus)o.particles().get()).ordinal(),
-                  i -> {
-                     o.particles().set(ParticleStatus.values()[i]);
-                     o.save();
-                  }
-               )
-            )
-            .add(new Ui.Toggle("lyricsflow.perf.shadows", null, () -> (Boolean)o.entityShadows().get(), v -> {
-               o.entityShadows().set(v);
-               o.save();
-            }))
-            .add(new Ui.Toggle("lyricsflow.perf.vsync", "lyricsflow.perf.vsync.desc", () -> (Boolean)o.enableVsync().get(), v -> {
-               o.enableVsync().set(v);
-               o.save();
-            }))
       );
       l.add(new Ui.Section("lyricsflow.section.perf_effects"));
       l.add(
@@ -1110,18 +1041,6 @@ final class Pages {
                sc().fxStars = v;
             }))
             .add(new Ui.Toggle("lyricsflow.perf.glow", "lyricsflow.perf.glow.desc", () -> c().glow, v -> c().glow = v))
-            .add(new Ui.Button("lyricsflow.perf.all_off", null, () -> Ui.tr("lyricsflow.button.apply"), null, false, () -> {
-               Profiles.setAll(c(), false);
-               ConfigManager.save();
-               note("lyricsflow.perf.all_off.done");
-               screen.rebuildSoon();
-            }))
-            .add(new Ui.Button("lyricsflow.perf.all_on", null, () -> Ui.tr("lyricsflow.button.apply"), null, true, () -> {
-               Profiles.setAll(c(), true);
-               ConfigManager.save();
-               note("lyricsflow.perf.all_on.done");
-               screen.rebuildSoon();
-            }))
       );
    }
 

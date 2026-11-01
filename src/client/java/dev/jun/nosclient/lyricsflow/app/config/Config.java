@@ -62,7 +62,6 @@ public class Config {
    public boolean customMoon = false;
    public boolean customShooting = true;
    public boolean lyricsSky = true;
-   public boolean lyricsIsland = true;
    public boolean lyricsFollow = true;
    public int lyricsStyle = 0;
    public boolean lyricsViewLock = false;
@@ -79,7 +78,6 @@ public class Config {
    public boolean fxSongIntro = true;
    public boolean translate = false;
    public String translateTo = "de";
-   public boolean islandEnabled = true;
    public boolean showClock = true;
    public boolean showPing = true;
    public boolean showFps = false;
@@ -87,8 +85,6 @@ public class Config {
    public boolean glassHotbar = true;
    public boolean fxStartup = true;
    public int quality = 1;
-   public boolean fpsBoost = false;
-   public String boostBefore = "";
    public boolean autoPerf = true;
    public int targetFps = 0;
    public boolean fxWeather = true;
@@ -96,7 +92,6 @@ public class Config {
    public boolean fxStars = true;
    public boolean fxBeams = true;
    public boolean fxSkyColor = true;
-   public int profile = 0;
    public boolean demoLyrics = false;
    public String spotifyClientId = "";
    public int spotifyMode = 0;
@@ -158,10 +153,6 @@ public class Config {
 
       if (this.cloudsBefore == null) {
          this.cloudsBefore = "";
-      }
-
-      if (this.boostBefore == null) {
-         this.boostBefore = "";
       }
 
       if (this.translateTo == null) {

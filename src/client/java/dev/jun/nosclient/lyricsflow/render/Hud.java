@@ -20,7 +20,6 @@ public final class Hud {
    public static float focusA = 1.0F;
    private static boolean wasActive = true;
    private static long backAt = -1L;
-   public static volatile boolean hideForScreenshot;
    private static int lastWordKey = Integer.MIN_VALUE;
    private static long lastFrame = -1L;
 
@@ -108,34 +107,16 @@ public final class Hud {
             WorldLyrics.tick();
          }
 
-         if (!hideForScreenshot) {
-            if (c.enabled) {
-               if (buffers == null) {
-                  buffers = mc.renderBuffers().bufferSource();
-               }
-            }
-         }
-      }
-   }
-
-   public static void renderWorldLayer(GuiGraphics g, DeltaTracker tick) {
-      Minecraft mc = Minecraft.getInstance();
-      if (mc.level != null && mc.player != null) {
-         frame();
-         if (!hideForScreenshot) {
-            LFConfig c = ConfigManager.get();
-            if (c.enabled) {
-               if (c.showLyrics) {
-                  WorldLyrics.render(g);
-               }
-            }
-         }
       }
    }
 
    public static void renderTopLayer(GuiGraphics g, DeltaTracker tick) {
       Minecraft mc = Minecraft.getInstance();
-      if (mc.level != null && mc.player != null && !hideForScreenshot) {
+      if (mc.level != null && mc.player != null) {
+         frame();
+      }
+
+      if (mc.level != null && mc.player != null) {
          LFConfig c = ConfigManager.get();
          if (c.enabled && c.showTopBar) {
             AutoPerf.begin();

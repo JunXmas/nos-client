@@ -4,8 +4,6 @@ import dev.jun.nosclient.lyricsflow.app.Core;
 import dev.jun.nosclient.lyricsflow.app.config.Config;
 import dev.jun.nosclient.lyricsflow.app.hud.Anim;
 import dev.jun.nosclient.lyricsflow.app.hud.Gfx;
-import dev.jun.nosclient.lyricsflow.app.hud.Island;
-import dev.jun.nosclient.lyricsflow.app.util.Fx;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -42,7 +40,6 @@ public final class SkyRenderer {
    private static long flashAt = 0L;
    private static long nextFlash = 0L;
    private static boolean forcedRain = false;
-   private static int lastSky = -99;
 
    private SkyRenderer() {
    }
@@ -103,15 +100,6 @@ public final class SkyRenderer {
 
    public static void tick(Minecraft mc) {
       Config c = Core.cfg();
-      if (c.sky != lastSky) {
-         if (lastSky != -99 && mc.player != null) {
-            SkyPreset p = SkyPreset.get(c.sky);
-            Island.notify(p == null ? Fx.t("lyricsflow.sky.off") : Fx.t("lyricsflow.sky.enabled", Fx.t(p.key())), p != null);
-         }
-
-         lastSky = c.sky;
-      }
-
       if (mc.level == null) {
          forcedRain = false;
       } else {

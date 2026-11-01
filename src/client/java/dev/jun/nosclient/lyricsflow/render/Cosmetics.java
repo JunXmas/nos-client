@@ -8,7 +8,6 @@ import com.mojang.math.Axis;
 import dev.jun.nosclient.lyricsflow.LyricsFlow;
 import dev.jun.nosclient.lyricsflow.config.ConfigManager;
 import dev.jun.nosclient.lyricsflow.config.LFConfig;
-import dev.jun.nosclient.lyricsflow.media.CosmeticSync;
 import dev.jun.nosclient.lyricsflow.util.Anim;
 import dev.jun.nosclient.lyricsflow.util.Http;
 import java.nio.charset.StandardCharsets;
@@ -143,10 +142,9 @@ public final class Cosmetics {
       LFConfig c = ConfigManager.get();
       if (!c.enabled) {
          return "none";
-      } else if (p == mc.player) {
-         return c.cosmetic == null ? "none" : c.cosmetic;
       } else {
-         return CosmeticSync.of(p.getUUID());
+         // Chỉ người chơi này thấy cosmetic của chính mình: không gửi, không nhận gì qua mạng.
+         return p == mc.player && c.cosmetic != null ? c.cosmetic : "none";
       }
    }
 

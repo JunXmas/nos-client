@@ -101,10 +101,6 @@ public final class WorldLyrics {
       return c.lyricsStyle == LFConfig.LyricsStyle.SKY && c.skyWords;
    }
 
-   private static boolean inWorld(LFConfig c) {
-      return c.lyricsStyle != LFConfig.LyricsStyle.SCREEN;
-   }
-
    private static List<int[]> chunks(Lyrics.Line line, LFConfig c, long seed) {
       List<int[]> out = new ArrayList<>();
       int n = line.words.size();
@@ -222,29 +218,12 @@ public final class WorldLyrics {
 
             if (!(pauseFade < 0.01F)) {
                Themes.Theme th = Themes.current();
-               if (inWorld(c)) {
-                  for (WorldLyrics.Placed p : visible) {
-                     update(p, t, c, th);
-                  }
+               for (WorldLyrics.Placed p : visible) {
+                  update(p, t, c, th);
                }
             }
          } else {
             visible.clear();
-         }
-      }
-   }
-
-   static void render(GuiGraphics g) {
-      LFConfig c = ConfigManager.get();
-      if (!(pauseFade < 0.01F) && !visible.isEmpty()) {
-         if (!inWorld(c)) {
-            long t = MediaManager.get().position();
-            float speed = Math.max(0.3F, c.animSpeed);
-            Themes.Theme th = Themes.current();
-
-            for (WorldLyrics.Placed p : visible) {
-               drawScreen(g, p, t, c, th, speed);
-            }
          }
       }
    }
@@ -270,10 +249,6 @@ public final class WorldLyrics {
          float relYaw = Math.abs(wrap(yaw - Proj.yaw));
          float relPitch = Math.abs(pitch - Proj.pitch);
          boolean inView = relYaw < 52.0F && relPitch < 42.0F && d < 24.0F * Math.max(1.0F, c.lyricsDistance) + 4.0F;
-         if (c.lyricsStyle == LFConfig.LyricsStyle.WALL) {
-            inView = d < 40.0;
-         }
-
          if (!inView && p.viewVis > 0.5F) {
             p.lookedAway = true;
          }
@@ -286,9 +261,6 @@ public final class WorldLyrics {
             p.occl = hit.getType() == Type.BLOCK && hit.getLocation().distanceTo(from) < d - 0.4 ? 0.0F : 1.0F;
          }
 
-         if (c.lyricsStyle == LFConfig.LyricsStyle.WALL) {
-            p.occl = 1.0F;
-         }
       }
 
       p.occlVis = Anim.approach(p.occlVis, p.occl, 6.0F);
@@ -311,10 +283,6 @@ public final class WorldLyrics {
    }
 
    private static Quaternionf facing(WorldLyrics.Placed p, LFConfig c) {
-      if (p.surf != null) {
-         return new Quaternionf(p.surf);
-      }
-
       float yaw;
       float pitch;
       if (c.viewLock) {
@@ -338,14 +306,13 @@ public final class WorldLyrics {
          return (float)(150.0 * Math.tan(Math.toRadians(3.1))) * c.lyricsScale;
       } else {
          return c.lyricsStyle == LFConfig.LyricsStyle.FLOATING
-            ? (float)(0.0765 * Math.max(2.5, p.sizeDist)) * c.lyricsScale * p.fit
-            : (float)(0.085 * Math.max(2.5, p.dist)) * c.lyricsScale * p.fit;
+            ? (float)(0.0765 * Math.max(2.5, p.sizeDist)) * c.lyricsScale
+            : (float)(0.085 * Math.max(2.5, p.dist)) * c.lyricsScale;
       }
    }
 
    public static boolean lateForShaders() {
-      LFConfig c = ConfigManager.get();
-      return IrisCompat.shadersOn() && c.lyricsStyle != LFConfig.LyricsStyle.WALL;
+      return IrisCompat.shadersOn();
    }
 
    public static void renderWorld(PoseStack ps, MultiBufferSource buffers) {
@@ -382,7 +349,7 @@ public final class WorldLyrics {
       LFConfig c = ConfigManager.get();
       if (AirLyrics.handles(c)) {
          Minecraft mc0 = Minecraft.getInstance();
-         if (!ghost && c.enabled && c.showLyrics && !Hud.hideForScreenshot && mc0.level != null && mc0.player != null) {
+         if (!ghost && c.enabled && c.showLyrics && mc0.level != null && mc0.player != null) {
             if (buffers == null) {
                buffers = mc0.renderBuffers().bufferSource();
             }
@@ -395,7 +362,7 @@ public final class WorldLyrics {
                AutoPerf.end();
             }
          }
-      } else if (c.enabled && c.showLyrics && inWorld(c) && !Hud.hideForScreenshot && !visible.isEmpty() && !(pauseFade < 0.01F)) {
+      } else if (c.enabled && c.showLyrics && !visible.isEmpty() && !(pauseFade < 0.01F)) {
          Minecraft mc = Minecraft.getInstance();
          if (mc.level != null && mc.player != null) {
             if (buffers == null) {
@@ -408,14 +375,12 @@ public final class WorldLyrics {
             float speed = Math.max(0.3F, c.animSpeed);
             Themes.Theme th = Themes.current();
             boolean sky = c.lyricsStyle == LFConfig.LyricsStyle.SKY;
-            boolean wall = c.lyricsStyle == LFConfig.LyricsStyle.WALL;
-            DisplayMode mode = wall ? DisplayMode.POLYGON_OFFSET : DisplayMode.NORMAL;
+            DisplayMode mode = DisplayMode.NORMAL;
             if (lateForShaders() || ghost) {
                mode = DisplayMode.SEE_THROUGH;
             }
 
             ghostNow = ghost;
-            layerStep = wall ? 0.004F : 0.06F;
             float glowBase = c.glow ? 0.65F : 0.0F;
             float beat = c.beatGlow ? Hud.beat : 0.0F;
             GpuBufferSlice oldFog = null;
@@ -450,14 +415,12 @@ public final class WorldLyrics {
                      ps.translate(a[0] - cp.x, a[1] - cp.y, a[2] - cp.z);
                      Quaternionf face = facing(p, c);
                      ps.mulPose(face);
-                     if (!wall && p.surf == null) {
-                        Vector3f n = face.transform(new Vector3f(0.0F, 0.0F, 1.0F));
-                        double vx = cp.x - a[0];
-                        double vy = cp.y - a[1];
-                        double vz = cp.z - a[2];
-                        if (n.x * vx + n.y * vy + n.z * vz < 0.0) {
-                           ps.mulPose(Axis.YP.rotationDegrees(180.0F));
-                        }
+                     Vector3f n = face.transform(new Vector3f(0.0F, 0.0F, 1.0F));
+                     double vx = cp.x - a[0];
+                     double vy = cp.y - a[1];
+                     double vz = cp.z - a[2];
+                     if (n.x * vx + n.y * vy + n.z * vz < 0.0) {
+                        ps.mulPose(Axis.YP.rotationDegrees(180.0F));
                      }
 
                      ps.mulPose(Axis.ZP.rotationDegrees(-p.tilt));
@@ -470,7 +433,7 @@ public final class WorldLyrics {
                            float dx = s[1];
                            float dy = s[2];
                            float sc = s[3];
-                           double bob = wall ? 0.0 : Math.sin(Anim.seconds() * 1.6 + j * 0.9 + p.seed) * (sky ? 0.02 : 0.04);
+                           double bob = Math.sin(Anim.seconds() * 1.6 + j * 0.9 + p.seed) * (sky ? 0.02 : 0.04);
                            float size = p.wsize[j] * sc;
                            ps.pushPose();
                            ps.translate((p.wx0[j] + dx) * em, -(p.wy0[j] + dy + (float)bob) * em, 0.0F);
@@ -480,10 +443,6 @@ public final class WorldLyrics {
 
                            float k = em * size / Fonts.height(font);
                            ps.scale(k, -k, k);
-                           if (wall) {
-                              layerStep = 0.006F / Math.max(1.0E-4F, k);
-                           }
-
                            boolean sung = t >= w.start && t < w.end + 80L;
                            float glow = glowBase + (sung ? 0.35F : 0.0F) + beat * 0.5F;
                            String word = Lyrics.show(w.text);
@@ -894,192 +853,6 @@ public final class WorldLyrics {
       }
    }
 
-   private static float crowd(Vec3 at) {
-      float pen = 0.0F;
-
-      for (WorldLyrics.Placed o : visible) {
-         double d = Math.sqrt(
-            (o.ax - at.x) * (o.ax - at.x) + (o.ay - at.y) * (o.ay - at.y) + (o.az - at.z) * (o.az - at.z)
-         );
-         if (d < 3.5) {
-            pen += (float)(3.5 - d) * 160.0F;
-         }
-      }
-
-      return pen;
-   }
-
-   private static boolean empty(Minecraft mc, BlockPos pos) {
-      return mc.level.getBlockState(pos).getCollisionShape(mc.level, pos).isEmpty() && mc.level.getFluidState(pos).isEmpty();
-   }
-
-   private static boolean solid(Minecraft mc, BlockPos pos) {
-      return !mc.level.getBlockState(pos).getCollisionShape(mc.level, pos).isEmpty() || !mc.level.getFluidState(pos).isEmpty();
-   }
-
-   private static void wallPlace(WorldLyrics.Placed p, long s) {
-      Minecraft mc = Minecraft.getInstance();
-      Vec3 eye = new Vec3(Proj.cx, Proj.cy, Proj.cz);
-      Vec3 best = null;
-      Vec3 bestN = null;
-      Quaternionf bestQ = null;
-      float bestScore = -1.0E9F;
-      if (mc.level != null && mc.player != null) {
-         for (int k = 0; k < 10; k++) {
-            float yaw = Proj.yaw + (k == 0 ? 0.0F : (rnd(s, 200 + k * 2) * 2.0F - 1.0F) * 35.0F);
-            float pitch = Math.max(-30.0F, Math.min(25.0F, Proj.pitch * 0.5F + (k == 0 ? 0.0F : (rnd(s, 201 + k * 2) - 0.5F) * 24.0F)));
-            double[] d = Proj.dir(yaw, pitch);
-            BlockHitResult hit = mc.level
-               .clip(new ClipContext(eye, eye.add(d[0] * 16.0, d[1] * 16.0, d[2] * 16.0), Block.COLLIDER, Fluid.ANY, mc.player));
-            if (hit.getType() == Type.BLOCK) {
-               Direction f = hit.getDirection();
-               double dist = hit.getLocation().distanceTo(eye);
-               if (f.getAxis().isHorizontal() && !(dist < 2.5)) {
-                  Vec3 n = new Vec3(f.getStepX(), 0.0, f.getStepZ());
-                  Vec3 t = new Vec3(n.z, 0.0, -n.x);
-                  float score = 1000.0F - (float)Math.abs(dist - 6.0) * 20.0F - Math.abs(wrap(yaw - Proj.yaw)) * 2.0F - crowd(hit.getLocation());
-
-                  for (int side = -2; side <= 2; side++) {
-                     if (side != 0) {
-                        Vec3 q = hit.getLocation().add(t.scale(side * 1.1));
-                        BlockPos in = BlockPos.containing(q.subtract(n.scale(0.5)));
-                        BlockPos out = BlockPos.containing(q.add(n.scale(0.5)));
-                        boolean ok = !mc.level.getBlockState(in).isAir() && empty(mc, out);
-                        if (!ok) {
-                           score -= Math.abs(side) == 1 ? 260.0F : 120.0F;
-                        }
-                     }
-                  }
-
-                  if (score > bestScore) {
-                     bestScore = score;
-                     bestN = n;
-                     best = hit.getLocation().add(n.scale(0.04));
-                     float yawIn = (float)Math.toDegrees(Math.atan2(n.x, -n.z));
-                     bestQ = new Quaternionf().rotationYXZ((float) Math.PI - (float)Math.toRadians(yawIn), 0.0F, 0.0F);
-                  }
-               }
-            }
-         }
-
-         if (best == null) {
-            float groundBest = -1.0E9F;
-
-            for (int k = 0; k < 8; k++) {
-               float yaw = Proj.yaw + (k == 0 ? 0.0F : (rnd(s, 230 + k * 2) * 2.0F - 1.0F) * 25.0F);
-               double dist = 4.5 + rnd(s, 231 + k * 2) * 2.5;
-               double[] d = Proj.dir(yaw, 0.0F);
-               Vec3 top = eye.add(d[0] * dist, 1.0, d[2] * dist);
-               BlockHitResult hit = mc.level
-                  .clip(new ClipContext(top, top.add(0.0, -8.0, 0.0), Block.COLLIDER, Fluid.ANY, mc.player));
-               if (hit.getType() == Type.BLOCK && hit.getDirection() == Direction.UP) {
-                  Vec3 pos = hit.getLocation().add(0.0, 0.04, 0.0);
-                  BlockHitResult see = mc.level.clip(new ClipContext(eye, pos, Block.VISUAL, Fluid.NONE, mc.player));
-                  if (see.getType() != Type.BLOCK || !(see.getLocation().distanceTo(pos) > 0.3)) {
-                     float score = (k == 0 ? 50 : 0) - crowd(pos);
-                     if (!(score <= groundBest)) {
-                        groundBest = score;
-                        best = pos;
-                        bestN = new Vec3(0.0, 1.0, 0.0);
-                        float yawTo = (float)Math.toDegrees(Math.atan2(-(pos.x - eye.x), pos.z - eye.z));
-                        bestQ = new Quaternionf().rotationYXZ((float) Math.PI - (float)Math.toRadians(yawTo), -((float)Math.toRadians(90.0)), 0.0F);
-                     }
-                  }
-               }
-            }
-         }
-      }
-
-      if (best == null) {
-         double[] d = Proj.dir(Proj.yaw, Math.max(-20.0F, Math.min(20.0F, Proj.pitch)));
-         best = eye.add(d[0] * 6.0, d[1] * 6.0, d[2] * 6.0);
-      }
-
-      p.ax = best.x;
-      p.ay = best.y;
-      p.az = best.z;
-      Vec3 rel = best.subtract(eye);
-      p.dist = Math.max(2.5, rel.length());
-      p.yaw = (float)Math.toDegrees(Math.atan2(-rel.x, rel.z));
-      p.pitch = p.dist < 1.0E-4 ? 0.0F : (float)(-Math.toDegrees(Math.asin(rel.y / rel.length())));
-      p.surf = bestQ;
-      p.surfN = bestQ == null ? null : bestN;
-      p.fit = 1.0F;
-   }
-
-   private static void fitToSurface(WorldLyrics.Placed p, LFConfig c, float[] widths) {
-      Minecraft mc = Minecraft.getInstance();
-      if (p.surf != null && p.surfN != null && mc.level != null) {
-         float x0 = Float.MAX_VALUE;
-         float x1 = -Float.MAX_VALUE;
-         float y0 = Float.MAX_VALUE;
-         float y1 = -Float.MAX_VALUE;
-
-         for (int j = 0; j < p.n(); j++) {
-            x0 = Math.min(x0, p.wx0[j] - widths[j] / 2.0F);
-            x1 = Math.max(x1, p.wx0[j] + widths[j] / 2.0F);
-            y0 = Math.min(y0, -p.wy0[j] - p.wsize[j] * 0.45F);
-            y1 = Math.max(y1, -p.wy0[j] + p.wsize[j] * 0.45F);
-         }
-
-         if (!(x0 > x1)) {
-            Vector3f r = p.surf.transform(new Vector3f(1.0F, 0.0F, 0.0F));
-            Vector3f u = p.surf.transform(new Vector3f(0.0F, 1.0F, 0.0F));
-            Vec3 right = new Vec3(r.x, r.y, r.z);
-            Vec3 up = new Vec3(u.x, u.y, u.z);
-            Vec3 n = p.surfN;
-            Vec3 base = new Vec3(p.ax, p.ay, p.az);
-            float[] scales = new float[]{1.0F, 0.8F, 0.65F, 0.5F};
-            double[] slide = new double[]{0.0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5, 2.0, -2.0, 3.0, -3.0};
-            double[] lift = new double[]{0.0, 1.0, -1.0};
-
-            for (float sc : scales) {
-               p.fit = sc;
-               float em = em(p, c);
-
-               for (double dv : lift) {
-                  for (double dh : slide) {
-                     Vec3 center = base.add(right.scale(dh)).add(up.scale(dv));
-                     if (fits(mc, center, right, up, n, x0 * em, x1 * em, y0 * em, y1 * em)) {
-                        p.ax = center.x;
-                        p.ay = center.y;
-                        p.az = center.z;
-                        return;
-                     }
-                  }
-               }
-            }
-
-            p.fit = 0.5F;
-         }
-      }
-   }
-
-   private static boolean fits(Minecraft mc, Vec3 center, Vec3 right, Vec3 up, Vec3 n, double x0, double x1, double y0, double y1) {
-      int nx = Math.max(2, (int)Math.ceil((x1 - x0) / 0.45));
-      int ny = Math.max(1, (int)Math.ceil((y1 - y0) / 0.45));
-
-      for (int i = 0; i <= nx; i++) {
-         double x = x0 + (x1 - x0) * i / nx;
-
-         for (int k = 0; k <= ny; k++) {
-            double y = y0 + (y1 - y0) * k / ny;
-            Vec3 q = center.add(right.scale(x)).add(up.scale(y));
-            BlockPos behind = BlockPos.containing(q.subtract(n.scale(0.3)));
-            BlockPos front = BlockPos.containing(q.add(n.scale(0.3)));
-            if (!solid(mc, behind)) {
-               return false;
-            }
-
-            if (!empty(mc, front)) {
-               return false;
-            }
-         }
-      }
-
-      return true;
-   }
-
    private static void place(WorldLyrics.Placed p, LFConfig c) {
       long s = p.seed;
       boolean random = c.randomPosition;
@@ -1090,12 +863,10 @@ public final class WorldLyrics {
       boolean skyStyle = c.lyricsStyle == LFConfig.LyricsStyle.SKY;
       boolean shaderMode = c.lyricsStyle == LFConfig.LyricsStyle.FLOATING && IrisCompat.shadersOn();
       int tries = random ? (c.lyricsStyle == LFConfig.LyricsStyle.FLOATING ? 40 : 12) : (!skyStyle && !shaderMode ? 1 : 8);
-      double cloud = c.lyricsStyle == LFConfig.LyricsStyle.SCREEN ? Double.NaN : cloudY();
+      double cloud = cloudY();
       float bestScore = -1.0E9F;
       float bYaw = 0.0F;
       float bPitch = 0.0F;
-      float bSx = 0.5F;
-      float bSy = 0.3F;
       float bSize = 6.0F;
       float bPY = 0.0F;
       float bPP = 0.0F;
@@ -1108,8 +879,6 @@ public final class WorldLyrics {
          float r3 = random ? rnd(s, 102 + k * 3) : 0.5F;
          float yaw = 0.0F;
          float pitch = 0.0F;
-         float sx = 0.0F;
-         float sy = 0.0F;
          float pY = 0.0F;
          float pP = 0.0F;
          double dist = 8.0;
@@ -1224,44 +993,28 @@ public final class WorldLyrics {
                   score -= (float)(8.0 - free) * 10.0F;
                }
                break;
-            case SCREEN:
-               sx = c.screenLyricsX + (random ? r1 * 0.26F : 0.0F);
-               sy = c.screenLyricsY + (random ? (r2 - 0.5F) * 0.24F : 0.0F);
-               if (Math.abs(sx - 0.5F) < 0.18F && Math.abs(sy - 0.5F) < 0.12F) {
-                  sy = 0.32F;
-               }
+            default:
          }
 
          float near = 1000.0F;
 
          for (WorldLyrics.Placed o : visible) {
-            if (o.exitAt < 0L || c.lyricsStyle != LFConfig.LyricsStyle.SCREEN) {
-               float d;
-               if (c.lyricsStyle == LFConfig.LyricsStyle.SCREEN) {
-                  float dx = (o.sx - sx) * 1.6F;
-                  float dy = o.sy - sy;
-                  d = (float)Math.sqrt(dx * dx + dy * dy) * 100.0F;
-               } else {
-                  float oy = o.yaw;
-                  float op = o.pitch;
-                  if (!c.viewLock && c.lyricsStyle != LFConfig.LyricsStyle.WALL) {
-                     double ex = o.ax - Proj.cx;
-                     double ey = o.ay - Proj.cy;
-                     double ez = o.az - Proj.cz;
-                     double len = Math.sqrt(ex * ex + ey * ey + ez * ez);
-                     if (len > 0.001) {
-                        oy = (float)Math.toDegrees(Math.atan2(-ex, ez));
-                        op = (float)(-Math.toDegrees(Math.asin(ey / len)));
-                     }
-                  }
-
-                  float dy = Math.abs(wrap(oy - yaw));
-                  float dp = Math.abs(op - pitch) * 2.2F;
-                  d = (float)Math.sqrt(dy * dy + dp * dp);
+            float oy = o.yaw;
+            float op = o.pitch;
+            if (!c.viewLock) {
+               double ex = o.ax - Proj.cx;
+               double ey = o.ay - Proj.cy;
+               double ez = o.az - Proj.cz;
+               double len = Math.sqrt(ex * ex + ey * ey + ez * ez);
+               if (len > 0.001) {
+                  oy = (float)Math.toDegrees(Math.atan2(-ex, ez));
+                  op = (float)(-Math.toDegrees(Math.asin(ey / len)));
                }
-
-               near = Math.min(near, d);
             }
+
+            float dy = Math.abs(wrap(oy - yaw));
+            float dp = Math.abs(op - pitch) * 2.2F;
+            near = Math.min(near, (float)Math.sqrt(dy * dy + dp * dp));
          }
 
          if ((c.lyricsStyle == LFConfig.LyricsStyle.FLOATING || skyWords(c)) && !c.viewLock) {
@@ -1303,8 +1056,6 @@ public final class WorldLyrics {
             bYaw = yaw;
             bPitch = pitch;
             bDist = dist;
-            bSx = sx;
-            bSy = sy;
             bSize = tSize;
             bPY = pY;
             bPP = pP;
@@ -1313,17 +1064,10 @@ public final class WorldLyrics {
 
       p.yaw = bYaw;
       p.pitch = bPitch;
-      p.sx = bSx;
-      p.sy = bSy;
       p.dist = bDist;
       p.sizeDist = bSize;
       p.pairYaw = bPY;
       p.pairPitch = bPP;
-      p.surf = null;
-      if (c.lyricsStyle == LFConfig.LyricsStyle.WALL) {
-         wallPlace(p, s);
-      }
-
       if ((c.lyricsStyle == LFConfig.LyricsStyle.FLOATING || c.lyricsStyle == LFConfig.LyricsStyle.SKY) && !c.viewLock) {
          double[] d = Proj.dir(bYaw, bPitch);
          p.ax = Proj.cx + d[0] * bDist;
@@ -1338,10 +1082,6 @@ public final class WorldLyrics {
       boolean sky = c.lyricsStyle == LFConfig.LyricsStyle.SKY;
       p.turn = sky && c.arcLayout ? (rnd(s, 5) > 0.5F ? 1.0F : -1.0F) * (c.skyWords ? 8.0F + rnd(s, 6) * 16.0F : 3.0F + rnd(s, 6) * 4.0F) : 0.0F;
       p.tilt = c.arcLayout ? (sky ? (c.skyWords ? -22.0F + rnd(s, 4) * 44.0F : -1.5F + rnd(s, 4) * 3.0F) : -10.0F + rnd(s, 4) * 14.0F) : 0.0F;
-      if (c.lyricsStyle == LFConfig.LyricsStyle.WALL) {
-         p.tilt = c.arcLayout ? -3.0F + rnd(s, 4) * 6.0F : 0.0F;
-      }
-
       List<Lyrics.Word> words = p.line.words;
       int n = p.n();
       String font = fontOf(p, c);
@@ -1450,10 +1190,6 @@ public final class WorldLyrics {
          }
       }
 
-      if (c.lyricsStyle == LFConfig.LyricsStyle.WALL) {
-         fitToSurface(p, c, widths);
-      }
-
       if (c.lyricsStyle == LFConfig.LyricsStyle.FLOATING && !c.viewLock) {
          keepOutOfBlocks(p, c, widths);
       }
@@ -1547,62 +1283,6 @@ public final class WorldLyrics {
       return false;
    }
 
-   private static void drawScreen(GuiGraphics g, WorldLyrics.Placed p, long t, LFConfig c, Themes.Theme th, float speed) {
-      float px = p.sx * Proj.width;
-      float py = p.sy * Proj.height;
-      float emPx = 15.0F * c.lyricsScale;
-      float globalA = pauseFade * Hud.focusA * c.textOpacity;
-      if (!(globalA < 0.01F)) {
-         String font = fontOf(p, c);
-         float glowBase = c.glow ? 0.65F : 0.0F;
-         float beat = c.beatGlow ? Hud.beat : 0.0F;
-         boolean single = false;
-         g.pose().pushMatrix();
-         g.pose().translate(px, py);
-         g.pose().rotate((float)Math.toRadians(p.tilt));
-         List<Lyrics.Word> words = p.line.words;
-
-         for (int j = 0; j < p.n(); j++) {
-            Lyrics.Word w = words.get(p.w0 + j);
-            float[] s = wordAnim(p, j, w, t, c, speed);
-            if (s != null) {
-               float alpha = s[0];
-               float dx = s[1];
-               float dy = s[2];
-               float sc = s[3];
-               double bob = Math.sin(Anim.seconds() * 1.6 + j * 0.9 + p.seed) * 0.04;
-               float size = emPx * p.wsize[j] * sc;
-               float x = (p.wx0[j] + dx) * emPx;
-               float y = (float)((p.wy0[j] + dy + bob) * emPx) - size / 2.0F;
-               if (single) {
-                  float out = Anim.progress(t, w.end + 120L, (float)(w.end + 120L) + 380.0F / speed);
-                  if (out >= 1.0F) {
-                     continue;
-                  }
-
-                  alpha *= 1.0F - Anim.easeInCubic(out);
-                  size = emPx * 1.7F * sc;
-                  x = dx * emPx;
-                  y = (float)((dy - out * 0.6F + bob) * emPx) - size / 2.0F;
-               }
-
-               boolean sung = t >= w.start && t < w.end + 80L;
-               float glow = glowBase + (sung ? 0.35F : 0.0F) + beat * 0.5F;
-               g.pose().pushMatrix();
-               g.pose().translate(x, y + size / 2.0F);
-               if (p.wrot[j] != 0.0F) {
-                  g.pose().rotate((float)Math.toRadians(p.wrot[j]));
-               }
-
-               Gfx.neon(g, Lyrics.show(w.text), font, 0.0F, -size / 2.0F, size, th.main(), th.a(), th.b(), alpha * globalA, c.twoColor, glow);
-               g.pose().popMatrix();
-            }
-         }
-
-         g.pose().popMatrix();
-      }
-   }
-
    private static final class Placed {
       final Lyrics.Line line;
       final int w0;
@@ -1615,12 +1295,7 @@ public final class WorldLyrics {
       double ay;
       double az;
       float turn;
-      float sx;
-      float sy;
       float tilt;
-      Quaternionf surf;
-      Vec3 surfN;
-      float fit = 1.0F;
       float pairYaw;
       float pairPitch;
       int rowsN = 1;

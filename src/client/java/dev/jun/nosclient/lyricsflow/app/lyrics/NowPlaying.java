@@ -1,5 +1,13 @@
 package dev.jun.nosclient.lyricsflow.app.lyrics;
 
+import dev.jun.nosclient.lyricsflow.app.Core;
+import dev.jun.nosclient.lyricsflow.app.config.Config;
+import dev.jun.nosclient.lyricsflow.app.sky.SkyPreset;
+import dev.jun.nosclient.lyricsflow.config.ConfigManager;
+import dev.jun.nosclient.lyricsflow.lyrics.Lyrics;
+import dev.jun.nosclient.lyricsflow.media.MediaManager;
+import dev.jun.nosclient.lyricsflow.media.Track;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,6 +22,11 @@ public final class NowPlaying {
    public final List<NowPlaying.Line> lines;
    public final NowPlaying.LyricsState lyricsState;
    public static final NowPlaying EMPTY = new NowPlaying(null, "", "", 0L, false, 0L, 0L, Collections.emptyList(), NowPlaying.LyricsState.NONE);
+   private static volatile NowPlaying now = EMPTY;
+   private static Lyrics shownLyrics;
+   private static boolean shownCaps;
+   private static List<NowPlaying.Line> shownLines = List.of();
+   private static String lastKey = "";
 
    public NowPlaying(
       String trackId,
@@ -35,6 +48,66 @@ public final class NowPlaying {
       this.fetchedAt = fetchedAt;
       this.lines = lines == null ? Collections.emptyList() : lines;
       this.lyricsState = lyricsState;
+   }
+
+   public static NowPlaying now() {
+      return now;
+   }
+
+   /** Ảnh chụp bài đang phát cho bầu trời (mỗi tick client). */
+   public static void tick() {
+      MediaManager mm = MediaManager.get();
+      Track t = mm.track();
+      if (t == null || t.isEmpty()) {
+         now = EMPTY;
+         lastKey = "";
+         return;
+      }
+
+      Lyrics l = mm.lyrics();
+      boolean caps = ConfigManager.get().allCaps;
+      if (l != shownLyrics || caps != shownCaps) {
+         shownLyrics = l;
+         shownCaps = caps;
+         shownLines = lines(l);
+      }
+
+      NowPlaying.LyricsState st = switch (mm.lyricsState()) {
+         case SEARCHING -> NowPlaying.LyricsState.LOADING;
+         case FOUND -> shownLines.isEmpty() ? NowPlaying.LyricsState.NOT_FOUND : NowPlaying.LyricsState.SYNCED;
+         case NOT_FOUND -> NowPlaying.LyricsState.NOT_FOUND;
+         default -> NowPlaying.LyricsState.NONE;
+      };
+      String key = t.key();
+      now = new NowPlaying(key, t.title, t.artist, t.durationMs, t.playing, Math.max(0L, mm.position()), System.currentTimeMillis(), shownLines, st);
+      if (!key.equals(lastKey)) {
+         lastKey = key;
+         Config cf = Core.cfg();
+         if (cf.skyShuffle && cf.sky >= 0) {
+            SkyPreset.shuffle();
+         }
+      }
+   }
+
+   static List<NowPlaying.Line> lines(Lyrics l) {
+      if (l == null || l.lines.isEmpty()) {
+         return List.of();
+      }
+
+      List<NowPlaying.Line> out = new ArrayList<>();
+      for (Lyrics.Line line : l.lines) {
+         int n = line.words.size();
+         String[] words = new String[n];
+         long[] times = new long[n];
+         for (int i = 0; i < n; i++) {
+            words[i] = Lyrics.show(line.words.get(i).text);
+            times[i] = line.words.get(i).start;
+         }
+
+         out.add(new NowPlaying.Line(line.start, Lyrics.show(line.text), words, n > 0 ? times : null));
+      }
+
+      return Collections.unmodifiableList(out);
    }
 
    public boolean hasTrack() {
