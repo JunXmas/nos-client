@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PingDebugMonitor.class)
 public abstract class PingDebugMonitorMixin {
-   @Inject(method = "onPongReceived", at = @At("HEAD"), require = 0)
+   @Inject(method = "onPongReceived", at = @At("HEAD"))
    private void lyricsflow$pong(ClientboundPongResponsePacket packet, CallbackInfo ci) {
       LivePing.record(Util.getMillis() - packet.time());
    }

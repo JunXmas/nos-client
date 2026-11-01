@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(FontTexture.class)
 public abstract class FontTextureMixin extends AbstractTexture {
-   @Inject(method = "<init>", at = @At("TAIL"), require = 0)
+   @Inject(method = "<init>", at = @At("TAIL"))
    private void lyricsflow$smooth(Supplier<String> name, GlyphRenderTypes types, boolean colored, CallbackInfo ci) {
       try {
          String n = name.get();

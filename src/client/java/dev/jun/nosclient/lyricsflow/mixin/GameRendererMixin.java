@@ -27,10 +27,9 @@ public abstract class GameRendererMixin {
       method = "renderLevel",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/LevelRenderer;renderLevel(Lnet/minecraft/GraphicsResourceAllocator;Lnet/minecraft/DeltaTracker;ZLnet/minecraft/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
+         target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
          shift = Shift.AFTER
-      ),
-      require = 0
+      )
    )
    private void lyricsflow$chroma(DeltaTracker deltaTracker, CallbackInfo ci) {
       Chroma.apply(this.resourcePool);
@@ -41,19 +40,19 @@ public abstract class GameRendererMixin {
       Chroma.drawGhost();
    }
 
-   @Inject(method = "getFov", at = @At("RETURN"), require = 0)
+   @Inject(method = "getFov", at = @At("RETURN"))
    private void lyricsflow$captureFov(Camera camera, float partialTick, boolean useFovSetting, CallbackInfoReturnable<Float> cir) {
       if (useFovSetting) {
          Proj.fovFromRenderer = cir.getReturnValueF();
       }
    }
 
-   @Inject(method = "render", at = @At("HEAD"), require = 0)
+   @Inject(method = "render", at = @At("HEAD"))
    private void lyricsflow$frameStart(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
       Anim.beginFrame();
    }
 
-   @Inject(method = "render", at = @At("TAIL"), require = 0)
+   @Inject(method = "render", at = @At("TAIL"))
    private void lyricsflow$afterRender(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
       ScreenshotHelper.afterFrame();
    }

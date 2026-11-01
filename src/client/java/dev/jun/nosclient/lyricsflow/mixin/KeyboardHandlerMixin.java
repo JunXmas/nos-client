@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class KeyboardHandlerMixin {
    @WrapOperation(
       method = "keyPress",
-      require = 0,
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/Screenshot;grab(Ljava/io/File;Lnet/minecraft/RenderTarget;Ljava/util/function/Consumer;)V")
+      
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Screenshot;grab(Ljava/io/File;Lcom/mojang/blaze3d/pipeline/RenderTarget;Ljava/util/function/Consumer;)V")
    )
    private void lyricsflow$delayScreenshot(File dir, RenderTarget target, Consumer<Component> done, Operation<Void> original) {
       if (!ScreenshotHelper.defer(() -> original.call(dir, target, done))) {

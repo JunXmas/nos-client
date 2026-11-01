@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class GuiHotbarMixin {
    @WrapOperation(
       method = "renderItemHotbar",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/GuiGraphics;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/Identifier;IIII)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V")
    )
    private void lyricsflow$hotbar(GuiGraphics g, RenderPipeline pipeline, Identifier id, int x, int y, int w, int h, Operation<Void> original) {
       if (!HotbarStyle.draw(g, id, x, y, w, h)) {

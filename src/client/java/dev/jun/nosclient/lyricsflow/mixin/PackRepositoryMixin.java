@@ -21,7 +21,7 @@ public abstract class PackRepositoryMixin {
    @Mutable
    private Set<RepositorySource> sources;
 
-   @Inject(method = "<init>", at = @At("RETURN"), require = 0)
+   @Inject(method = "<init>", at = @At("RETURN"))
    private void lyricsflow$addFonts(RepositorySource[] given, CallbackInfo ci) {
       boolean client = false;
 

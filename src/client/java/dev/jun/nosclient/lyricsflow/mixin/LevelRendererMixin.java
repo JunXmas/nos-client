@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin {
-   @Inject(method = "renderLevel", at = @At("HEAD"), require = 0)
+   @Inject(method = "renderLevel", at = @At("HEAD"))
    private void lyricsflow$matrices(
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,

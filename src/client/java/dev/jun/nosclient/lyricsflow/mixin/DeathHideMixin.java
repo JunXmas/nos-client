@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderer.class)
 public abstract class DeathHideMixin {
-   @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true, require = 0)
+   @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
    private void lyricsflow$hideForDeathFx(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
       if (DeathFx.hides(entity)) {
          cir.setReturnValue(false);
