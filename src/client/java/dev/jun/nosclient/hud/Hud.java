@@ -10,14 +10,7 @@ import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.theme.Theme;
 import dev.jun.nosclient.theme.ThemePalette;
 import dev.jun.nosclient.typography.Typography;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.IntBinaryOperator;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Camera;
@@ -48,9 +41,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
+import net.minecraft.world.phys.Vec3;
+
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.IntBinaryOperator;
 
 @Environment(EnvType.CLIENT)
 public final class Hud {
@@ -104,7 +107,7 @@ public final class Hud {
     private int W;
     private int Hs;
     private static final float[] ZERO = new float[4];
-    private static final String[] DIRS = new String[]{"n", "ne", "e", "se", "s", "sw", "w", "nw"};
+    private static final String[] DIRS = new String[] {"n", "ne", "e", "se", "s", "sw", "w", "nw"};
     private long lastLook;
     private Object lastTarget;
     private String lookName = "";
@@ -113,12 +116,22 @@ public final class Hud {
     private ItemStack lookTool = ItemStack.EMPTY;
     private boolean lookHas;
     private float lookHp = -1.0F;
-    private static final ItemStack[] TOOLS = new ItemStack[]{
-        new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.IRON_AXE), new ItemStack(Items.IRON_SHOVEL), new ItemStack(Items.IRON_HOE)
-    };
-    private static final EquipmentSlot[] ARMOR = new EquipmentSlot[]{
-        EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND
-    };
+    private static final ItemStack[] TOOLS =
+            new ItemStack[] {
+                new ItemStack(Items.IRON_PICKAXE),
+                new ItemStack(Items.IRON_AXE),
+                new ItemStack(Items.IRON_SHOVEL),
+                new ItemStack(Items.IRON_HOE)
+            };
+    private static final EquipmentSlot[] ARMOR =
+            new EquipmentSlot[] {
+                EquipmentSlot.HEAD,
+                EquipmentSlot.CHEST,
+                EquipmentSlot.LEGS,
+                EquipmentSlot.FEET,
+                EquipmentSlot.MAINHAND,
+                EquipmentSlot.OFFHAND
+            };
     private final int[] armorKey = new int[ARMOR.length];
     private final String[] armorText = new String[ARMOR.length];
     private final ItemStack[] inv = new ItemStack[27];
@@ -128,14 +141,13 @@ public final class Hud {
     private static final int INV_H = 55;
     public static final Hud INSTANCE = new Hud();
 
-    private Hud() {
-    }
+    private Hud() {}
 
     public void render(GuiGraphics g, DeltaTracker dt) {
         if (!COUNT) {
             this.draw(g);
         } else {
-            int[] n = new int[]{0};
+            int[] n = new int[] {0};
             GuiRenderState st = g.guiRenderState;
             st.forEachElement(e -> n[0]++, TraverseRange.ALL);
             int before = n[0];
@@ -143,7 +155,8 @@ public final class Hud {
             n[0] = 0;
             st.forEachElement(e -> n[0]++, TraverseRange.ALL);
             if (++this.counted % 120 == 0) {
-                LoggerFactory.getLogger("nosclient").info("HUD: {} phần tử GUI/khung", n[0] - before);
+                LoggerFactory.getLogger("nosclient")
+                        .info("HUD: {} phần tử GUI/khung", n[0] - before);
             }
         }
     }
@@ -155,7 +168,10 @@ public final class Hud {
         ACC = palette.accent();
         Minecraft mc = Minecraft.getInstance();
         long now = System.nanoTime();
-        float d = this.lastFrame == 0L ? 0.0F : Math.min(0.05F, (float)(now - this.lastFrame) / 1.0E9F);
+        float d =
+                this.lastFrame == 0L
+                        ? 0.0F
+                        : Math.min(0.05F, (float) (now - this.lastFrame) / 1.0E9F);
         if (this.lastFrame != 0L) {
             this.ft[this.fi] = now - this.lastFrame;
             this.fi = (this.fi + 1) % this.ft.length;
@@ -177,15 +193,27 @@ public final class Hud {
         LocalPlayer p = mc.player;
         if (p != null && !mc.options.hideGui && !mc.debugEntries.isOverlayVisible()) {
             if (!mc.gui.getChat().isChatFocused() && !mc.options.keyPlayerList.isDown()) {
-                boolean busy = p.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4 || this.left.count(now) + this.right.count(now) > 0 || p.hurtTime > 0;
+                boolean busy =
+                        p.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4
+                                || this.left.count(now) + this.right.count(now) > 0
+                                || p.hurtTime > 0;
                 if (busy) {
                     this.lastBusy = now;
                 }
 
-                this.fade = Ui.approach(this.fade, !this.editing && this.c.hudIdleFade && now - this.lastBusy >= 3000000000L ? 0.5F : 1.0F, d, 3.0F);
+                this.fade =
+                        Ui.approach(
+                                this.fade,
+                                !this.editing
+                                                && this.c.hudIdleFade
+                                                && now - this.lastBusy >= 3000000000L
+                                        ? 0.5F
+                                        : 1.0F,
+                                d,
+                                3.0F);
                 TA = this.fade;
-                BA = (float)this.c.hudBg * this.fade;
-                this.S = (float)this.c.hudScale;
+                BA = (float) this.c.hudBg * this.fade;
+                this.S = (float) this.c.hudScale;
                 this.W = Math.round(g.guiWidth() / this.S);
                 this.Hs = Math.round(g.guiHeight() / this.S);
                 g.pose().pushMatrix();
@@ -223,7 +251,13 @@ public final class Hud {
 
     private int place(GuiGraphics g, String id, int fx, int fy, IntBinaryOperator draw) {
         HudLayout.Slot s = HudLayout.get(id);
-        float k = (float)(Typography.hudScale(this.S * s.scale, Minecraft.getInstance().getWindow().getGuiScale(), this.c.hudReadable) / this.S);
+        float k =
+                (float)
+                        (Typography.hudScale(
+                                        this.S * s.scale,
+                                        Minecraft.getInstance().getWindow().getGuiScale(),
+                                        this.c.hudReadable)
+                                / this.S);
         float[] b = this.local.getOrDefault(id, ZERO);
         float ox;
         float oy;
@@ -231,11 +265,14 @@ public final class Hud {
             ox = fx;
             oy = fy;
         } else {
-            ox = (float)(s.x * this.W) - (s.ax == 0 ? b[0] : (s.ax == 1 ? (b[0] + b[2]) / 2.0F : b[2])) * k;
-            oy = (float)(s.y * this.Hs) - (s.ay == 0 ? b[1] : b[3]) * k;
+            ox =
+                    (float) (s.x * this.W)
+                            - (s.ax == 0 ? b[0] : (s.ax == 1 ? (b[0] + b[2]) / 2.0F : b[2])) * k;
+            oy = (float) (s.y * this.Hs) - (s.ay == 0 ? b[1] : b[3]) * k;
         }
 
-        Hud.GadgetMotion position = this.movement.computeIfAbsent(id, key -> new Hud.GadgetMotion());
+        Hud.GadgetMotion position =
+                this.movement.computeIfAbsent(id, key -> new Hud.GadgetMotion());
         if (position.seen != this.renderedFrame - 1L) {
             position.alpha = 0.0F;
         }
@@ -259,8 +296,8 @@ public final class Hud {
         float ba = BA;
         TA = TA * position.alpha;
         BA = BA * position.alpha;
-        TA = TA * (float)s.alpha;
-        BA = BA * (float)s.alpha;
+        TA = TA * (float) s.alpha;
+        BA = BA * (float) s.alpha;
         my0 = Float.MAX_VALUE;
         mx0 = Float.MAX_VALUE;
         my1 = -Float.MAX_VALUE;
@@ -287,8 +324,15 @@ public final class Hud {
         }
 
         if (mx1 >= mx0) {
-            this.local.put(id, new float[]{mx0, my0, mx1, my1});
-            this.rects.put(id, new float[]{(ox + mx0 * k) * this.S, (oy + my0 * k) * this.S, (ox + mx1 * k) * this.S, (oy + my1 * k) * this.S});
+            this.local.put(id, new float[] {mx0, my0, mx1, my1});
+            this.rects.put(
+                    id,
+                    new float[] {
+                        (ox + mx0 * k) * this.S,
+                        (oy + my0 * k) * this.S,
+                        (ox + mx1 * k) * this.S,
+                        (oy + my1 * k) * this.S
+                    });
         } else {
             this.rects.remove(id);
         }
@@ -296,7 +340,8 @@ public final class Hud {
         return s.auto() ? Math.round(oy + bottom * k) : fy;
     }
 
-    private void drawScaled(GuiGraphics g, Minecraft mc, LocalPlayer p, Font f, long now, float d, int W) {
+    private void drawScaled(
+            GuiGraphics g, Minecraft mc, LocalPlayer p, Font f, long now, float d, int W) {
         int x = 6;
         int y = 6;
         if (this.editing) {
@@ -304,16 +349,26 @@ public final class Hud {
         }
 
         if (this.c.fps) {
-            y = this.place(g, "fps", x, y, (xx, yy) -> this.fps(g, f, xx, yy, mc.getFps(), this.low(now))) + 3;
+            y =
+                    this.place(
+                                    g,
+                                    "fps",
+                                    x,
+                                    y,
+                                    (xx, yy) -> this.fps(g, f, xx, yy, mc.getFps(), this.low(now)))
+                            + 3;
         }
 
         if (this.c.coords) {
             BlockPos b = p.blockPosition();
-            String k = mc.level.getBiome(b).unwrapKey().map(r -> r.identifier().toString()).orElse("");
+            String k =
+                    mc.level.getBiome(b).unwrapKey().map(r -> r.identifier().toString()).orElse("");
             if (!k.equals(this.biomeKey) || !this.biomeLanguage.equals(mc.options.languageCode)) {
                 this.biomeLanguage = mc.options.languageCode;
                 this.biomeKey = k;
-                this.biomeName = Component.translatable("biome." + k.replace(':', '.').replace('/', '.')).getString();
+                this.biomeName =
+                        Component.translatable("biome." + k.replace(':', '.').replace('/', '.'))
+                                .getString();
             }
 
             y = this.place(g, "coords", x, y, (xx, yy) -> this.coordinates(g, f, p, xx, yy)) + 3;
@@ -322,53 +377,113 @@ public final class Hud {
         if (this.c.day) {
             if (now - this.lastDay > 2000000000L || this.dayText.isEmpty()) {
                 long t = mc.level.getDayTime();
-                int h = (int)((t / 1000L + 6L) % 24L);
-                int m = (int)(t % 1000L * 60L / 1000L);
-                this.dayText = Component.translatable("nosclient.hud.day.label").getString()
-                    + " "
-                    + (t / 24000L + 1L)
-                    + (this.c.dayTime ? "  " + (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m : "");
+                int h = (int) ((t / 1000L + 6L) % 24L);
+                int m = (int) (t % 1000L * 60L / 1000L);
+                this.dayText =
+                        Component.translatable("nosclient.hud.day.label").getString()
+                                + " "
+                                + (t / 24000L + 1L)
+                                + (this.c.dayTime
+                                        ? "  "
+                                                + (h < 10 ? "0" : "")
+                                                + h
+                                                + ":"
+                                                + (m < 10 ? "0" : "")
+                                                + m
+                                        : "");
                 this.lastDay = now;
             }
 
-            y = this.place(g, "day", x, y, (xx, yy) -> row(g, f, xx, yy, null, this.dayText, null)) + 3;
+            y =
+                    this.place(
+                                    g,
+                                    "day",
+                                    x,
+                                    y,
+                                    (xx, yy) -> row(g, f, xx, yy, null, this.dayText, null))
+                            + 3;
         }
 
         if (this.c.cps) {
-            y = this.place(
-                    g,
-                    "cps",
-                    x,
-                    y,
-                    (xx, yy) -> row(
-                        g,
-                        f,
-                        xx,
-                        yy,
-                        null,
-                        this.c.cpsRight ? this.left.count(now) + " | " + this.right.count(now) : String.valueOf(this.left.count(now)),
-                        "CPS"
-                    )
-                )
-                + 3;
+            y =
+                    this.place(
+                                    g,
+                                    "cps",
+                                    x,
+                                    y,
+                                    (xx, yy) ->
+                                            row(
+                                                    g,
+                                                    f,
+                                                    xx,
+                                                    yy,
+                                                    null,
+                                                    this.c.cpsRight
+                                                            ? this.left.count(now)
+                                                                    + " | "
+                                                                    + this.right.count(now)
+                                                            : String.valueOf(this.left.count(now)),
+                                                    "CPS"))
+                            + 3;
         }
 
         if (this.c.ping && mc.getConnection() != null) {
             PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
-            y = this.place(g, "ping", x, y, (xx, yy) -> row(g, f, xx, yy, null, String.valueOf(pi == null ? 0 : pi.getLatency()), "ms")) + 3;
+            y =
+                    this.place(
+                                    g,
+                                    "ping",
+                                    x,
+                                    y,
+                                    (xx, yy) ->
+                                            row(
+                                                    g,
+                                                    f,
+                                                    xx,
+                                                    yy,
+                                                    null,
+                                                    String.valueOf(
+                                                            dev.jun.nosclient.render.LivePing.get(
+                                                                    mc)),
+                                                    "ms"))
+                            + 3;
         }
 
         if (this.c.keys) {
-            y = this.place(g, "keys", x, y + 3, (xx, yy) -> this.keys(g, f, mc, xx, yy, now, d)) + 3;
+            y =
+                    this.place(g, "keys", x, y + 3, (xx, yy) -> this.keys(g, f, mc, xx, yy, now, d))
+                            + 3;
         }
 
         if (this.c.sprint && this.c.sprintShow && (Feats.sprintOn || this.editing)) {
-            y = this.place(g, "sprint", x, y, (xx, yy) -> row(g, f, xx, yy, null, Component.translatable("nosclient.hud.sprint").getString(), null)) + 3;
+            y =
+                    this.place(
+                                    g,
+                                    "sprint",
+                                    x,
+                                    y,
+                                    (xx, yy) ->
+                                            row(
+                                                    g,
+                                                    f,
+                                                    xx,
+                                                    yy,
+                                                    null,
+                                                    Component.translatable("nosclient.hud.sprint")
+                                                            .getString(),
+                                                    null))
+                            + 3;
         }
 
         int ry = Math.round(this.Hs * 0.3F);
         if (this.c.minimap) {
-            ry = this.place(g, "minimap", W - 6, ry, (xx, yy) -> Minimap.render(g, mc, xx, yy, BA, TA));
+            ry =
+                    this.place(
+                            g,
+                            "minimap",
+                            W - 6,
+                            ry,
+                            (xx, yy) -> Minimap.render(g, mc, xx, yy, BA, TA));
         }
 
         if (this.c.effects) {
@@ -380,7 +495,12 @@ public final class Hud {
         }
 
         if (this.c.invhud) {
-            this.place(g, "invhud", W / 2 - 78, this.Hs - 22 - 40 - 55, (xx, yy) -> this.invhud(g, mc, p, xx, yy));
+            this.place(
+                    g,
+                    "invhud",
+                    W / 2 - 78,
+                    this.Hs - 22 - 40 - 55,
+                    (xx, yy) -> this.invhud(g, mc, p, xx, yy));
         }
 
         if (this.c.waypoint) {
@@ -388,12 +508,23 @@ public final class Hud {
         }
 
         if (this.c.blockinfo) {
-            this.place(g, "blockinfo", W / 2, this.c.direction ? 44 : 6, (xx, yy) -> this.blockinfo(g, f, mc, xx, yy, now));
+            this.place(
+                    g,
+                    "blockinfo",
+                    W / 2,
+                    this.c.direction ? 44 : 6,
+                    (xx, yy) -> this.blockinfo(g, f, mc, xx, yy, now));
         }
 
         if (this.c.direction) {
-            int boss = ((BossHealthOverlayAccessor)mc.gui.getBossOverlay()).nosclient$events().size();
-            this.place(g, "direction", W / 2, boss > 0 ? 6 + boss * 19 : 6, (xx, yy) -> compass(g, f, p, xx, yy));
+            int boss =
+                    ((BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nosclient$events().size();
+            this.place(
+                    g,
+                    "direction",
+                    W / 2,
+                    boss > 0 ? 6 + boss * 19 : 6,
+                    (xx, yy) -> compass(g, f, p, xx, yy));
         }
     }
 
@@ -401,16 +532,31 @@ public final class Hud {
         if (now - this.lastLow > 500000000L && this.fn > 20) {
             long[] s = Arrays.copyOf(this.ft, this.fn);
             Arrays.sort(s);
-            this.low = (int)Math.round(1.0E9 / Math.max(1L, s[Math.max(0, this.fn - 1 - this.fn / 100)]));
+            this.low =
+                    (int)
+                            Math.round(
+                                    1.0E9
+                                            / Math.max(
+                                                    1L,
+                                                    s[Math.max(0, this.fn - 1 - this.fn / 100)]));
             this.lastLow = now;
         }
 
         return this.low;
     }
 
-    private static int row(GuiGraphics g, Font f, int x, int y, String label, String val, String suffix) {
-        int valueWidth = suffix != null && suffix.equals("ms") ? Math.max(sw(f, val), sw(f, "888")) : sw(f, val);
-        int w = 7 + sw(f, label != null ? label + " " : "") + valueWidth + (suffix != null ? sw(f, " " + suffix) : 0) + 7;
+    private static int row(
+            GuiGraphics g, Font f, int x, int y, String label, String val, String suffix) {
+        int valueWidth =
+                suffix != null && suffix.equals("ms")
+                        ? Math.max(sw(f, val), sw(f, "888"))
+                        : sw(f, val);
+        int w =
+                7
+                        + sw(f, label != null ? label + " " : "")
+                        + valueWidth
+                        + (suffix != null ? sw(f, " " + suffix) : 0)
+                        + 7;
         bg(g, x, y, w, 19);
         float tx = x + 7;
         float ty = y + 5.5F;
@@ -429,17 +575,25 @@ public final class Hud {
 
     private int coordinates(GuiGraphics g, Font f, LocalPlayer p, int x, int y) {
         BlockPos b = p.blockPosition();
-        String[] values = this.c.coordsDecimal
-            ? new String[]{
-                String.format(Locale.ROOT, "%.1f", p.getX()), String.format(Locale.ROOT, "%.1f", p.getY()), String.format(Locale.ROOT, "%.1f", p.getZ())
-            }
-            : new String[]{Integer.toString(b.getX()), Integer.toString(b.getY()), Integer.toString(b.getZ())};
-        String[] axes = new String[]{"X", "Y", "Z"};
+        String[] values =
+                this.c.coordsDecimal
+                        ? new String[] {
+                            String.format(Locale.ROOT, "%.1f", p.getX()),
+                            String.format(Locale.ROOT, "%.1f", p.getY()),
+                            String.format(Locale.ROOT, "%.1f", p.getZ())
+                        }
+                        : new String[] {
+                            Integer.toString(b.getX()),
+                            Integer.toString(b.getY()),
+                            Integer.toString(b.getZ())
+                        };
+        String[] axes = new String[] {"X", "Y", "Z"};
         int[] spans = new int[3];
         int content = 0;
 
         for (int i = 0; i < 3; i++) {
-            spans[i] = sw(f, axes[i] + " ") + Math.max(sw(f, values[i]), sw(f, i == 1 ? "88" : "−88"));
+            spans[i] =
+                    sw(f, axes[i] + " ") + Math.max(sw(f, values[i]), sw(f, i == 1 ? "88" : "−88"));
             content += spans[i] + (i == 2 ? 0 : 6);
         }
 
@@ -477,12 +631,31 @@ public final class Hud {
     }
 
     private static void metric(GuiGraphics g, Font font, String text, float x, float y, int color) {
-        AnimatedText.Frame frame = LABELS.update(activeGadget + ":" + metricIndex++, text, frameTime, SceneConfig.INSTANCE.animations);
-        if (frame.progress() < 1.0F && !frame.previous().equals(frame.current()) && sw(font, frame.previous()) <= sw(font, frame.current())) {
-            txt(g, font, frame.previous(), x, y - frame.progress() * 1.5F, Ui.alpha(color, (1.0F - frame.progress()) * 0.3F));
+        AnimatedText.Frame frame =
+                LABELS.update(
+                        activeGadget + ":" + metricIndex++,
+                        text,
+                        frameTime,
+                        SceneConfig.INSTANCE.animations);
+        if (frame.progress() < 1.0F
+                && !frame.previous().equals(frame.current())
+                && sw(font, frame.previous()) <= sw(font, frame.current())) {
+            txt(
+                    g,
+                    font,
+                    frame.previous(),
+                    x,
+                    y - frame.progress() * 1.5F,
+                    Ui.alpha(color, (1.0F - frame.progress()) * 0.3F));
         }
 
-        txt(g, font, frame.current(), x, y + (1.0F - frame.progress()) * 1.5F, Ui.alpha(color, 0.7F + 0.3F * frame.progress()));
+        txt(
+                g,
+                font,
+                frame.current(),
+                x,
+                y + (1.0F - frame.progress()) * 1.5F,
+                Ui.alpha(color, 0.7F + 0.3F * frame.progress()));
     }
 
     private int fps(GuiGraphics g, Font f, int x, int y, int fps, int low) {
@@ -515,10 +688,15 @@ public final class Hud {
 
         for (int i = 0; i < this.spark.length; i++) {
             int s = this.spark[(this.sp + i) % this.spark.length];
-            int yy = y + 19 - 6 - Math.round((float)(s - mn) / Math.max(1, mx - mn) * 5.0F);
-            int xx = tx + Math.round((float)(i * (sw - 1)) / (this.spark.length - 1));
+            int yy = y + 19 - 6 - Math.round((float) (s - mn) / Math.max(1, mx - mn) * 5.0F);
+            int xx = tx + Math.round((float) (i * (sw - 1)) / (this.spark.length - 1));
             if (prev >= 0) {
-                g.fill(xx - 1, Math.min(prev, yy), xx, Math.max(prev, yy) + 1, T(Ui.alpha(ACC, 0.8F)));
+                g.fill(
+                        xx - 1,
+                        Math.min(prev, yy),
+                        xx,
+                        Math.max(prev, yy) + 1,
+                        T(Ui.alpha(ACC, 0.8F)));
             }
 
             prev = yy;
@@ -546,8 +724,15 @@ public final class Hud {
                 float edge = 1.0F - Math.abs(dx) / 76.0F;
                 if (degree % 45 == 0) {
                     int direction = Math.floorMod(degree / 45, 8);
-                    String label = Component.translatable("nosclient.dir." + DIRS[direction]).getString();
-                    txt(g, f, label, xx - sw(f, label) / 2.0F, y + 7, T(Ui.alpha(direction == 0 ? ACC : TEXT, edge)));
+                    String label =
+                            Component.translatable("nosclient.dir." + DIRS[direction]).getString();
+                    txt(
+                            g,
+                            f,
+                            label,
+                            xx - sw(f, label) / 2.0F,
+                            y + 7,
+                            T(Ui.alpha(direction == 0 ? ACC : TEXT, edge)));
                 } else {
                     g.fill(xx, y + 14, xx + 1, y + 17, T(Ui.alpha(DIM, edge * 0.5F)));
                 }
@@ -556,8 +741,14 @@ public final class Hud {
 
         if (SceneConfig.INSTANCE.waypoint) {
             for (Waypoints.Wp point : Waypoints.here(mc)) {
-                double angle = (Math.toDegrees(Math.atan2(-(point.x() + 0.5 - p.getX()), point.z() + 0.5 - p.getZ())) + 540.0) % 360.0;
-                float dx = (float)((angle - yaw + 540.0) % 360.0 - 180.0) * 1.35F;
+                double angle =
+                        (Math.toDegrees(
+                                                Math.atan2(
+                                                        -(point.x() + 0.5 - p.getX()),
+                                                        point.z() + 0.5 - p.getZ()))
+                                        + 540.0)
+                                % 360.0;
+                float dx = (float) ((angle - yaw + 540.0) % 360.0 - 180.0) * 1.35F;
                 if (Math.abs(dx) <= 66.0F) {
                     int xx = Math.round(center + dx);
                     g.fill(xx - 1, y + 2, xx + 2, y + 4, T(point.color()));
@@ -588,8 +779,28 @@ public final class Hud {
         int mw = (full - gap) / 2;
         int my = y + 2 * (s + gap);
         if (this.c.keysMouse) {
-            this.key(g, f, 4, x, my, mw, this.c.keysCps ? 26 : s, this.c.keysCps ? "LMB\n" + this.left.count(now) + " CPS" : "LMB", o.keyAttack, dt);
-            this.key(g, f, 5, x + mw + gap, my, mw, this.c.keysCps ? 26 : s, this.c.keysCps ? "RMB\n" + this.right.count(now) + " CPS" : "RMB", o.keyUse, dt);
+            this.key(
+                    g,
+                    f,
+                    4,
+                    x,
+                    my,
+                    mw,
+                    this.c.keysCps ? 26 : s,
+                    this.c.keysCps ? "LMB\n" + this.left.count(now) + " CPS" : "LMB",
+                    o.keyAttack,
+                    dt);
+            this.key(
+                    g,
+                    f,
+                    5,
+                    x + mw + gap,
+                    my,
+                    mw,
+                    this.c.keysCps ? 26 : s,
+                    this.c.keysCps ? "RMB\n" + this.right.count(now) + " CPS" : "RMB",
+                    o.keyUse,
+                    dt);
             my += (this.c.keysCps ? 26 : s) + gap;
         }
 
@@ -607,7 +818,7 @@ public final class Hud {
         double yaw = Math.toRadians(cam.yRot());
         double pitch = Math.toRadians(cam.xRot());
         double tanY = Math.tan(Math.toRadians(Feats.lastFov) / 2.0);
-        double aspect = (double)W / Hs;
+        double aspect = (double) W / Hs;
 
         for (Waypoints.Wp w : Waypoints.here(mc)) {
             double dx = w.x() + 0.5 - cp.x;
@@ -635,8 +846,8 @@ public final class Hud {
                 sy = Math.max(10.0, Math.min(Hs - 30, sy));
             }
 
-            int x = (int)Math.round(sx);
-            int y = (int)Math.round(sy);
+            int x = (int) Math.round(sx);
+            int y = (int) Math.round(sy);
 
             for (int k = 0; k < 4; k++) {
                 g.fill(x - k, y - 3 + k, x + k + 1, y - 2 + k, T(w.color()));
@@ -658,9 +869,11 @@ public final class Hud {
         if (hit instanceof EntityHitResult eh) {
             return eh.getEntity().getId();
         } else {
-            return hit instanceof BlockHitResult bh && hit.getType() == Type.BLOCK && mc.level != null
-                ? List.of(bh.getBlockPos(), mc.level.getBlockState(bh.getBlockPos()))
-                : null;
+            return hit instanceof BlockHitResult bh
+                            && hit.getType() == Type.BLOCK
+                            && mc.level != null
+                    ? List.of(bh.getBlockPos(), mc.level.getBlockState(bh.getBlockPos()))
+                    : null;
         }
     }
 
@@ -681,7 +894,12 @@ public final class Hud {
         }
 
         int iw = this.lookIcon.isEmpty() ? 0 : 20;
-        int w = Math.max(sw(f, this.lookName), sw(f, this.lookSub) + (this.lookTool.isEmpty() ? 0 : 14)) + iw + 14;
+        int w =
+                Math.max(
+                                sw(f, this.lookName),
+                                sw(f, this.lookSub) + (this.lookTool.isEmpty() ? 0 : 14))
+                        + iw
+                        + 14;
         int h = this.lookSub.isEmpty() && this.lookTool.isEmpty() ? 18 : 28;
         int x = cx - w / 2;
         bg(g, x, y, w, h);
@@ -700,11 +918,23 @@ public final class Hud {
             g.pose().popMatrix();
         }
 
-        float bar = this.lookHp >= 0.0F ? this.lookHp : ((MultiPlayerGameModeAccessor)mc.gameMode).nosclient$progress();
+        float bar =
+                this.lookHp >= 0.0F
+                        ? this.lookHp
+                        : ((MultiPlayerGameModeAccessor) mc.gameMode).nosclient$progress();
         if (bar > 0.0F) {
-            float shown = this.c.animations ? Ui.approach(this.bars.getOrDefault("target", bar), bar, frameStep, 14.0F) : bar;
+            float shown =
+                    this.c.animations
+                            ? Ui.approach(
+                                    this.bars.getOrDefault("target", bar), bar, frameStep, 14.0F)
+                            : bar;
             this.bars.put("target", shown);
-            g.fill(x + 3, y + h - 2, x + 3 + Math.round((w - 6) * Math.min(1.0F, shown)), y + h - 1, T(this.lookHp >= 0.0F ? -2256495 : ACC));
+            g.fill(
+                    x + 3,
+                    y + h - 2,
+                    x + 3 + Math.round((w - 6) * Math.min(1.0F, shown)),
+                    y + h - 1,
+                    T(this.lookHp >= 0.0F ? -2256495 : ACC));
         } else {
             this.bars.remove("target");
         }
@@ -720,12 +950,20 @@ public final class Hud {
             if (hit instanceof EntityHitResult eh) {
                 Entity e = eh.getEntity();
                 this.lookName = e.getDisplayName().getString();
-                this.lookSub = this.c.blockId ? BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString() : "";
+                this.lookSub =
+                        this.c.blockId
+                                ? BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString()
+                                : "";
                 this.lookIcon = ItemStack.EMPTY;
                 this.lookTool = ItemStack.EMPTY;
                 if (this.c.blockHp && e instanceof LivingEntity le) {
                     this.lookHp = le.getHealth() / Math.max(1.0F, le.getMaxHealth());
-                    this.lookSub = Math.round(le.getHealth()) + "/" + Math.round(le.getMaxHealth()) + " ♥  " + this.lookSub;
+                    this.lookSub =
+                            Math.round(le.getHealth())
+                                    + "/"
+                                    + Math.round(le.getMaxHealth())
+                                    + " ♥  "
+                                    + this.lookSub;
                 }
 
                 this.lookHas = true;
@@ -736,19 +974,23 @@ public final class Hud {
                 }
 
                 this.lookName = st.getBlock().getName().getString();
-                this.lookSub = this.c.blockId ? BuiltInRegistries.BLOCK.getKey(st.getBlock()).toString() : "";
+                this.lookSub =
+                        this.c.blockId
+                                ? BuiltInRegistries.BLOCK.getKey(st.getBlock()).toString()
+                                : "";
                 this.lookIcon = new ItemStack(st.getBlock().asItem());
-                this.lookTool = !this.c.blockTool
-                    ? ItemStack.EMPTY
-                    : (
-                        st.is(BlockTags.MINEABLE_WITH_PICKAXE)
-                            ? TOOLS[0]
-                            : (
-                                st.is(BlockTags.MINEABLE_WITH_AXE)
-                                    ? TOOLS[1]
-                                    : (st.is(BlockTags.MINEABLE_WITH_SHOVEL) ? TOOLS[2] : (st.is(BlockTags.MINEABLE_WITH_HOE) ? TOOLS[3] : ItemStack.EMPTY))
-                            )
-                    );
+                this.lookTool =
+                        !this.c.blockTool
+                                ? ItemStack.EMPTY
+                                : (st.is(BlockTags.MINEABLE_WITH_PICKAXE)
+                                        ? TOOLS[0]
+                                        : (st.is(BlockTags.MINEABLE_WITH_AXE)
+                                                ? TOOLS[1]
+                                                : (st.is(BlockTags.MINEABLE_WITH_SHOVEL)
+                                                        ? TOOLS[2]
+                                                        : (st.is(BlockTags.MINEABLE_WITH_HOE)
+                                                                ? TOOLS[3]
+                                                                : ItemStack.EMPTY))));
                 this.lookHas = true;
             }
         }
@@ -757,16 +999,41 @@ public final class Hud {
     private int effects(GuiGraphics g, Font f, LocalPlayer p, int xr, int y) {
         for (MobEffectInstance e : p.getActiveEffects()) {
             if (e.showIcon()) {
-                String name = e.getEffect().value().getDisplayName().getString() + (e.getAmplifier() > 0 ? " " + roman(e.getAmplifier() + 1) : "");
-                String time = !this.c.fxTime ? "" : (e.isInfiniteDuration() ? "∞" : mmss(e.getDuration() / 20));
+                String name =
+                        e.getEffect().value().getDisplayName().getString()
+                                + (e.getAmplifier() > 0 ? " " + roman(e.getAmplifier() + 1) : "");
+                String time =
+                        !this.c.fxTime
+                                ? ""
+                                : (e.isInfiniteDuration() ? "∞" : mmss(e.getDuration() / 20));
                 int w = 26 + sw(f, name) + (time.isEmpty() ? 0 : 6 + sw(f, time)) + 7;
                 int h = 21;
                 int x = xr - w;
                 bg(g, x, y, w, h);
-                float blink = !e.isInfiniteDuration() && e.endsWithin(200) ? 0.45F + 0.55F * (float)Math.abs(Math.sin(System.nanoTime() / 2.5E8)) : 1.0F;
-                g.blitSprite(RenderPipelines.GUI_TEXTURED, Gui.getMobEffectSprite(e.getEffect()), x + 7, y + 1, 14, 14, T(Ui.alpha(-1, blink)));
+                float blink =
+                        !e.isInfiniteDuration() && e.endsWithin(200)
+                                ? 0.45F
+                                        + 0.55F
+                                                * (float)
+                                                        Math.abs(
+                                                                Math.sin(System.nanoTime() / 2.5E8))
+                                : 1.0F;
+                g.blitSprite(
+                        RenderPipelines.GUI_TEXTURED,
+                        Gui.getMobEffectSprite(e.getEffect()),
+                        x + 7,
+                        y + 1,
+                        14,
+                        14,
+                        T(Ui.alpha(-1, blink)));
                 float ty = y + (h - 8.0F) / 2.0F;
-                txt(g, f, name, x + 7 + 19, ty, T(e.getEffect().value().isBeneficial() ? TEXT : -25958));
+                txt(
+                        g,
+                        f,
+                        name,
+                        x + 7 + 19,
+                        ty,
+                        T(e.getEffect().value().isBeneficial() ? TEXT : -25958));
                 txt(g, f, time, x + w - 7 - sw(f, time), ty, T(Ui.alpha(DIM, blink)));
                 y += h + 3;
             }
@@ -780,7 +1047,9 @@ public final class Hud {
     }
 
     private static String roman(int n) {
-        return n <= 10 ? new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}[n] : String.valueOf(n);
+        return n <= 10
+                ? new String[] {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}[n]
+                : String.valueOf(n);
     }
 
     private int armor(GuiGraphics g, Font f, LocalPlayer p, int xr, int y) {
@@ -789,15 +1058,25 @@ public final class Hud {
             if ((i < 4 || this.c.armorHand) && !it.isEmpty() && it.isDamageableItem()) {
                 int left = it.getMaxDamage() - it.getDamageValue();
                 int k = (System.identityHashCode(it.getItem()) * 31 + left) * 4 + this.c.armorFmt;
-                float frac = (float)left / Math.max(1, it.getMaxDamage());
+                float frac = (float) left / Math.max(1, it.getMaxDamage());
                 if (this.armorKey[i] != k || this.armorText[i] == null) {
                     this.armorKey[i] = k;
-                    this.armorText[i] = this.c.armorFmt == 0 ? String.valueOf(left) : (this.c.armorFmt == 1 ? Math.round(frac * 100.0F) + "%" : "");
+                    this.armorText[i] =
+                            this.c.armorFmt == 0
+                                    ? String.valueOf(left)
+                                    : (this.c.armorFmt == 1 ? Math.round(frac * 100.0F) + "%" : "");
                 }
 
                 int col = frac > 0.5F ? -8398733 : (frac > 0.2F ? -670639 : -895654);
                 boolean warn = this.c.armorWarn && frac < 0.1F;
-                float bl = warn ? 0.4F + 0.6F * (float)Math.abs(Math.sin(System.nanoTime() / 2.0E8)) : 1.0F;
+                float bl =
+                        warn
+                                ? 0.4F
+                                        + 0.6F
+                                                * (float)
+                                                        Math.abs(
+                                                                Math.sin(System.nanoTime() / 2.0E8))
+                                : 1.0F;
                 int w = 23 + (this.armorText[i].isEmpty() ? 0 : 5 + sw(f, this.armorText[i])) + 7;
                 int h = 18;
                 int x = xr - w;
@@ -808,7 +1087,13 @@ public final class Hud {
 
                 g.renderItem(it, x + 7 - 1, y + 1);
                 if (!this.armorText[i].isEmpty()) {
-                    txt(g, f, this.armorText[i], x + 7 + 20, y + (h - 8.0F) / 2.0F, T(Ui.alpha(col, bl)));
+                    txt(
+                            g,
+                            f,
+                            this.armorText[i],
+                            x + 7 + 20,
+                            y + (h - 8.0F) / 2.0F,
+                            T(Ui.alpha(col, bl)));
                 }
 
                 g.fill(x, y + h - 1, x + Math.round(w * frac), y + h, T(col));
@@ -858,12 +1143,26 @@ public final class Hud {
         return y + h;
     }
 
-    private void key(GuiGraphics g, Font f, int i, int x, int y, int w, int h, String label, KeyMapping binding, float dt) {
+    private void key(
+            GuiGraphics g,
+            Font f,
+            int i,
+            int x,
+            int y,
+            int w,
+            int h,
+            String label,
+            KeyMapping binding,
+            float dt) {
         mark(x, y, x + w, y + h);
-        this.keyGlow[i] = this.c.animations ? Ui.approach(this.keyGlow[i], binding.isDown() ? 1.0F : 0.0F, dt, 20.0F) : (binding.isDown() ? 1.0F : 0.0F);
+        this.keyGlow[i] =
+                this.c.animations
+                        ? Ui.approach(this.keyGlow[i], binding.isDown() ? 1.0F : 0.0F, dt, 20.0F)
+                        : (binding.isDown() ? 1.0F : 0.0F);
         float e = Ui.ease(this.keyGlow[i]);
         ThemePalette palette = Theme.palette();
-        // Phím bấm: phủ accent nhạt + viền accent + lún nhẹ. Trước đây đổ đặc accent 90% và đổi chữ sang màu mực
+        // Phím bấm: phủ accent nhạt + viền accent + lún nhẹ. Trước đây đổ đặc accent 90% và đổi chữ
+        // sang màu mực
         // đen, ra một khối xanh đậm chói mắt giữa HUD trong suốt.
         float sink = this.c.animations ? 0.06F * e : 0.0F;
         g.pose().pushMatrix();
@@ -883,10 +1182,22 @@ public final class Hud {
         } else {
             String[] lines = label.split("\\n");
             if (lines.length == 1) {
-                txt(g, f, label, x + (w - sw(f, label)) / 2.0F, y + (h - 8) / 2.0F + press, foreground);
+                txt(
+                        g,
+                        f,
+                        label,
+                        x + (w - sw(f, label)) / 2.0F,
+                        y + (h - 8) / 2.0F + press,
+                        foreground);
             } else {
                 txt(g, f, lines[0], x + (w - sw(f, lines[0])) / 2.0F, y + 4 + press, foreground);
-                txt(g, f, lines[1], x + (w - sw(f, lines[1])) / 2.0F, y + 15 + press, Ui.alpha(foreground, 0.8F));
+                txt(
+                        g,
+                        f,
+                        lines[1],
+                        x + (w - sw(f, lines[1])) / 2.0F,
+                        y + 15 + press,
+                        Ui.alpha(foreground, 0.8F));
             }
         }
 

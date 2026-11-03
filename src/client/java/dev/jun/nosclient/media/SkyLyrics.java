@@ -2,21 +2,24 @@ package dev.jun.nosclient.media;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import dev.jun.nosclient.ClientEffects;
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.config.MusicConfig;
+import dev.jun.nosclient.config.MusicSettings;
 import dev.jun.nosclient.feat.Feats;
+import dev.jun.nosclient.media.lyrics.Lyrics;
 import dev.jun.nosclient.scene.SceneConfig;
+import dev.jun.nosclient.sky.SkyPreset;
 import dev.jun.nosclient.theme.Theme;
 import dev.jun.nosclient.theme.ThemePalette;
 import dev.jun.nosclient.typography.Typography;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -26,31 +29,48 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.dimension.DimensionType.Skybox;
+
 import org.joml.Matrix4f;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 /**
- * Lời nhạc trên trời. Mỗi dòng mới sinh ra đúng hướng người chơi đang nhìn (nâng lên khỏi chân trời),
- * từng chữ ngưng tụ từ bụi sao, chữ sáng dần theo nhịp hát (karaoke), dòng cũ tan thành bụi bay lên.
- * Chữ nằm trong thế giới ở bán kính theo tầm nhìn nên núi, cây, nhà che được như cảnh vật thật.
- * Toán chuyển động ở {@link LyricMotion}.
+ * Lời nhạc trên trời. Mỗi dòng mới sinh ra đúng hướng người chơi đang nhìn (nâng lên khỏi chân
+ * trời), từng chữ ngưng tụ từ bụi sao, chữ sáng dần theo nhịp hát (karaoke), dòng cũ tan thành bụi
+ * bay lên. Chữ nằm trong thế giới ở bán kính theo tầm nhìn nên núi, cây, nhà che được như cảnh vật
+ * thật. Toán chuyển động ở {@link LyricMotion}.
  */
 @Environment(EnvType.CLIENT)
 public final class SkyLyrics {
     public static LyricsService service;
+
     /** Thời gian CPU vẽ lời nhạc (cộng dồn) — chỉ để probe đo chi phí khung hình. */
     public static long renderNanos;
+
     public static long renderFrames;
     private static final int LIGHT = 15728880;
     private static final int ROW = 13;
     private static final int DUST = 5;
     private static final int MOTES = 7;
     static final String INTERLUDE = "♪ ♪ ♪";
-    private static final float[][] EDGE = new float[][]{{-0.22F, 0.0F}, {0.22F, 0.0F}, {0.0F, -0.22F}, {0.0F, 0.22F}};
-    private static final float[][] AURA = new float[][]{
-        {-0.55F, 0.0F}, {0.55F, 0.0F}, {0.0F, -0.55F}, {0.0F, 0.55F}, {-0.39F, -0.39F}, {0.39F, -0.39F}, {-0.39F, 0.39F}, {0.39F, 0.39F}
-    };
+    private static final float[][] EDGE =
+            new float[][] {{-0.22F, 0.0F}, {0.22F, 0.0F}, {0.0F, -0.22F}, {0.0F, 0.22F}};
+    private static final float[][] AURA =
+            new float[][] {
+                {-0.55F, 0.0F},
+                {0.55F, 0.0F},
+                {0.0F, -0.55F},
+                {0.0F, 0.55F},
+                {-0.39F, -0.39F},
+                {0.39F, -0.39F},
+                {-0.39F, 0.39F},
+                {0.39F, 0.39F}
+            };
     private static final ArrayList<Shown> shown = new ArrayList<>();
-    private static final LinkedHashMap<Key, List<Line>> layouts = new LinkedHashMap<>(16, 0.75F, true);
+    private static final LinkedHashMap<Key, List<Line>> layouts =
+            new LinkedHashMap<>(16, 0.75F, true);
     private static Object level;
     private static String key = "";
     private static String next = "";
@@ -63,29 +83,29 @@ public final class SkyLyrics {
     private static double radius = 120.0;
     private static CelestialTypography.Ink ink = CelestialTypography.ink(0, -1, -4927299, true);
 
-    private SkyLyrics() {
-    }
+    private SkyLyrics() {}
 
     public static void init() {
-        service = new LyricsService(FabricLoader.getInstance().getConfigDir().resolve("nosclient-lyrics"));
-        ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-            service.configure(SceneConfig.INSTANCE.lyrics, SceneConfig.INSTANCE.lyricsAutoFetch);
-            if (mc.getOverlay() != null) {
-                layouts.clear();
-            }
-        });
+        service = MediaManager.get().lyricsService();
+        ClientTickEvents.END_CLIENT_TICK.register(
+                mc -> {
+                    if (mc.getOverlay() != null) {
+                        layouts.clear();
+                    }
+                });
         ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> service.close());
         WorldRenderEvents.END_EXTRACTION.register(context -> extract());
         AuroraSky.init();
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            PoseStack matrices = context.matrices();
-            if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
-                long t0 = System.nanoTime();
-                render(matrices, context.consumers());
-                renderNanos += System.nanoTime() - t0;
-                renderFrames++;
-            }
-        });
+        WorldRenderEvents.AFTER_ENTITIES.register(
+                context -> {
+                    PoseStack matrices = context.matrices();
+                    if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
+                        long t0 = System.nanoTime();
+                        render(matrices, context.consumers());
+                        renderNanos += System.nanoTime() - t0;
+                        renderFrames++;
+                    }
+                });
     }
 
     private static void extract() {
@@ -99,46 +119,42 @@ public final class SkyLyrics {
             key = "";
         }
 
-        // F1 (ẩn giao diện) vẫn giữ lời nhạc: chữ là một phần cảnh trời, và là thứ người chơi muốn có trong ảnh chụp.
-        boolean active = c.lyrics && mc.level != null && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
+        // F1 (ẩn giao diện) vẫn giữ lời nhạc: chữ là một phần cảnh trời, và là thứ người chơi muốn
+        // có trong ảnh chụp.
+        boolean active =
+                MusicSettings.get().enabled
+                        && MusicSettings.get().showLyrics
+                        && MusicSettings.get().lyricsStyle == MusicConfig.LyricsStyle.SKY
+                        && mc.level != null
+                        && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
         String line = "";
         String upcoming = "";
         String id = "";
         boolean newLine = true;
         long start = 0L;
         long length = 4000L;
+        LyricSchedule.Phrase phrase = null;
         if (active) {
-            LyricsService.Snapshot state = service.snapshot();
-            List<LrcTimeline.Line> lines = state.timeline().lines();
-            position = state.track().position(now) - c.lyricsDelay;
-            int index = now - state.track().sampledAt() > 15000000000L ? -1 : state.timeline().indexAt(position);
-            if (index >= 0) {
-                line = lines.get(index).text();
-                start = lines.get(index).atMs();
-                // Dòng trống trong LRC = nhạc dạo/gian tấu. Trước đây chữ biến mất cả chục giây như mất lời; giờ hiện
-                // nốt nhạc nhỏ để biết vẫn đang theo bài.
-                if (line.isBlank() && index + 1 < lines.size() && lines.get(index + 1).atMs() - start > 3000L) {
-                    line = INTERLUDE;
+            MediaManager media = MediaManager.get();
+            Lyrics lyrics = media.lyrics();
+            position = media.position();
+            Lyrics.Line current = lyrics == null ? null : lyrics.lastStartedBefore(position);
+            if (current != null) {
+                List<LyricSchedule.Phrase> phrases = LyricSchedule.phrases(current, poster());
+                int index = 0;
+                for (int i = 0; i < phrases.size(); i++)
+                    if (phrases.get(i).start() <= position) index = i;
+                if (!phrases.isEmpty()) {
+                    phrase = phrases.get(index);
+                    line = phrase.text();
+                    start = phrase.start();
+                    length = phrase.end() - start;
+                    id = media.track().key() + ":" + current.index + "#" + index;
+                    newLine = index == 0;
+                    if (!poster() && c.lyricsNext && current.index + 1 < lyrics.lines.size()) {
+                        upcoming = lyrics.lines.get(current.index + 1).text;
+                    }
                 }
-                if (index + 1 < lines.size()) {
-                    length = lines.get(index + 1).atMs() - start;
-                    upcoming = c.lyricsNext ? lines.get(index + 1).text() : "";
-                }
-            }
-
-            id = state.track().key() + ":" + index;
-            // Chữ khối: câu chia cụm ngắn hiện lần lượt; khoá đổi theo cụm nên mỗi cụm là một lần "sinh" riêng.
-            if (index >= 0 && poster() && !line.isBlank() && !INTERLUDE.equals(line)) {
-                List<String> chunks = LyricChunks.split(line);
-                long[] at = LyricChunks.starts(chunks, length);
-                int chunk = LyricChunks.indexAt(at, position - start);
-                id += "#" + chunk;
-                start += at[chunk];
-                length = at[chunk + 1] - at[chunk];
-                line = chunks.get(chunk);
-                // Chữ khối chỉ hiện cụm đang hát: dòng kế tiếp nguyên câu bên cạnh làm trời đầy chữ.
-                upcoming = "";
-                newLine = chunk == 0;
             }
         }
 
@@ -146,7 +162,12 @@ public final class SkyLyrics {
         float elapsed = ambientAt == 0L ? 0.0F : Math.min(0.1F, (now - ambientAt) / 1.0E9F);
         ambientAt = now;
         // Chui vào hang/nhà thì lời mờ đi chứ không tắt phụt; trời mở lại thì hiện lại.
-        float target = active && mc.level.canSeeSky(camera.blockPosition()) ? 1.0F : 0.0F;
+        float target =
+                active
+                                && (MusicSettings.get().showUnderground
+                                        || mc.level.canSeeSky(camera.blockPosition()))
+                        ? MusicSettings.get().textOpacity
+                        : 0.0F;
         presence = c.animations ? Ui.approach(presence, target, elapsed, 3.0F) : target;
         mode = c.animations ? c.lyricsMotion : LyricMotion.NONE;
         speed = 480.0F / c.lyricsDuration;
@@ -163,7 +184,8 @@ public final class SkyLyrics {
             if (line.isBlank()) {
                 AuroraSky.calm();
             } else if (newLine) {
-                // Nhịp cực quang theo CÂU, không theo cụm: cụm nhỏ dồn dập mà kick từng cụm thì cực quang giật liên tục.
+                // Nhịp cực quang theo CÂU, không theo cụm: cụm nhỏ dồn dập mà kick từng cụm thì cực
+                // quang giật liên tục.
                 AuroraSky.kick(line.length(), length);
             }
 
@@ -171,26 +193,44 @@ public final class SkyLyrics {
                 long seed = id.hashCode() * 31L + now;
                 float[] anchor;
                 if (poster() && c.lyricsFollow) {
-                    // Rải cụm ngẫu nhiên trong khung nhìn (luôn trên trời), tránh chỗ hai cụm vừa hiện.
+                    // Rải cụm ngẫu nhiên trong khung nhìn (luôn trên trời), tránh chỗ hai cụm vừa
+                    // hiện.
                     List<float[]> recent = new ArrayList<>();
                     for (int i = Math.max(0, shown.size() - 2); i < shown.size(); i++) {
-                        recent.add(new float[]{shown.get(i).bearing, shown.get(i).elevation});
+                        recent.add(new float[] {shown.get(i).bearing, shown.get(i).elevation});
                     }
 
-                    anchor = LyricChunks.place(camera.yRot(), -camera.xRot(), Feats.lastFov, (double)mc.getWindow().getWidth() / Math.max(1, mc.getWindow().getHeight()),
-                        seed, recent);
+                    anchor =
+                            LyricChunks.place(
+                                    camera.yRot(),
+                                    -camera.xRot(),
+                                    Feats.lastFov,
+                                    (double) mc.getWindow().getWidth()
+                                            / Math.max(1, mc.getWindow().getHeight()),
+                                    seed,
+                                    recent);
                 } else if (c.lyricsFollow) {
-                    anchor = LyricMotion.anchor(camera.yRot(), camera.xRot(), last == null ? 0.0F : last.bearing, last == null ? 0.0F : last.elevation,
-                        last != null && now - last.born < 20000000000L);
+                    anchor =
+                            LyricMotion.anchor(
+                                    camera.yRot(),
+                                    camera.xRot(),
+                                    last == null ? 0.0F : last.bearing,
+                                    last == null ? 0.0F : last.elevation,
+                                    last != null && now - last.born < 20000000000L);
                 } else {
-                    anchor = new float[]{c.lyricsBearing, c.lyricsElevation};
+                    anchor = new float[] {c.lyricsBearing, c.lyricsElevation};
                 }
 
-                shown.add(new Shown(line, seed, anchor[0], anchor[1], now, start, length));
+                shown.add(new Shown(line, seed, anchor[0], anchor[1], now, start, length, phrase));
             }
         }
 
-        shown.removeIf(s -> s.died != 0L && (now - s.died) / 1.0E9F > LyricMotion.lifetime(s.text.length(), speed) * (mode == LyricMotion.NONE ? 0.0F : 1.0F));
+        shown.removeIf(
+                s ->
+                        s.died != 0L
+                                && (now - s.died) / 1.0E9F
+                                        > LyricMotion.lifetime(s.text.length(), speed)
+                                                * (mode == LyricMotion.NONE ? 0.0F : 1.0F));
 
         while (shown.size() > 4) {
             shown.removeFirst();
@@ -198,24 +238,44 @@ public final class SkyLyrics {
 
         // Chữ khối: không hiện câu kế tiếp (kể cả lúc nhạc dạo) — mỗi lúc chỉ một cụm trên trời.
         next = poster() ? "" : upcoming;
-        // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
-        // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4× tầm nhìn nên không bị cắt.
-        // Đặt sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được nó.
-        radius = Math.max(40.0, mc.options.getEffectiveRenderDistance() * 16 * 0.92);
+        // Đặt chữ sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che
+        // được nó.
+        // Cỡ chữ tỉ lệ với bán kính nên trên màn hình vẫn giữ nguyên; mặt phẳng xa của camera là 4×
+        // tầm nhìn nên không bị cắt.
+        // Đặt sát mép tầm nhìn: mọi địa hình đã nạp (núi xa, rặng cây) đều ở trước chữ nên che được
+        // nó.
+        radius =
+                Math.max(
+                        30.0,
+                        Math.min(
+                                MusicSettings.get().skyDistance,
+                                mc.options.getEffectiveRenderDistance() * 16 * 0.92));
         if (ShaderPacks.active()) {
-            // Shaderpack phủ sương theo khoảng cách lên cả chữ: sát mép tầm nhìn chữ chìm hẳn. Kéo về gần — đổi lại
+            // Shaderpack phủ sương theo khoảng cách lên cả chữ: sát mép tầm nhìn chữ chìm hẳn. Kéo
+            // về gần — đổi lại
             // núi rất xa không che chữ được nữa.
             radius = Math.min(radius, 48.0);
         }
         ThemePalette palette = Theme.palette();
-        int sky = camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F);
+        SkyPreset preset = SceneConfig.INSTANCE.sky ? SkyPreset.get(ClientEffects.cfg().sky) : null;
+        int sky =
+                preset == null
+                        ? camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F)
+                        : preset.horizon;
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);
         if (ShaderPacks.active()) {
-            // Shaderpack tone-map lại cả khung hình nên chữ trắng-mờ chìm vào trời: dùng màu mực người chơi chọn, đậm.
+            // Shaderpack tone-map lại cả khung hình nên chữ trắng-mờ chìm vào trời: dùng màu mực
+            // người chơi chọn, đậm.
             int lyricInk = 0xFF000000 | c.lyricsInk;
-            ink = new CelestialTypography.Ink(ThemePalette.mix(lyricInk, 0xFFFFFF, 0.25), 0x14061A, lyricInk, 0.9F, 0.55F);
+            ink =
+                    new CelestialTypography.Ink(
+                            ThemePalette.mix(lyricInk, 0xFFFFFF, 0.25),
+                            0x14061A,
+                            lyricInk,
+                            0.9F,
+                            0.55F);
         }
-        float targetGlow = c.lyricsCinematic ? ink.haloOpacity() * (float)c.lyricsGlow : 0.0F;
+        float targetGlow = c.lyricsCinematic ? ink.haloOpacity() * (float) c.lyricsGlow : 0.0F;
         glow = c.animations ? Ui.approach(glow, targetGlow, elapsed, 4.0F) : targetGlow;
     }
 
@@ -224,7 +284,13 @@ public final class SkyLyrics {
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
         double fov = Math.max(5.0F, Math.min(170.0F, Feats.lastFov));
-        double raster = SkyTextPlane.density(mc.getWindow().getHeight(), fov, c.lyricsSize, c.lyricsWidth * 1.04, c.lyricsHeight * 1.1);
+        double raster =
+                SkyTextPlane.density(
+                        mc.getWindow().getHeight(),
+                        fov,
+                        c.lyricsSize,
+                        c.lyricsWidth * 1.04,
+                        c.lyricsHeight * 1.1);
         long now = System.nanoTime();
         Shown newest = null;
 
@@ -240,13 +306,26 @@ public final class SkyLyrics {
             matrices.pushPose();
 
             try {
-                matrices.translate(-Math.sin(yaw) * Math.cos(pitch) * radius, Math.sin(pitch) * radius, Math.cos(yaw) * Math.cos(pitch) * radius);
+                matrices.translate(
+                        -Math.sin(yaw) * Math.cos(pitch) * radius,
+                        Math.sin(pitch) * radius,
+                        Math.cos(yaw) * Math.cos(pitch) * radius);
                 matrices.mulPose(SkyTextPlane.rotation(s.bearing, s.elevation));
-                float scale = (float)(SkyTextPlane.WORLD_SCALE * c.lyricsSize * radius / 120.0);
-                matrices.scale(scale * (float)c.lyricsWidth * 1.04F, -scale * (float)c.lyricsHeight * 1.1F, scale);
-                float bottom = line(font, s, raster, now, s == newest, matrices.last().pose(), buffers);
+                float scale = (float) (SkyTextPlane.WORLD_SCALE * c.lyricsSize * radius / 120.0);
+                matrices.scale(
+                        scale * (float) c.lyricsWidth * 1.04F,
+                        -scale * (float) c.lyricsHeight * 1.1F,
+                        scale);
+                float bottom =
+                        line(font, s, raster, now, s == newest, matrices.last().pose(), buffers);
                 if (s == newest && !next.isBlank()) {
-                    upcoming(font, raster, (now - s.born) / 1.0E9F, bottom, matrices.last().pose(), buffers);
+                    upcoming(
+                            font,
+                            raster,
+                            (now - s.born) / 1.0E9F,
+                            bottom,
+                            matrices.last().pose(),
+                            buffers);
                 }
             } finally {
                 matrices.popPose();
@@ -255,7 +334,14 @@ public final class SkyLyrics {
     }
 
     /** Vẽ một dòng; trả về đáy dòng (toạ độ chữ) để đặt dòng kế tiếp. */
-    private static float line(Font font, Shown s, double raster, long now, boolean newest, Matrix4f base, MultiBufferSource buffers) {
+    private static float line(
+            Font font,
+            Shown s,
+            double raster,
+            long now,
+            boolean newest,
+            Matrix4f base,
+            MultiBufferSource buffers) {
         SceneConfig c = SceneConfig.INSTANCE;
         List<Line> rows = wrap(font, s.text, raster);
         int n = 0;
@@ -269,13 +355,16 @@ public final class SkyLyrics {
         float age = (now - s.born) / 1.0E9F;
         float exit = s.died == 0L ? -1.0F : (now - s.died) / 1.0E9F;
         float music = (position - s.startMs) / 1000.0F;
-        float seconds = c.animations ? (float)(now / 1.0E9 % 3600.0) : 0.0F;
+        float seconds = c.animations ? (float) (now / 1.0E9 % 3600.0) : 0.0F;
         float[] cx = new float[n];
         float[] cy = new float[n];
         LyricMotion.Pose[] poses = new LyricMotion.Pose[n];
         Letter[] glyphs = new Letter[n];
         // Dòng bị thay trôi lên nhường chỗ (như cuộn lời) trong lúc tan, không đè lên dòng mới.
-        float lift = exit < 0.0F || mode == LyricMotion.NONE ? 0.0F : LyricMotion.smooth(exit * speed / 0.5F) * (rows.size() * ROW + 8);
+        float lift =
+                exit < 0.0F || mode == LyricMotion.NONE
+                        ? 0.0F
+                        : LyricMotion.smooth(exit * speed / 0.5F) * (rows.size() * ROW + 8);
         float top = -(rows.size() - 1) * ROW / 2.0F - lift;
         float widest = 0.0F;
         int i = 0;
@@ -287,16 +376,23 @@ public final class SkyLyrics {
 
             for (Letter letter : row.letters) {
                 if (!letter.blank) {
-                    float sinceLit = exit >= 0.0F ? 9.0F : music - LyricMotion.litAt(i, n, s.lengthMs / 1000.0F);
+                    float sinceLit = exit >= 0.0F ? 9.0F : music - s.litAt(i, n);
                     cx[i] = x + letter.advance / 2.0F;
-                    cy[i] = top + r * ROW + 4.5F
-                        + (c.lyricsCinematic ? (float)CelestialTypography.wave(cx[i], row.width / 2.0F, seconds) : 0.0F);
+                    cy[i] =
+                            top
+                                    + r * ROW
+                                    + 4.5F
+                                    + (c.lyricsCinematic
+                                            ? (float)
+                                                    CelestialTypography.wave(
+                                                            cx[i], row.width / 2.0F, seconds)
+                                            : 0.0F);
                     poses[i] = LyricMotion.letter(mode, age, exit, i, n, s.seed, sinceLit, speed);
                     glyphs[i] = letter;
                     i++;
                 }
 
-                x += letter.advance + (float)c.lyricsTracking;
+                x += letter.advance + (float) c.lyricsTracking;
             }
         }
 
@@ -313,25 +409,57 @@ public final class SkyLyrics {
                 float y = cy[k] + p.y();
                 if (p.trail() > 0.02F) {
                     // Đuôi sao chổi: nối chỗ chữ đang ở với chỗ nó ở 0.09 s trước.
-                    LyricMotion.Pose back = LyricMotion.letter(mode, age - 0.09F, exit, k, n, s.seed, -1.0F, speed);
-                    streak(stars, base, cx[k] + back.x(), cy[k] + back.y(), x, y, 1.6F * p.scale(), halo, p.trail() * p.alpha() * presence * 0.8F);
+                    LyricMotion.Pose back =
+                            LyricMotion.letter(mode, age - 0.09F, exit, k, n, s.seed, -1.0F, speed);
+                    streak(
+                            stars,
+                            base,
+                            cx[k] + back.x(),
+                            cy[k] + back.y(),
+                            x,
+                            y,
+                            1.6F * p.scale(),
+                            halo,
+                            p.trail() * p.alpha() * presence * 0.8F);
                     star(stars, base, x, y, 2.6F, white, p.trail() * p.alpha() * presence);
                 }
 
                 if (p.flash() > 0.02F) {
-                    star(stars, base, x, y, 7.5F * p.flash() + 2.0F, white, p.flash() * presence * 0.9F);
+                    star(
+                            stars,
+                            base,
+                            x,
+                            y,
+                            7.5F * p.flash() + 2.0F,
+                            white,
+                            p.flash() * presence * 0.9F);
                 }
 
-                float[] spark = exit >= 0.0F ? null : LyricMotion.spark(music - LyricMotion.litAt(k, n, s.lengthMs / 1000.0F), k, s.seed);
+                float[] spark =
+                        exit >= 0.0F ? null : LyricMotion.spark(music - s.litAt(k, n), k, s.seed);
                 if (spark != null) {
-                    star(stars, base, x + spark[0], y + spark[1], 2.2F * spark[2], halo, spark[3] * presence);
+                    star(
+                            stars,
+                            base,
+                            x + spark[0],
+                            y + spark[1],
+                            2.2F * spark[2],
+                            halo,
+                            spark[3] * presence);
                 }
 
                 if (exit >= 0.0F) {
                     for (int d = 0; d < DUST; d++) {
                         float[] dust = LyricMotion.dust(exit, k, d, s.seed, speed);
                         if (dust != null) {
-                            star(stars, base, cx[k] + dust[0], cy[k] + dust[1], 1.4F * dust[2], d == 0 ? white : halo, dust[3] * presence * 0.8F);
+                            star(
+                                    stars,
+                                    base,
+                                    cx[k] + dust[0],
+                                    cy[k] + dust[1],
+                                    1.4F * dust[2],
+                                    d == 0 ? white : halo,
+                                    dust[3] * presence * 0.8F);
                         }
                     }
                 }
@@ -344,10 +472,31 @@ public final class SkyLyrics {
                 float ry = rows.size() * ROW / 2.0F + 10.0F;
 
                 for (int k = 0; k < MOTES; k++) {
-                    double angle = LyricMotion.hash(s.seed, k, 30) * Math.PI * 2.0 + seconds * (0.08 + 0.06 * LyricMotion.hash(s.seed, k, 31));
-                    float twinkle = 0.5F + 0.5F * (float)Math.sin(seconds * (1.5F + LyricMotion.hash(s.seed, k, 32) * 2.0F) + k);
-                    star(stars, base, (float)Math.cos(angle) * rx, 4.5F + (float)Math.sin(angle) * ry, 1.6F,
-                        halo, appear * twinkle * presence * 0.45F);
+                    double angle =
+                            LyricMotion.hash(s.seed, k, 30) * Math.PI * 2.0
+                                    + seconds * (0.08 + 0.06 * LyricMotion.hash(s.seed, k, 31));
+                    float twinkle =
+                            0.5F
+                                    + 0.5F
+                                            * (float)
+                                                    Math.sin(
+                                                            seconds
+                                                                            * (1.5F
+                                                                                    + LyricMotion
+                                                                                                    .hash(
+                                                                                                            s.seed,
+                                                                                                            k,
+                                                                                                            32)
+                                                                                            * 2.0F)
+                                                                    + k);
+                    star(
+                            stars,
+                            base,
+                            (float) Math.cos(angle) * rx,
+                            4.5F + (float) Math.sin(angle) * ry,
+                            1.6F,
+                            halo,
+                            appear * twinkle * presence * 0.45F);
                 }
             }
         }
@@ -358,26 +507,57 @@ public final class SkyLyrics {
         }
 
         int dim = ThemePalette.mix(body, ink.halo(), 0.5);
-        // Lượt mềm (quầng + viền) cho mọi chữ rồi mới tới lượt lõi: gom theo loại vẽ để bộ đệm không xả liên tục.
+        // Lượt mềm (quầng + viền) cho mọi chữ rồi mới tới lượt lõi: gom theo loại vẽ để bộ đệm
+        // không xả liên tục.
         for (int k = 0; k < n; k++) {
             LyricMotion.Pose p = poses[k];
             float alpha = p.alpha() * presence * (0.5F + 0.5F * p.lit());
             if (!(alpha < 0.03F)) {
-                Matrix4f m = letter(base, cx[k], cy[k], p, glyphs[k].advance).translate(0.0F, 0.0F, -0.01F);
+                Matrix4f m =
+                        letter(base, cx[k], cy[k], p, glyphs[k].advance)
+                                .translate(0.0F, 0.0F, -0.01F);
                 float aura = alpha * (glow * (0.3F + 0.7F * p.lit()) + 0.5F * p.flash());
                 float edge = alpha * ink.edgeOpacity();
                 if (aura > 0.005F) {
                     for (float[] d : AURA) {
-                        font.drawInBatch(glyphs[k].glyph, d[0] * 1.9F, d[1] * 1.9F, Ui.alpha(ink.halo(), Math.min(1.0F, aura * 0.22F)), false, m, buffers,
-                            DisplayMode.POLYGON_OFFSET, 0, LIGHT);
-                        font.drawInBatch(glyphs[k].glyph, d[0], d[1], Ui.alpha(ink.halo(), Math.min(1.0F, aura)), false, m, buffers,
-                            DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+                        font.drawInBatch(
+                                glyphs[k].glyph,
+                                d[0] * 1.9F,
+                                d[1] * 1.9F,
+                                Ui.alpha(ink.halo(), Math.min(1.0F, aura * 0.22F)),
+                                false,
+                                m,
+                                buffers,
+                                DisplayMode.POLYGON_OFFSET,
+                                0,
+                                LIGHT);
+                        font.drawInBatch(
+                                glyphs[k].glyph,
+                                d[0],
+                                d[1],
+                                Ui.alpha(ink.halo(), Math.min(1.0F, aura)),
+                                false,
+                                m,
+                                buffers,
+                                DisplayMode.POLYGON_OFFSET,
+                                0,
+                                LIGHT);
                     }
                 }
 
                 if (edge > 0.02F) {
                     for (float[] d : EDGE) {
-                        font.drawInBatch(glyphs[k].glyph, d[0], d[1], Ui.alpha(ink.edge(), edge), false, m, buffers, DisplayMode.POLYGON_OFFSET, 0, LIGHT);
+                        font.drawInBatch(
+                                glyphs[k].glyph,
+                                d[0],
+                                d[1],
+                                Ui.alpha(ink.edge(), edge),
+                                false,
+                                m,
+                                buffers,
+                                DisplayMode.POLYGON_OFFSET,
+                                0,
+                                LIGHT);
                     }
                 }
             }
@@ -388,8 +568,17 @@ public final class SkyLyrics {
             float alpha = p.alpha() * presence * (0.5F + 0.5F * p.lit());
             if (!(alpha < 0.03F)) {
                 int color = Ui.lerpCol(dim, body, p.lit());
-                font.drawInBatch(glyphs[k].glyph, 0.0F, 0.0F, Ui.alpha(color, Math.min(1.0F, alpha)), false, letter(base, cx[k], cy[k], p, glyphs[k].advance),
-                    buffers, DisplayMode.NORMAL, 0, LIGHT);
+                font.drawInBatch(
+                        glyphs[k].glyph,
+                        0.0F,
+                        0.0F,
+                        Ui.alpha(color, Math.min(1.0F, alpha)),
+                        false,
+                        letter(base, cx[k], cy[k], p, glyphs[k].advance),
+                        buffers,
+                        DisplayMode.NORMAL,
+                        0,
+                        LIGHT);
             }
         }
 
@@ -397,14 +586,24 @@ public final class SkyLyrics {
     }
 
     /**
-     * Chữ poster "trong suốt": lòng chữ không có màu riêng mà là cảnh phía sau (bản chụp SceneCopy) bị đảo rồi ánh
-     * xạ lên dải màu đo từ ảnh mẫu — trời sáng ra tím đậm, cây tối ra hồng rực, vân lá/mây/núi vẫn hiện trong chữ.
-     * Không vẽ bóng: lớp bóng lùi sau mặt chữ qua polygon offset thò ra thành viền sáng-mờ lởm chởm khi nhìn gần;
-     * ảnh mẫu gần như không có bóng, đường viền đã có sẵn nhờ cảnh tối ở mép do lòng chữ đảo màu.
+     * Chữ poster "trong suốt": lòng chữ không có màu riêng mà là cảnh phía sau (bản chụp SceneCopy)
+     * bị đảo rồi ánh xạ lên dải màu đo từ ảnh mẫu — trời sáng ra tím đậm, cây tối ra hồng rực, vân
+     * lá/mây/núi vẫn hiện trong chữ. Không vẽ bóng: lớp bóng lùi sau mặt chữ qua polygon offset thò
+     * ra thành viền sáng-mờ lởm chởm khi nhìn gần; ảnh mẫu gần như không có bóng, đường viền đã có
+     * sẵn nhờ cảnh tối ở mép do lòng chữ đảo màu.
      */
-    private static void posterPass(Font font, int n, LyricMotion.Pose[] poses, Letter[] glyphs, float[] cx, float[] cy, Matrix4f base, MultiBufferSource buffers) {
+    private static void posterPass(
+            Font font,
+            int n,
+            LyricMotion.Pose[] poses,
+            Letter[] glyphs,
+            float[] cx,
+            float[] cy,
+            Matrix4f base,
+            MultiBufferSource buffers) {
         int inkColor = 0xFF000000 | SceneConfig.INSTANCE.lyricsInk;
-        // Chụp cảnh trước khi có chữ: lòng chữ lấy mẫu bản chụp này (vẽ đè lên chính framebuffer đang đọc thì GL
+        // Chụp cảnh trước khi có chữ: lòng chữ lấy mẫu bản chụp này (vẽ đè lên chính framebuffer
+        // đang đọc thì GL
         // cấm). Xả bộ đệm trước để cảnh đã đủ mọi thứ vẽ trước chữ.
         flush(buffers);
         SceneCopy.capture();
@@ -414,11 +613,26 @@ public final class SkyLyrics {
             float alpha = Math.min(1.0F, p.alpha() * presence);
             if (!(alpha < 0.03F)) {
                 // Mực sáng dần theo nhịp hát: chưa tới lượt thì tông trầm, tới lượt thì hồng rực.
-                int lit = Ui.lerpCol(ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000, inkColor, p.lit());
+                int lit =
+                        Ui.lerpCol(
+                                ThemePalette.mix(inkColor, 0x2A0B3D, 0.45) | 0xFF000000,
+                                inkColor,
+                                p.lit());
                 Matrix4f m = letter(base, cx[k], cy[k], p, glyphs[k].advance);
-                // Một bản duy nhất: in chồng nhiều bản cùng mặt phẳng thì chúng tranh depth với nhau, mép nét lởm
+                // Một bản duy nhất: in chồng nhiều bản cùng mặt phẳng thì chúng tranh depth với
+                // nhau, mép nét lởm
                 // chởm và hở sáng (jun chụp được ở cự ly gần).
-                font.drawInBatch(glyphs[k].glyph, 0.0F, 0.0F, Ui.alpha(lit, alpha), false, m, buffers, DisplayMode.NORMAL, 0, LIGHT);
+                font.drawInBatch(
+                        glyphs[k].glyph,
+                        0.0F,
+                        0.0F,
+                        Ui.alpha(lit, alpha),
+                        false,
+                        m,
+                        buffers,
+                        DisplayMode.NORMAL,
+                        0,
+                        LIGHT);
             }
         }
 
@@ -431,7 +645,13 @@ public final class SkyLyrics {
         }
     }
 
-    private static void upcoming(Font font, double raster, float age, float bottom, Matrix4f base, MultiBufferSource buffers) {
+    private static void upcoming(
+            Font font,
+            double raster,
+            float age,
+            float bottom,
+            Matrix4f base,
+            MultiBufferSource buffers) {
         float alpha = LyricMotion.smooth((age - 0.35F) / 0.6F) * 0.38F * presence;
         if (!(alpha < 0.03F)) {
             Matrix4f m = new Matrix4f(base).scale(0.72F, 0.72F, 0.72F);
@@ -441,8 +661,18 @@ public final class SkyLyrics {
                 float x = -row.width / 2.0F;
 
                 for (Letter letter : row.letters) {
-                    font.drawInBatch(letter.glyph, x, y, Ui.alpha(ink.body(), alpha), false, m, buffers, DisplayMode.NORMAL, 0, LIGHT);
-                    x += letter.advance + (float)SceneConfig.INSTANCE.lyricsTracking;
+                    font.drawInBatch(
+                            letter.glyph,
+                            x,
+                            y,
+                            Ui.alpha(ink.body(), alpha),
+                            false,
+                            m,
+                            buffers,
+                            DisplayMode.NORMAL,
+                            0,
+                            LIGHT);
+                    x += letter.advance + (float) SceneConfig.INSTANCE.lyricsTracking;
                 }
 
                 y += ROW - 1;
@@ -450,11 +680,17 @@ public final class SkyLyrics {
         }
     }
 
-    private static Matrix4f letter(Matrix4f base, float cx, float cy, LyricMotion.Pose p, float advance) {
-        return new Matrix4f(base).translate(cx + p.x(), cy + p.y(), 0.0F).rotateZ(p.rot()).scale(p.scale(), p.scale(), 1.0F).translate(-advance / 2.0F, -4.5F, 0.0F);
+    private static Matrix4f letter(
+            Matrix4f base, float cx, float cy, LyricMotion.Pose p, float advance) {
+        return new Matrix4f(base)
+                .translate(cx + p.x(), cy + p.y(), 0.0F)
+                .rotateZ(p.rot())
+                .scale(p.scale(), p.scale(), 1.0F)
+                .translate(-advance / 2.0F, -4.5F, 0.0F);
     }
 
-    private static void star(VertexConsumer vc, Matrix4f m, float x, float y, float r, int rgb, float alpha) {
+    private static void star(
+            VertexConsumer vc, Matrix4f m, float x, float y, float r, int rgb, float alpha) {
         if (!(alpha < 0.01F)) {
             int color = Ui.alpha(0xFF000000 | rgb, Math.min(1.0F, alpha));
             vc.addVertex(m, x - r, y - r, 0.0F).setUv(-1.0F, -1.0F).setColor(color);
@@ -464,10 +700,19 @@ public final class SkyLyrics {
         }
     }
 
-    private static void streak(VertexConsumer vc, Matrix4f m, float x0, float y0, float x1, float y1, float width, int rgb, float alpha) {
+    private static void streak(
+            VertexConsumer vc,
+            Matrix4f m,
+            float x0,
+            float y0,
+            float x1,
+            float y1,
+            float width,
+            int rgb,
+            float alpha) {
         float dx = x1 - x0;
         float dy = y1 - y0;
-        float length = (float)Math.sqrt(dx * dx + dy * dy);
+        float length = (float) Math.sqrt(dx * dx + dy * dy);
         if (!(alpha < 0.01F) && !(length < 0.3F)) {
             float nx = -dy / length * width;
             float ny = dx / length * width;
@@ -489,22 +734,55 @@ public final class SkyLyrics {
         boolean poster = poster();
         // Chữ khối in hoa như poster; toLowerCase/UpperCase theo locale gốc để giữ dấu tiếng Việt.
         String text = poster ? raw.toUpperCase(java.util.Locale.ROOT) : raw;
-        Key key = new Key(text, Typography.worldDensityIndex(raster) + (poster ? 100 : 0), c.lyricsWidth, c.lyricsTracking);
+        Key key =
+                new Key(
+                        MusicSettings.get().font,
+                        text,
+                        Typography.worldDensityIndex(raster) + (poster ? 100 : 0),
+                        c.lyricsWidth,
+                        c.lyricsTracking);
         List<Line> cached = layouts.get(key);
         if (cached != null) {
             return cached;
         }
 
-        List<String> rows = CelestialTypography.wrap(
-            text, part -> font.getSplitter().stringWidth(Ui.worldText(part, raster, poster)), c.lyricsTracking, 170.0 / c.lyricsWidth
-        );
-        List<Line> built = rows.stream().map(row -> {
-            List<Letter> letters = CelestialTypography.clusters(row).stream().map(part -> {
-                MutableComponent component = Ui.worldText(part, raster, poster);
-                return new Letter(component.getVisualOrderText(), font.getSplitter().stringWidth(component), part.isBlank());
-            }).toList();
-            return new Line(letters, (float)(letters.stream().mapToDouble(Letter::advance).sum() + Math.max(0, letters.size() - 1) * c.lyricsTracking));
-        }).toList();
+        List<String> rows =
+                CelestialTypography.wrap(
+                        text,
+                        part -> font.getSplitter().stringWidth(Ui.worldText(part, raster, poster)),
+                        c.lyricsTracking,
+                        170.0 / c.lyricsWidth);
+        List<Line> built =
+                rows.stream()
+                        .map(
+                                row -> {
+                                    List<Letter> letters =
+                                            CelestialTypography.clusters(row).stream()
+                                                    .map(
+                                                            part -> {
+                                                                MutableComponent component =
+                                                                        Ui.worldText(
+                                                                                part, raster,
+                                                                                poster);
+                                                                return new Letter(
+                                                                        component
+                                                                                .getVisualOrderText(),
+                                                                        font.getSplitter()
+                                                                                .stringWidth(
+                                                                                        component),
+                                                                        part.isBlank());
+                                                            })
+                                                    .toList();
+                                    return new Line(
+                                            letters,
+                                            (float)
+                                                    (letters.stream()
+                                                                    .mapToDouble(Letter::advance)
+                                                                    .sum()
+                                                            + Math.max(0, letters.size() - 1)
+                                                                    * c.lyricsTracking));
+                                })
+                        .toList();
         layouts.put(key, built);
         if (layouts.size() > 16) {
             layouts.pollFirstEntry();
@@ -523,8 +801,29 @@ public final class SkyLyrics {
         final long startMs;
         final long lengthMs;
         long died;
+        final LyricSchedule.Phrase phrase;
 
-        Shown(String text, long seed, float bearing, float elevation, long born, long startMs, long lengthMs) {
+        Shown(
+                String text,
+                long seed,
+                float bearing,
+                float elevation,
+                long born,
+                long startMs,
+                long lengthMs) {
+            this(text, seed, bearing, elevation, born, startMs, lengthMs, null);
+        }
+
+        Shown(
+                String text,
+                long seed,
+                float bearing,
+                float elevation,
+                long born,
+                long startMs,
+                long lengthMs,
+                LyricSchedule.Phrase phrase) {
+            this.phrase = phrase;
             this.text = text;
             this.seed = seed;
             this.bearing = bearing;
@@ -533,17 +832,20 @@ public final class SkyLyrics {
             this.startMs = startMs;
             this.lengthMs = lengthMs;
         }
+
+        float litAt(int index, int count) {
+            return phrase == null
+                    ? LyricMotion.litAt(index, count, lengthMs / 1000.0F)
+                    : phrase.litAt(index, count);
+        }
     }
 
     @Environment(EnvType.CLIENT)
-    private record Key(String text, int density, double width, double tracking) {
-    }
+    private record Key(String font, String text, int density, double width, double tracking) {}
 
     @Environment(EnvType.CLIENT)
-    private record Letter(FormattedCharSequence glyph, float advance, boolean blank) {
-    }
+    private record Letter(FormattedCharSequence glyph, float advance, boolean blank) {}
 
     @Environment(EnvType.CLIENT)
-    private record Line(List<Letter> letters, float width) {
-    }
+    private record Line(List<Letter> letters, float width) {}
 }

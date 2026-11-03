@@ -1,23 +1,29 @@
 package dev.jun.nosclient.media;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
 final class MediaCommand {
-    private MediaCommand() {
-    }
+    private MediaCommand() {}
 
     static String run(List<String> arguments) throws Exception {
+        return run(arguments, 2000L);
+    }
+
+    static String run(List<String> arguments, long timeoutMs) throws Exception {
         ProcessBuilder builder = new ProcessBuilder(arguments).redirectError(Redirect.DISCARD);
-        // Launcher đóng gói (PyInstaller) để lại LD_LIBRARY_PATH trỏ vào glib riêng của nó; gdbus hệ thống
-        // nạp nhầm glib đó rồi chết "undefined symbol" — lời nhạc tắt im lặng. Công cụ hệ thống phải chạy
+        // Launcher đóng gói (PyInstaller) để lại LD_LIBRARY_PATH trỏ vào glib riêng của nó; gdbus
+        // hệ thống
+        // nạp nhầm glib đó rồi chết "undefined symbol" — lời nhạc tắt im lặng. Công cụ hệ thống
+        // phải chạy
         // bằng thư viện hệ thống.
         builder.environment().remove("LD_LIBRARY_PATH");
         builder.environment().remove("LD_PRELOAD");
@@ -25,14 +31,17 @@ final class MediaCommand {
 
         try {
             CompletableFuture<byte[]> output = new CompletableFuture<>();
-            Thread.ofVirtual().name("nos-media-output").start(() -> {
-                try {
-                    output.complete(process.getInputStream().readNBytes(65537));
-                } catch (IOException e) {
-                    output.completeExceptionally(e);
-                }
-            });
-            if (!process.waitFor(2L, TimeUnit.SECONDS)) {
+            Thread.ofVirtual()
+                    .name("nos-media-output")
+                    .start(
+                            () -> {
+                                try {
+                                    output.complete(process.getInputStream().readNBytes(65537));
+                                } catch (IOException e) {
+                                    output.completeExceptionally(e);
+                                }
+                            });
+            if (!process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
                 throw new IOException("Media query timed out");
             } else {
                 byte[] bytes = output.get(1L, TimeUnit.SECONDS);

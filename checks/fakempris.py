@@ -19,6 +19,7 @@ XML = """<node>
  <interface name="org.mpris.MediaPlayer2.Player">
   <method name="PlayPause"/><method name="Play"/><method name="Pause"/>
   <method name="Next"/><method name="Previous"/>
+  <method name="Seek"><arg type="x" direction="in"/></method>
   <property name="PlaybackStatus" type="s" access="read"/>
   <property name="Metadata" type="a{sv}" access="read"/>
   <property name="Position" type="x" access="read"/>
@@ -26,7 +27,9 @@ XML = """<node>
 </node>"""
 
 title, artist, length = sys.argv[1], sys.argv[2], float(sys.argv[3])
-started = time.time() - (float(sys.argv[4]) if len(sys.argv) > 4 else 0.0)
+position = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
+sampled = time.monotonic()
+track_index = 1
 playing = True
 
 
@@ -36,19 +39,31 @@ def prop(_conn, _sender, _path, _iface, name):
     if name == "PlaybackStatus":
         return GLib.Variant("s", "Playing" if playing else "Paused")
     if name == "Position":
-        return GLib.Variant("x", int((time.time() - started) * 1_000_000))
+        return GLib.Variant("x", int(current_position() * 1_000_000))
     return GLib.Variant("a{sv}", {
-        "mpris:trackid": GLib.Variant("o", "/fake/track/1"),
-        "xesam:title": GLib.Variant("s", title),
+        "mpris:trackid": GLib.Variant("o", f"/fake/track/{track_index}"),
+        "xesam:title": GLib.Variant("s", title if track_index == 1 else f"Fixture track {track_index}"),
         "xesam:artist": GLib.Variant("as", [artist]),
         "mpris:length": GLib.Variant("x", int(length * 1_000_000)),
     })
 
 
-def call(_conn, _sender, _path, _iface, method, _params, invocation):
-    global playing
+def current_position():
+    elapsed = time.monotonic() - sampled if playing else 0.0
+    return min(length, max(0.0, position + elapsed))
+
+
+def call(_conn, _sender, _path, _iface, method, params, invocation):
+    global playing, position, sampled, track_index
+    position = current_position()
+    sampled = time.monotonic()
     if method in ("PlayPause", "Play", "Pause"):
         playing = method == "Play" or (method == "PlayPause" and not playing)
+    elif method == "Seek":
+        position = min(length, max(0.0, position + params.unpack()[0] / 1_000_000))
+    elif method in ("Next", "Previous"):
+        track_index = max(1, track_index + (1 if method == "Next" else -1))
+        position = 0.0
     invocation.return_value(None)
 
 
