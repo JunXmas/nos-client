@@ -18,7 +18,7 @@ Fabric API và Java 21.
 
 ## Sử dụng
 
-Nhấn **R-Shift** để mở hub, **K** để mở thẻ lời nhạc, **;** để mở trình phát.
+Nhấn **R-Shift** để mở hub, **U** để mở thẻ lời nhạc, **;** để mở trình phát.
 Các phím đều đổi được trong cài đặt. Phím nhạc không tác động khi đang nhập trong menu hoặc chat.
 Bật thẻ **Lời nhạc** rồi phát nhạc bằng ứng dụng hoặc trình duyệt.
 

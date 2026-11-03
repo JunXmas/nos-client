@@ -14,6 +14,7 @@ import dev.jun.nosclient.sky.SkyPreset;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -57,6 +58,18 @@ public final class GameVerification implements ClientModInitializer {
         output = Path.of(System.getProperty("nos.verify.output"));
         ClientLifecycleEvents.CLIENT_STARTED.register(
                 mc -> {
+                    for (KeyMapping own : MediaKeys.all()) {
+                        var binding = KeyBindingHelper.getBoundKeyOf(own);
+                        for (KeyMapping other : mc.options.keyMappings) {
+                            if (own != other
+                                    && binding.equals(KeyBindingHelper.getBoundKeyOf(other)))
+                                throw new AssertionError(
+                                        "Media key conflict: "
+                                                + own.getName()
+                                                + " and "
+                                                + other.getName());
+                        }
+                    }
                     clouds = mc.options.cloudStatus().get();
                     originalWidth = mc.getWindow().getWidth();
                     originalHeight = mc.getWindow().getHeight();
@@ -105,6 +118,8 @@ public final class GameVerification implements ClientModInitializer {
             }
             double elapsed = (now - since) / 1e9;
             boolean inHub = phase >= presetCount * 2 && phase < presetCount * 2 + panels.length;
+            if (inHub && !(mc.screen instanceof NosSettingsScreen))
+                throw new AssertionError("Expected Nos hub, got " + mc.screen);
             if (inHub && mc.screen instanceof NosSettingsScreen screen) {
                 if (elapsed > .6 && !photographedTop) {
                     Screenshot.grab(

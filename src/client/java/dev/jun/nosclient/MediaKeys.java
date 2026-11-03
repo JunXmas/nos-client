@@ -37,7 +37,7 @@ public final class MediaKeys {
     public static void register() {
         openMenu =
                 KeyBindingHelper.registerKeyBinding(
-                        new KeyMapping("key.nosclient.music.menu", Type.KEYSYM, 75, CATEGORY));
+                        new KeyMapping("key.nosclient.music.menu", Type.KEYSYM, 85, CATEGORY));
         playPause =
                 KeyBindingHelper.registerKeyBinding(
                         new KeyMapping(
@@ -50,7 +50,7 @@ public final class MediaKeys {
                         new KeyMapping("key.nosclient.music.player", Type.KEYSYM, 59, CATEGORY));
         toggle =
                 KeyBindingHelper.registerKeyBinding(
-                        new KeyMapping("key.nosclient.music.onoff", Type.KEYSYM, 79, CATEGORY));
+                        new KeyMapping("key.nosclient.music.onoff", Type.KEYSYM, 73, CATEGORY));
         previous =
                 KeyBindingHelper.registerKeyBinding(
                         new KeyMapping("key.nosclient.music.previous", Type.KEYSYM, 263, CATEGORY));
