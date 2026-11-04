@@ -2,7 +2,8 @@
 
 ## 0.4.0
 
-- Tích hợp nguồn nhạc, lời từng chữ, bầu trời và hiệu ứng từ LyricsFlow vào Nos Client.
+- Giới hạn bản tích hợp vào nhạc, lời và bầu trời; gỡ phụ kiện, vệt/aura và hiệu ứng chết của LF.
+- Tích hợp nguồn nhạc, lời từng chữ, bầu trời từ LyricsFlow vào Nos Client.
 - Dùng một entrypoint, bộ phím, namespace tài nguyên, hub cài đặt và file cấu hình chung.
 - Đồng bộ bo góc hub theo Glass; tránh phím trùng Iris và giữ trời/lời hiện sau shaderpack.
 - Giữ SkyLyrics Nos cho lời trên trời; thêm dữ liệu từng chữ, font lựa chọn và kiểu lời trôi nổi.

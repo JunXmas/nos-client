@@ -5,14 +5,12 @@ import dev.jun.nosclient.MediaKeys;
 import dev.jun.nosclient.config.EffectsConfig;
 import dev.jun.nosclient.config.MusicConfig;
 import dev.jun.nosclient.config.MusicSettings;
-import dev.jun.nosclient.cosmetic.effects.DeathFx;
 import dev.jun.nosclient.feat.AutoPerf;
 import dev.jun.nosclient.media.AppVolume;
 import dev.jun.nosclient.media.MediaManager;
 import dev.jun.nosclient.media.SpotifyWeb;
 import dev.jun.nosclient.media.Track;
 import dev.jun.nosclient.render.Chroma;
-import dev.jun.nosclient.render.Cosmetics;
 import dev.jun.nosclient.render.Fonts;
 import dev.jun.nosclient.render.Gfx;
 import dev.jun.nosclient.render.Themes;
@@ -104,9 +102,6 @@ final class Pages {
                 break;
             case SKY:
                 sky(l, screen);
-                break;
-            case COSMETICS:
-                cosmetics(l, screen);
                 break;
             case DISPLAY:
                 display(l);
@@ -1179,59 +1174,6 @@ final class Pages {
                                                 dev.jun.nosclient.scene.SceneConfig.INSTANCE
                                                                 .lyricsAurora =
                                                         v)));
-    }
-
-    private static void cosmetics(List<Ui.Widget> l, MusicPanels screen) {
-        l.add(new Ui.Section("nosclient.music.section.cosmetics"));
-        l.add(new Ui.Info(() -> Ui.tr("nosclient.music.opt.cosmetic.desc")));
-        String[] ids = Cosmetics.IDS;
-        l.add(
-                new Ui.CosmeticGrid(
-                        ids,
-                        () -> Math.max(0, Arrays.asList(ids).indexOf(c().cosmetic)),
-                        i -> c().cosmetic = ids[i]));
-        l.add(new Ui.Info(() -> Ui.tr("nosclient.music.info.cosmetic_share")));
-        EffectsConfig sc = sc();
-        l.add(new Ui.Section("nosclient.music.ui.style.death"));
-        String[] de = new String[4];
-
-        for (int i = 0; i < de.length; i++) {
-            de[i] = "nosclient.music.ui.death." + i;
-        }
-
-        Ui.Card death =
-                new Ui.Card()
-                        .add(
-                                new Ui.Chips(
-                                        "nosclient.music.ui.style.death",
-                                        "nosclient.music.ui.style.death.sub",
-                                        de,
-                                        () -> Math.floorMod(sc.deathFx, de.length),
-                                        i -> {
-                                            sc.deathFx = i;
-                                            screen.rebuildSoon();
-                                        }));
-        if (sc.deathFx > 0) {
-            death.add(
-                            new Ui.Toggle(
-                                    "nosclient.music.ui.style.deathothers",
-                                    "nosclient.music.ui.style.deathothers.sub",
-                                    () -> sc.deathOthers,
-                                    v -> sc.deathOthers = v))
-                    .add(
-                            new Ui.Button(
-                                    "nosclient.music.ui.style.deathtest",
-                                    "nosclient.music.ui.style.deathtest.sub",
-                                    () -> Ui.tr("nosclient.music.ui.style.deathtest"),
-                                    "play",
-                                    true,
-                                    () -> {
-                                        Minecraft.getInstance().setScreen(null);
-                                        DeathFx.test();
-                                    }));
-        }
-
-        l.add(death);
     }
 
     private static void display(List<Ui.Widget> l) {

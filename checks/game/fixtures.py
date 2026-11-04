@@ -9,8 +9,8 @@ directory = Path(sys.argv[1])
 directory.mkdir(parents=True, exist_ok=True)
 config = {
     "client": {"intro": False, "lyricsAutoFetch": False, "lyricsNext": False, "lyricsFollow": False, "lyricsBearing": 270, "lyricsElevation": 15},
-    "music": {"enabled": True, "showLyrics": True, "source": "ANY", "lyricsStyle": "SKY", "autoPerf": False},
-    "effects": {"sky": 1},
+    "music": {"enabled": True, "showLyrics": True, "source": "ANY", "lyricsStyle": "SKY", "autoPerf": False, "cosmetic": "cap_back"},
+    "effects": {"sky": 1, "cosmeticsEnabled": True, "trail": 3, "aura": True, "deathFx": 3, "deathOthers": True},
 }
 (directory / "nosclient.json").write_text(json.dumps(config), encoding="utf-8")
 (directory / "nosclient.properties").write_text("intro=false\nlyrics=true\nlyricsAutoFetch=false\nlyricsAurora=false\nsky=false\ndfps=false\n", encoding="utf-8")

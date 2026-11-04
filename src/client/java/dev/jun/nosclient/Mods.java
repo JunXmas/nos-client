@@ -102,13 +102,6 @@ public final class Mods {
                             () -> MusicSettings.get().showLyrics,
                             v -> MusicSettings.get().showLyrics = v),
                     m(
-                            "accessories",
-                            "world",
-                            "",
-                            Items.LEATHER_HELMET,
-                            () -> ClientEffects.cfg().cosmeticsEnabled,
-                            v -> ClientEffects.cfg().cosmeticsEnabled = v),
-                    m(
                             "karaoke",
                             "hud",
                             "",

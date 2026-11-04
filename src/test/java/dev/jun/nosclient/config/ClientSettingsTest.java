@@ -20,6 +20,32 @@ class ClientSettingsTest {
     }
 
     @Test
+    void obsoleteCosmeticSettingsAreIgnoredAndRemovedWithoutChangingMusicOrSky() throws Exception {
+        Path file = directory.resolve("nosclient.json");
+        Files.writeString(
+                file,
+                """
+                {"music":{"showLyrics":true,"font":"poppins","cosmetic":"cap_back"},
+                 "effects":{"sky":28,"cosmeticsEnabled":true,"deathFx":3,"deathOthers":true,
+                            "trail":3,"aura":true}}
+                """);
+        ClientSettings store = new ClientSettings(file);
+        MusicConfig music = store.section("music", MusicConfig.class, MusicConfig::new);
+        EffectsConfig effects = store.section("effects", EffectsConfig.class, EffectsConfig::new);
+        assertTrue(music.showLyrics);
+        assertEquals("poppins", music.font);
+        assertEquals(28, effects.sky);
+        store.save();
+        var saved = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
+        assertFalse(saved.getAsJsonObject("music").has("cosmetic"));
+        for (String field :
+                new String[] {"cosmeticsEnabled", "deathFx", "deathOthers", "trail", "aura"})
+            assertFalse(saved.getAsJsonObject("effects").has(field), field);
+        assertTrue(saved.getAsJsonObject("music").get("showLyrics").getAsBoolean());
+        assertEquals(28, saved.getAsJsonObject("effects").get("sky").getAsInt());
+    }
+
+    @Test
     void allSectionsPersistTogetherAndExistingValuesSkipLegacyMigration() throws Exception {
         Path file = directory.resolve("nosclient.json");
         Files.writeString(

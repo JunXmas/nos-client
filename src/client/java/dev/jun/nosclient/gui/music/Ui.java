@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 
 import dev.jun.nosclient.ClientEffects;
-import dev.jun.nosclient.ClientResources;
 import dev.jun.nosclient.config.MusicSettings;
 import dev.jun.nosclient.gui.effects.SkyThumbs;
 import dev.jun.nosclient.render.Gfx;
@@ -763,116 +762,6 @@ public final class Ui {
             }
 
             return true;
-        }
-    }
-
-    public static class CosmeticGrid extends Ui.Widget {
-        private final String[] ids;
-        private final IntSupplier get;
-        private final IntConsumer set;
-        private static final float CW = 66.0F;
-        private static final float CH = 80.0F;
-        private static final float GAP = 6.0F;
-        private int cols = 1;
-        private final float[] hov;
-
-        public CosmeticGrid(String[] ids, IntSupplier get, IntConsumer set) {
-            this.ids = ids;
-            this.get = get;
-            this.set = set;
-            this.hov = new float[ids.length];
-        }
-
-        @Override
-        protected boolean interactive() {
-            return true;
-        }
-
-        @Override
-        protected float measure(float w) {
-            this.cols = Math.max(1, (int) ((w + 6.0F) / 72.0F));
-            int rows = (this.ids.length + this.cols - 1) / this.cols;
-            return rows * 86.0F + 4.0F;
-        }
-
-        private float cellW() {
-            return (this.w - 6.0F * (this.cols - 1)) / this.cols;
-        }
-
-        @Override
-        public void render(GuiGraphics g, float ox, float oy, double mx, double my, float a) {
-            float cw = this.cellW();
-            int sel = this.get.getAsInt();
-
-            for (int i = 0; i < this.ids.length; i++) {
-                float x = ox + this.x + i % this.cols * (cw + 6.0F);
-                float y = oy + this.y + i / this.cols * 86.0F;
-                boolean over = Ui.inside(mx, my, x, y, cw, 80.0F);
-                boolean on = i == sel;
-                this.hov[i] = Anim.approach(this.hov[i], over ? 1.0F : 0.0F, 14.0F);
-                int bg = Col.lerp(-14541264, -13883584, this.hov[i]);
-                Gfx.round(g, x, y, cw, 80.0F, 8.0F, Col.alpha(bg, a));
-                if (on) {
-                    Gfx.roundOutline(g, x, y, cw, 80.0F, 8.0F, 1.4F, Col.alpha(Themes.accent(), a));
-                }
-
-                float im = Math.min(cw - 12.0F, 56.0F);
-                float ix = x + (cw - im) / 2.0F;
-                float iy = y + 5.0F - this.hov[i] * 1.5F;
-                if ("none".equals(this.ids[i])) {
-                    Icons.draw(
-                            g,
-                            "close",
-                            ix + im / 2.0F,
-                            iy + im / 2.0F,
-                            im * 0.45F,
-                            Col.alpha(-9541498, a));
-                } else {
-                    Gfx.image(
-                            g,
-                            ClientResources.id("textures/gui/cosmetics/" + this.ids[i] + ".png"),
-                            128,
-                            128,
-                            ix,
-                            iy,
-                            im,
-                            im,
-                            Col.alpha(-1, a));
-                }
-
-                String name =
-                        Gfx.ellipsize(
-                                Ui.tr("nosclient.music.cosmetic." + this.ids[i]),
-                                Ui.FB,
-                                6.6F,
-                                cw - 8.0F);
-                Gfx.textCentered(
-                        g,
-                        name,
-                        Ui.FB,
-                        x + cw / 2.0F,
-                        y + 80.0F - 14.0F,
-                        6.6F,
-                        Col.alpha(on ? -856070 : -6515020, a));
-            }
-        }
-
-        @Override
-        public boolean click(double mx, double my, float ox, float oy) {
-            float cw = this.cellW();
-
-            for (int i = 0; i < this.ids.length; i++) {
-                float x = ox + this.x + i % this.cols * (cw + 6.0F);
-                float y = oy + this.y + i / this.cols * 86.0F;
-                if (Ui.inside(mx, my, x, y, cw, 80.0F)) {
-                    this.set.accept(i);
-                    Ui.save();
-                    UiSounds.play(UiSounds.CLICK, 1.0F + i % 5 * 0.02F);
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 

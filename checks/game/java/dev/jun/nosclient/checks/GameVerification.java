@@ -48,7 +48,6 @@ public final class GameVerification implements ClientModInitializer {
         "lyrics",
         "textstyle",
         "sky",
-        "accessories",
         "karaoke",
         "mediaKeys",
         "mediaProfiles",
@@ -180,13 +179,12 @@ public final class GameVerification implements ClientModInitializer {
             case 1 -> "floating";
             case 2 -> "sky-music-disabled";
             case 3 -> "sky-disabled";
-            case 4 -> "cosmetic-preview";
-            case 5 -> "cosmetic-disabled";
-            case 6 -> "hub-resize-small";
-            case 7 -> "hub-resize-large";
-            case 8 -> "hud-karaoke-before";
-            case 9 -> "hud-karaoke-after";
-            case 10 -> "sky-word-sync";
+            case 4 -> "vanilla-player";
+            case 5 -> "hub-resize-small";
+            case 6 -> "hub-resize-large";
+            case 7 -> "hud-karaoke-before";
+            case 8 -> "hud-karaoke-after";
+            case 9 -> "sky-word-sync";
             default -> "done";
         };
     }
@@ -242,31 +240,24 @@ public final class GameVerification implements ClientModInitializer {
             SceneConfig.INSTANCE.sky = false;
         } else if (phase == count + panels.length + fonts.size() + 4) {
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
-            ClientEffects.cfg().cosmeticsEnabled = true;
-            ClientEffects.cfg().aura = true;
-            ClientEffects.cfg().trail = 1;
-            MusicSettings.get().cosmetic = "cap_back";
-            dev.jun.nosclient.cosmetic.effects.DeathFx.test();
         } else if (phase == count + panels.length + fonts.size() + 5) {
-            ClientEffects.cfg().cosmeticsEnabled = false;
-        } else if (phase == count + panels.length + fonts.size() + 6) {
             mc.options.hideGui = false;
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
             mc.getWindow().setWindowed(960, 540);
             mc.setScreen(NosSettingsScreen.forFeature(null, "lyrics"));
-        } else if (phase == count + panels.length + fonts.size() + 7) {
+        } else if (phase == count + panels.length + fonts.size() + 6) {
             mc.getWindow().setWindowed(originalWidth, originalHeight);
             MusicSettings.get().enabled = true;
             SceneConfig.INSTANCE.sky = true;
             mc.setScreen(NosSettingsScreen.forFeature(null, "sky"));
-        } else if (phase == count + panels.length + fonts.size() + 8) {
+        } else if (phase == count + panels.length + fonts.size() + 7) {
             MusicSettings.get().enabled = false;
             mc.setScreen(new HudEditScreen(null));
-        } else if (phase == count + panels.length + fonts.size() + 9) {
+        } else if (phase == count + panels.length + fonts.size() + 8) {
             hud = new HudVerification();
             ScreenEvents.afterRender(mc.screen)
                     .register((screen, graphics, x, y, delta) -> hud.rendered());
-        } else if (phase == count + panels.length + fonts.size() + 10) {
+        } else if (phase == count + panels.length + fonts.size() + 9) {
             mc.setScreen(null);
             mc.options.hideGui = true;
             MusicSettings.get().enabled = true;

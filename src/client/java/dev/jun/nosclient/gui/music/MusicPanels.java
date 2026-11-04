@@ -21,7 +21,6 @@ public final class MusicPanels {
         LYRICS,
         STYLE,
         SKY,
-        COSMETICS,
         DISPLAY,
         PERF,
         KEYS,
@@ -34,7 +33,6 @@ public final class MusicPanels {
             case "lyrics" -> Tab.LYRICS;
             case "textstyle" -> Tab.STYLE;
             case "sky" -> Tab.SKY;
-            case "accessories" -> Tab.COSMETICS;
             case "karaoke" -> Tab.DISPLAY;
             case "mediaKeys" -> Tab.KEYS;
             case "mediaProfiles" -> Tab.SAVED;
