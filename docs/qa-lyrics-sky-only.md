@@ -1,4 +1,17 @@
-# QA Nos Client 0.4.0: nhạc, lời và bầu trời
+# QA Nos Client: nhạc, lời và bầu trời
+
+## Bản vá 0.4.1
+
+Thông báo bản quyền Nos dùng tên JunXmas ở cả tiếng Việt và tiếng Anh. Giữ điều khoản Nos,
+thông báo MIT của LF và giấy phép font. SHA-256 jar 0.4.1:
+`dafd33ffec25de4a98791cb10a7885586a5693f2d10ed0ed08b68e4d9880e34a`.
+
+Build, 72 JUnit và 774 khóa dịch đạt. Đối chiếu với jar 0.4.0 đã phát hành chỉ khác LICENSE,
+metadata phiên bản và chuỗi phiên bản trong ba lớp. Bytecode sau chuẩn hóa chuỗi phiên bản giống nhau;
+mọi entry khác, gồm shader, tài nguyên, MIT và font, trùng từng byte. Không chạy lại game cho thay đổi
+thông báo này; các lượt Minecraft dưới đây dùng artifact 0.4.0.
+
+## Artifact 0.4.0 chạy Minecraft
 
 Ngày kiểm tra: 04/11/2026. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21, Linux.
 Jar: `nosclient-0.4.0.jar`.

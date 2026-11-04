@@ -1,5 +1,9 @@
 # Thay đổi
 
+## 0.4.1
+
+- Dùng tên JunXmas trong thông báo bản quyền thay cho họ tên đầy đủ.
+
 ## 0.4.0
 
 - Giới hạn bản tích hợp vào nhạc, lời và bầu trời; gỡ phụ kiện, vệt/aura và hiệu ứng chết của LF.
