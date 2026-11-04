@@ -15,7 +15,7 @@ class ConfigDefaultsTest {
         effects.sky = 20;
         effects.cloudsBefore = "FAST";
         assertTrue(ConfigDefaults.reset("textstyle", music, effects));
-        assertEquals("poppins", music.font);
+        assertEquals("nos-celestial", music.font);
         assertEquals(MusicConfig.Source.SPOTIFY, music.source);
         assertTrue(music.profiles.containsKey("Keep"));
         assertEquals(20, effects.sky);

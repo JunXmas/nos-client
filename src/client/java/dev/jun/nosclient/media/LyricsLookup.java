@@ -292,7 +292,7 @@ final class LyricsLookup {
                     HttpRequest.newBuilder(URI.create("https://lrclib.net/api/" + path))
                             .timeout(Duration.ofNanos(Math.min(remaining, 4000000000L)))
                             .header("Accept", "application/json")
-                            .header("User-Agent", "NosClient/0.4.1 (synced-lyrics)")
+                            .header("User-Agent", "NosClient/0.4.2 (synced-lyrics)")
                             .build();
             dev.jun.nosclient.util.LimitedBody body =
                     new dev.jun.nosclient.util.LimitedBody(2097152);

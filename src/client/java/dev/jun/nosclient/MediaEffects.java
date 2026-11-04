@@ -39,6 +39,6 @@ public final class MediaEffects {
                     dev.jun.nosclient.sky.SkyRenderer.restoreClouds(client);
                     MediaManager.get().stop();
                 });
-        ClientResources.LOG.info("Nos Client {} ready", "0.4.1");
+        ClientResources.LOG.info("Nos Client {} ready", "0.4.2");
     }
 }

@@ -1,5 +1,10 @@
 # Thay đổi
 
+## 0.4.2
+
+- Dùng lyrics trên trời Nos và font Nos Celestial làm mặc định cho cấu hình mới và khi đặt lại.
+- Giữ các kiểu lyrics LF và lựa chọn đã lưu.
+
 ## 0.4.1
 
 - Dùng lyrics LF mặc định; khôi phục kiểu câu ghép cặp/rải từ trên trời, giữ kiểu Nos riêng.

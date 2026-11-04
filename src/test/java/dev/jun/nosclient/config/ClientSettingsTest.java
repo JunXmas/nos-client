@@ -115,8 +115,8 @@ class ClientSettingsTest {
         MusicConfig music = new MusicConfig();
         music.clamp();
         assertEquals(MusicConfig.Source.ANY, music.source);
-        assertEquals(MusicConfig.LyricsStyle.SKY, music.lyricsStyle);
-        assertEquals("poppins", music.font);
+        assertEquals(MusicConfig.LyricsStyle.NOS_SKY, music.lyricsStyle);
+        assertEquals("nos-celestial", music.font);
         music.font = "../../wrong";
         music.lyricsStyle = null;
         music.topBarStyle = null;
@@ -124,8 +124,8 @@ class ClientSettingsTest {
         music.textOpacity = Float.POSITIVE_INFINITY;
         music.maxLines = -99;
         music.clamp();
-        assertEquals("poppins", music.font);
-        assertNotNull(music.lyricsStyle);
+        assertEquals("nos-celestial", music.font);
+        assertEquals(MusicConfig.LyricsStyle.NOS_SKY, music.lyricsStyle);
         assertNotNull(music.topBarStyle);
         assertTrue(Float.isFinite(music.lyricsScale));
         assertTrue(Float.isFinite(music.textOpacity));

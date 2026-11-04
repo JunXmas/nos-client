@@ -13,7 +13,7 @@ public class MusicConfig {
     public int syncOffsetMs = 0;
     public Map<String, Integer> songOffsets = new HashMap<>();
     public boolean showLyrics = false;
-    public MusicConfig.LyricsStyle lyricsStyle = MusicConfig.LyricsStyle.SKY;
+    public MusicConfig.LyricsStyle lyricsStyle = MusicConfig.LyricsStyle.NOS_SKY;
     public boolean skyWords = false;
     public boolean followView = false;
     public boolean viewLock = false;
@@ -30,7 +30,7 @@ public class MusicConfig {
     public boolean varySizes = true;
     public boolean arcLayout = true;
     public int maxLines = 2;
-    public String font = "poppins";
+    public String font = "nos-celestial";
     public MusicConfig.TextStyle textStyle = MusicConfig.TextStyle.NEON;
     public String theme = "lavender";
     public boolean customTheme = false;
@@ -71,12 +71,12 @@ public class MusicConfig {
     public void clamp() {
         configVersion = Math.max(19, configVersion);
         if (source == null) source = Source.ANY;
-        if (lyricsStyle == null) lyricsStyle = LyricsStyle.SKY;
+        if (lyricsStyle == null) lyricsStyle = LyricsStyle.NOS_SKY;
         if (textStyle == null) textStyle = TextStyle.NEON;
         if (enterAnim == null) enterAnim = EnterAnim.NEON;
         if (exitAnim == null) exitAnim = ExitAnim.FLOAT_UP;
         if (topBarStyle == null) topBarStyle = TopBarStyle.KARAOKE;
-        if (font == null || !font.matches("[a-z0-9_-]{1,96}")) font = "poppins";
+        if (font == null || !font.matches("[a-z0-9_-]{1,96}")) font = "nos-celestial";
         if (topBarFont == null || !topBarFont.matches("[a-z0-9_-]{1,96}")) topBarFont = "outfit";
         if (theme == null) theme = "lavender";
         if (profiles == null) profiles = new LinkedHashMap<>();
