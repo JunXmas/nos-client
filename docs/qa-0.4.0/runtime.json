@@ -1,0 +1,22 @@
+[
+  {
+    "run": "fo-no-iris",
+    "sha256": "8fe2916acce921041f3878f84e3f0351a9a93a1a82cf9c36a9550ac9ede47d70",
+    "result": "preset captures=58, hub captures=9, fonts=23, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+  },
+  {
+    "run": "fo-iris-verified",
+    "sha256": "162d655061c24bbd66b9e7fba01aa69b86d1f41645fe58ecdde45a45ef4b96a3",
+    "result": "preset captures=0, hub captures=9, fonts=0, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+  },
+  {
+    "run": "iris-late-render",
+    "sha256": "64a11db766134b6fc393ef97bd30c35086b22f9e680b584a48443f970d0bdbac",
+    "result": "preset captures=0, hub captures=9, fonts=23, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+  },
+  {
+    "run": "late-regression-no-iris",
+    "sha256": "64a11db766134b6fc393ef97bd30c35086b22f9e680b584a48443f970d0bdbac",
+    "result": "preset captures=0, hub captures=9, fonts=0, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+  }
+]

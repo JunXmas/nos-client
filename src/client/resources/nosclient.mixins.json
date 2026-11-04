@@ -1,30 +1,39 @@
 {
-	"required": true,
-	"minVersion": "0.8",
-	"package": "dev.jun.nosclient.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"client": [
-		"PanoramaRendererMixin",
-		"MouseHandlerMixin",
-		"BossHealthOverlayAccessor",
-		"LightTextureMixin",
-		"GameRendererMixin",
-		"CameraMixin",
-		"FramerateLimitTrackerMixin",
-		"AbstractContainerScreenAccessor",
-		"MultiPlayerGameModeAccessor",
-		"LevelRendererMixin",
-		"GlyphRenderStateMixin",
-		"SkyAttributeMixin",
-		"VisualWeatherMixin",
-		"PrecipitationMixin",
-		"ContainerTooltipMixin",
-		"FontTextureMixin",
-		"SkyGlyphRenderTypesMixin",
-		"CosmeticCapeMixin",
-		"OwnEffectParticlesMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	}
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.jun.nosclient.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "PanoramaRendererMixin",
+    "MouseHandlerMixin",
+    "BossHealthOverlayAccessor",
+    "LightTextureMixin",
+    "GameRendererMixin",
+    "CameraMixin",
+    "FramerateLimitTrackerMixin",
+    "AbstractContainerScreenAccessor",
+    "MultiPlayerGameModeAccessor",
+    "LevelRendererMixin",
+    "GlyphRenderStateMixin",
+    "ContainerTooltipMixin",
+    "FontTextureMixin",
+    "SkyGlyphRenderTypesMixin",
+    "CosmeticCapeMixin",
+    "OwnEffectParticlesMixin",
+    "GameRendererAccessor",
+    "EffectsGameRendererMixin",
+    "EffectsLevelRendererMixin",
+    "PackRepositoryMixin",
+    "PostChainAccessor",
+    "PostPassAccessor",
+    "DeathHideMixin",
+    "FogRendererMixin",
+    "ClientPacketListenerAccessor",
+    "PingDebugMonitorMixin",
+    "SkyClockMixin",
+    "LevelWeatherAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

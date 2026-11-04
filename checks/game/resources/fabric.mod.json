@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "nosclient-verification",
+  "version": "1",
+  "name": "Nos isolated verification",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.jun.nosclient.checks.VerificationClient"]},
+  "depends": {"nosclient": "*", "fabric-lifecycle-events-v1": "*"}
+}

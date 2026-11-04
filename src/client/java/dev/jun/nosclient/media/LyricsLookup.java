@@ -4,16 +4,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.io.ByteArrayOutputStream;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpClient.Redirect;
-import java.net.http.HttpResponse.BodySubscriber;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.Duration;
@@ -21,19 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Flow.Subscription;
 import java.util.regex.Pattern;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
 final class LyricsLookup {
-    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3L)).followRedirects(Redirect.NEVER).build();
+    private static final HttpClient HTTP =
+            HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3L))
+                    .followRedirects(Redirect.NEVER)
+                    .build();
 
-    private LyricsLookup() {
-    }
+    private LyricsLookup() {}
 
     private static String encode(String text) {
         return URLEncoder.encode(text, StandardCharsets.UTF_8);
@@ -41,9 +41,12 @@ final class LyricsLookup {
 
     static List<LyricsLookup.Query> queries(MediaTrack track) {
         LyricsLookup.Query exact = new LyricsLookup.Query(track.title(), track.artist());
-        String title = track.title()
-            .replaceFirst("(?i)\\s*[-|]?\\s*[\\[(](?:official\\s+(?:music\\s+)?(?:video|audio)|lyrics?|visuali[sz]er|audio)[\\])]\\s*$", "")
-            .strip();
+        String title =
+                track.title()
+                        .replaceFirst(
+                                "(?i)\\s*[-|]?\\s*[\\[(](?:official\\s+(?:music\\s+)?(?:video|audio)|lyrics?|visuali[sz]er|audio)[\\])]\\s*$",
+                                "")
+                        .strip();
         String artist = track.artist().replaceFirst("(?i)\\s*-\\s*Topic$", "").strip();
         int dash = title.indexOf(" - ");
         if (dash > 0 && dash < title.length() - 3) {
@@ -52,72 +55,110 @@ final class LyricsLookup {
         }
 
         LyricsLookup.Query normalized = new LyricsLookup.Query(title, artist);
-        return !normalized.equals(exact) && !title.isBlank() ? List.of(exact, normalized) : List.of(exact);
+        return !normalized.equals(exact) && !title.isBlank()
+                ? List.of(exact, normalized)
+                : List.of(exact);
     }
 
     static String fetch(MediaTrack track) throws Exception {
+        Match match = find(track);
+        return match == null ? "" : match.lrc();
+    }
+
+    static Match find(MediaTrack track) throws Exception {
         if (track.title().isBlank()) {
-            return "";
+            return null;
         }
 
         long deadline = System.nanoTime() + 12000000000L;
         // Trình phát nhạc đưa đúng tên bài/ca sĩ: tra khớp chính xác trước (nhanh, ít nhầm).
         if (track.source() != MediaSource.BROWSER) {
             for (LyricsLookup.Query query : queries(track)) {
-                JsonElement data = request("get?" + parameters(query) + (track.durationMs() > 0L ? "&duration=" + Math.round(track.durationMs() / 1000.0) : ""), deadline);
-                String lrc = data != null && data.isJsonObject() ? synced(data.getAsJsonObject()) : "";
+                JsonElement data =
+                        request(
+                                "get?"
+                                        + parameters(query)
+                                        + (track.durationMs() > 0L
+                                                ? "&duration="
+                                                        + Math.round(track.durationMs() / 1000.0)
+                                                : ""),
+                                deadline);
+                String lrc =
+                        data != null && data.isJsonObject() ? synced(data.getAsJsonObject()) : "";
                 if (!lrc.isBlank()) {
-                    return lrc;
+                    return new Match(query.title(), query.artist(), lrc);
                 }
             }
         }
 
-        // Tab YouTube: title là tiêu đề video ("Bài - Ca sĩ | Official MV", có khi ngược thứ tự), artist là tên kênh.
-        // Tra khớp chính xác không bao giờ trúng → tìm rộng theo cụm chữ rồi tự chọn bản khớp tên + thời lượng.
+        // Tab YouTube: title là tiêu đề video ("Bài - Ca sĩ | Official MV", có khi ngược thứ tự),
+        // artist là tên kênh.
+        // Tra khớp chính xác không bao giờ trúng → tìm rộng theo cụm chữ rồi tự chọn bản khớp tên +
+        // thời lượng.
         Video video = Video.of(track);
         if (video.parts().isEmpty()) {
-            return "";
+            return null;
         }
 
         for (String search : video.searches()) {
             JsonElement found = request("search?q=" + encode(search), deadline);
-            String lrc = found != null && found.isJsonArray()
-                ? pick(found.getAsJsonArray(), video, track.durationMs(), track.source() == MediaSource.BROWSER ? 8000L : 3000L)
-                : "";
-            if (!lrc.isBlank()) {
-                return lrc;
+            Match match =
+                    found != null && found.isJsonArray()
+                            ? pickMatch(
+                                    found.getAsJsonArray(),
+                                    video,
+                                    track.durationMs(),
+                                    track.source() == MediaSource.BROWSER ? 8000L : 3000L)
+                            : null;
+            if (match != null) {
+                return match;
             }
         }
 
-        return "";
+        return null;
     }
 
     private static String parameters(LyricsLookup.Query query) {
         return "track_name=" + encode(query.title()) + "&artist_name=" + encode(query.artist());
     }
 
-    /** Bản khớp tên bài + ca sĩ + thời lượng (lệch quá {@code tolerance} thì lời chạy lệch nhạc — thà không hiện). */
+    /**
+     * Bản khớp tên bài + ca sĩ + thời lượng (lệch quá {@code tolerance} thì lời chạy lệch nhạc —
+     * thà không hiện).
+     */
     static String pick(JsonArray results, Video video, long durationMs, long tolerance) {
-        String best = "";
+        Match match = pickMatch(results, video, durationMs, tolerance);
+        return match == null ? "" : match.lrc();
+    }
+
+    static Match pickMatch(JsonArray results, Video video, long durationMs, long tolerance) {
+        Match best = null;
         double bestDistance = Double.MAX_VALUE;
         for (int i = 0; i < Math.min(100, results.size()); i++) {
             try {
                 JsonObject data = results.get(i).getAsJsonObject();
                 String name = string(data, "trackName");
                 String lrc = synced(data);
-                if (lrc.isBlank() || data.has("instrumental") && !data.get("instrumental").isJsonNull() && data.get("instrumental").getAsBoolean()) {
+                if (lrc.isBlank()
+                        || data.has("instrumental")
+                                && !data.get("instrumental").isJsonNull()
+                                && data.get("instrumental").getAsBoolean()) {
                     continue;
                 }
 
-                if (!video.version() && VERSION.matcher(name).find() || !video.matches(Video.of(name, "").parts(), string(data, "artistName"))) {
+                if (!video.version() && VERSION.matcher(name).find()
+                        || !video.matches(Video.of(name, "").parts(), string(data, "artistName"))) {
                     continue;
                 }
 
-                double distance = durationMs > 0L && data.has("duration") && !data.get("duration").isJsonNull()
-                    ? Math.abs(data.get("duration").getAsDouble() * 1000.0 - durationMs)
-                    : 0.0;
+                double distance =
+                        durationMs > 0L
+                                        && data.has("duration")
+                                        && !data.get("duration").isJsonNull()
+                                ? Math.abs(data.get("duration").getAsDouble() * 1000.0 - durationMs)
+                                : 0.0;
                 if (distance <= tolerance && distance < bestDistance) {
-                    best = lrc;
+                    best = new Match(name, string(data, "artistName"), lrc);
                     bestDistance = distance;
                 }
             } catch (RuntimeException skipped) {
@@ -126,6 +167,8 @@ final class LyricsLookup {
 
         return best;
     }
+
+    record Match(String title, String artist, String lrc) {}
 
     private static String synced(JsonObject data) {
         String lrc = string(data, "syncedLyrics");
@@ -137,20 +180,31 @@ final class LyricsLookup {
     }
 
     static String fold(String text) {
-        return Normalizer.normalize(text, Normalizer.Form.NFKD).toLowerCase(Locale.ROOT).replace("đ", "d").replaceAll("[^\\p{L}\\p{N}]+", "");
+        return Normalizer.normalize(text, Normalizer.Form.NFKD)
+                .toLowerCase(Locale.ROOT)
+                .replace("đ", "d")
+                .replaceAll("[^\\p{L}\\p{N}]+", "");
     }
 
     private static final Pattern BRACKETS = Pattern.compile("[(\\[「【][^)\\]」】]*[)\\]」】]");
     // " l " là chữ L thay cho "|" — kênh Việt hay viết "... l Official Video".
     private static final Pattern SEPARATOR = Pattern.compile("\\s+(?:[-–—|/•]|l)\\s+");
-    private static final Pattern PROMO = Pattern.compile(
-        "(?iu)^(?:official|offical|music|lyrics?|video|audio|mv|m/v|visuali[sz]er|hd|4k|vietsub|engsub|full|original|teaser|clip|chính|thức|\\s)+$"
-    );
-    private static final Pattern VERSION = Pattern.compile("(?iu)\\b(?:live|remix|cover|acoustic|instrumental|karaoke|beat|slowed|sped\\s*up|nightcore|lofi|lo-fi)\\b");
-    private static final Pattern FEAT = Pattern.compile("(?iu)\\s+(?:ft\\.?|feat\\.?|featuring|prod\\.?)\\s+.*$");
-    private static final Pattern CHANNEL = Pattern.compile("(?iu)(?:\\s*-\\s*topic|\\s+vevo|\\s+official|\\s+music|\\s+channel)+\\s*$");
+    private static final Pattern PROMO =
+            Pattern.compile(
+                    "(?iu)^(?:official|offical|music|lyrics?|video|audio|mv|m/v|visuali[sz]er|hd|4k|vietsub|engsub|full|original|teaser|clip|chính|thức|\\s)+$");
+    private static final Pattern VERSION =
+            Pattern.compile(
+                    "(?iu)\\b(?:live|remix|cover|acoustic|instrumental|karaoke|beat|slowed|sped\\s*up|nightcore|lofi|lo-fi)\\b");
+    private static final Pattern FEAT =
+            Pattern.compile("(?iu)\\s+(?:ft\\.?|feat\\.?|featuring|prod\\.?)\\s+.*$");
+    private static final Pattern CHANNEL =
+            Pattern.compile(
+                    "(?iu)(?:\\s*-\\s*topic|\\s+vevo|\\s+official|\\s+music|\\s+channel)+\\s*$");
 
-    /** Tiêu đề tách thành các mảnh (tên bài, ca sĩ — chưa biết mảnh nào là gì) + tên kênh đã bỏ đuôi "Official/Topic". */
+    /**
+     * Tiêu đề tách thành các mảnh (tên bài, ca sĩ — chưa biết mảnh nào là gì) + tên kênh đã bỏ đuôi
+     * "Official/Topic".
+     */
     record Video(List<String> parts, String channel, boolean version) {
         static Video of(MediaTrack track) {
             return of(track.title(), track.artist());
@@ -158,23 +212,34 @@ final class LyricsLookup {
 
         static Video of(String title, String channel) {
             List<String> parts = new ArrayList<>();
-            for (String part : SEPARATOR.split(BRACKETS.matcher(title).replaceAll(" ").replaceAll("\\s+", " ").strip())) {
+            for (String part :
+                    SEPARATOR.split(
+                            BRACKETS.matcher(title)
+                                    .replaceAll(" ")
+                                    .replaceAll("\\s+", " ")
+                                    .strip())) {
                 part = FEAT.matcher(part.strip()).replaceFirst("").strip();
                 if (!part.isBlank() && !PROMO.matcher(part).matches() && !fold(part).isEmpty()) {
                     parts.add(part);
                 }
             }
 
-            return new Video(List.copyOf(parts), CHANNEL.matcher(channel).replaceFirst("").strip(), VERSION.matcher(title).find());
+            return new Video(
+                    List.copyOf(parts),
+                    CHANNEL.matcher(channel).replaceFirst("").strip(),
+                    VERSION.matcher(title).find());
         }
 
         /**
-         * Chuỗi tìm, lần lượt tới khi trúng. lrclib tìm theo đúng dấu: tiêu đề "SON TUNG M-TP x TYGA | COME MY WAY"
-         * (không dấu, kèm người hát cùng) ra 0 kết quả, còn "COME MY WAY Sơn Tùng M-TP" (mảnh + tên kênh) thì trúng.
+         * Chuỗi tìm, lần lượt tới khi trúng. lrclib tìm theo đúng dấu: tiêu đề "SON TUNG M-TP x
+         * TYGA | COME MY WAY" (không dấu, kèm người hát cùng) ra 0 kết quả, còn "COME MY WAY Sơn
+         * Tùng M-TP" (mảnh + tên kênh) thì trúng.
          */
         List<String> searches() {
             List<String> searches = new ArrayList<>();
-            searches.add(String.join(" ", this.parts) + (this.parts.size() == 1 ? " " + this.channel : ""));
+            searches.add(
+                    String.join(" ", this.parts)
+                            + (this.parts.size() == 1 ? " " + this.channel : ""));
             for (String part : this.parts) {
                 String search = (part + " " + this.channel).strip();
                 if (!this.channel.isBlank() && !searches.contains(search) && searches.size() < 3) {
@@ -185,7 +250,10 @@ final class LyricsLookup {
             return searches;
         }
 
-        /** Một mảnh trùng tên bài, và ca sĩ khớp một mảnh còn lại hoặc tên kênh (thứ tự nào cũng được). */
+        /**
+         * Một mảnh trùng tên bài, và ca sĩ khớp một mảnh còn lại hoặc tên kênh (thứ tự nào cũng
+         * được).
+         */
         boolean matches(List<String> name, String artist) {
             String singer = fold(artist);
             for (String part : this.parts) {
@@ -220,12 +288,14 @@ final class LyricsLookup {
                 throw new IOException("Lyrics lookup timed out");
             }
 
-            HttpRequest request = HttpRequest.newBuilder(URI.create("https://lrclib.net/api/" + path))
-                .timeout(Duration.ofNanos(Math.min(remaining, 4000000000L)))
-                .header("Accept", "application/json")
-                .header("User-Agent", "NosClient/0.3 (synced-lyrics)")
-                .build();
-            LyricsLookup.LimitedBody body = new LyricsLookup.LimitedBody();
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create("https://lrclib.net/api/" + path))
+                            .timeout(Duration.ofNanos(Math.min(remaining, 4000000000L)))
+                            .header("Accept", "application/json")
+                            .header("User-Agent", "NosClient/0.4.0 (synced-lyrics)")
+                            .build();
+            dev.jun.nosclient.util.LimitedBody body =
+                    new dev.jun.nosclient.util.LimitedBody(2097152);
             CompletableFuture<HttpResponse<byte[]>> future = HTTP.sendAsync(request, _info -> body);
 
             try {
@@ -235,8 +305,11 @@ final class LyricsLookup {
                     return null;
                 }
 
-                // lrclib hay báo 503 "bận" vài giây (nhất là tên có dấu) — chờ chút rồi thử lại thay vì bỏ cả bài.
-                if ((status == 503 || status == 429) && attempt < 3 && deadline - System.nanoTime() > 2500000000L) {
+                // lrclib hay báo 503 "bận" vài giây (nhất là tên có dấu) — chờ chút rồi thử lại
+                // thay vì bỏ cả bài.
+                if ((status == 503 || status == 429)
+                        && attempt < 3
+                        && deadline - System.nanoTime() > 2500000000L) {
                     Thread.sleep(1200L + 800L * attempt);
                     continue;
                 }
@@ -254,57 +327,5 @@ final class LyricsLookup {
     }
 
     @Environment(EnvType.CLIENT)
-    private static final class LimitedBody implements BodySubscriber<byte[]> {
-        private final CompletableFuture<byte[]> result = new CompletableFuture<>();
-        private final ByteArrayOutputStream output = new ByteArrayOutputStream();
-        private volatile Subscription subscription;
-
-        @Override
-        public CompletionStage<byte[]> getBody() {
-            return this.result;
-        }
-
-        @Override
-        public void onSubscribe(Subscription value) {
-            this.subscription = value;
-            value.request(1L);
-        }
-
-        public void onNext(List<ByteBuffer> buffers) {
-            for (ByteBuffer buffer : buffers) {
-                // search trả tới 20 bản kèm cả lời thường lẫn lời đồng bộ (~0,5–1 MB với bài nhiều bản).
-                if (this.output.size() + buffer.remaining() > 2097152) {
-                    this.onError(new IOException("Lyrics response too large"));
-                    this.cancel();
-                    return;
-                }
-
-                byte[] bytes = new byte[buffer.remaining()];
-                buffer.get(bytes);
-                this.output.writeBytes(bytes);
-            }
-
-            this.subscription.request(1L);
-        }
-
-        @Override
-        public void onError(Throwable error) {
-            this.result.completeExceptionally(error);
-        }
-
-        @Override
-        public void onComplete() {
-            this.result.complete(this.output.toByteArray());
-        }
-
-        void cancel() {
-            if (this.subscription != null) {
-                this.subscription.cancel();
-            }
-        }
-    }
-
-    @Environment(EnvType.CLIENT)
-    record Query(String title, String artist) {
-    }
+    record Query(String title, String artist) {}
 }

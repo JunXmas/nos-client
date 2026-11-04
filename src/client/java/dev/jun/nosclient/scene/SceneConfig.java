@@ -1,6 +1,15 @@
 package dev.jun.nosclient.scene;
 
+import dev.jun.nosclient.config.ClientSettings;
 import dev.jun.nosclient.storage.ClientFiles;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -9,16 +18,11 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Environment(EnvType.CLIENT)
 public final class SceneConfig {
     private static final Logger LOG = LoggerFactory.getLogger("nosclient");
-    public static final SceneConfig INSTANCE = load(file());
+    public static final SceneConfig INSTANCE = loadCurrent();
     public boolean blossom = true;
     public boolean cane = true;
     public boolean fx = true;
@@ -41,15 +45,9 @@ public final class SceneConfig {
     public int themeSurface = 1187104;
     public int themeText = 15856621;
     public int hudStyle = 0;
-    public boolean sky = false;
-    public boolean weather = false;
-    public boolean lyrics = false;
-    public double skyHour = 18.0;
-    public double skyStars = 0.7;
-    public int weatherMode = 0;
-    public boolean lyricsAutoFetch = true;
+    public boolean sky = true;
+    public volatile boolean lyricsAutoFetch = true;
     public boolean lyricsNext = true;
-    public int lyricsDelay = 0;
     public int lyricsBearing = 0;
     public int lyricsElevation = 40;
     public double lyricsSize = 1.0;
@@ -114,13 +112,24 @@ public final class SceneConfig {
     public boolean lyricsCinematic = true;
     public boolean lyricsBlendSky = true;
     public boolean lyricsFollow = true;
+
     /** 0 = Poster (chữ khối in hoa, lòng đảo màu cảnh), 1 = Thanh mảnh (bản cũ). */
     public int lyricsStyle = 0;
+
     /** Cực quang nhịp theo lời nhạc trên trời đêm. */
-    public boolean lyricsAurora = true;
+    public boolean lyricsAurora = false;
+
     /** Ẩn hạt hiệu ứng thuốc của chính mình ở góc nhìn thứ nhất. */
     public boolean hideOwnEffectParticles = true;
+
     public int lyricsInk = 0xF826BE;
+
+    private static SceneConfig loadCurrent() {
+        SceneConfig settings =
+                ClientSettings.current().section("client", SceneConfig.class, () -> load(file()));
+        settings.clamp();
+        return settings;
+    }
 
     private static Path file() {
         return FabricLoader.getInstance().getConfigDir().resolve("nosclient.properties");
@@ -139,7 +148,11 @@ public final class SceneConfig {
 
     static boolean option(Field f) {
         int m = f.getModifiers();
-        return Modifier.isPublic(m) && !Modifier.isStatic(m) && (f.getType() == boolean.class || f.getType() == int.class || f.getType() == double.class);
+        return Modifier.isPublic(m)
+                && !Modifier.isStatic(m)
+                && (f.getType() == boolean.class
+                        || f.getType() == int.class
+                        || f.getType() == double.class);
     }
 
     static SceneConfig load(Path p) {
@@ -177,7 +190,8 @@ public final class SceneConfig {
         }
 
         if (!props.containsKey("hudShadow")) {
-            // Trước khi có tuỳ chọn này, bóng chữ đi theo kiểu HUD "Tối giản": giữ nguyên cho người đang dùng.
+            // Trước khi có tuỳ chọn này, bóng chữ đi theo kiểu HUD "Tối giản": giữ nguyên cho người
+            // đang dùng.
             c.hudShadow = c.hudStyle == 1;
         }
 
@@ -202,11 +216,7 @@ public final class SceneConfig {
             this.gamma = ConfigValues.bounded(this.gamma, 0.0, 16.0, -1.0);
         }
 
-        this.skyHour = ConfigValues.bounded(this.skyHour, 0.0, 24.0, 18.0);
-        this.skyStars = ConfigValues.bounded(this.skyStars, 0.0, 1.0, 0.7);
         this.lyricsSize = ConfigValues.bounded(this.lyricsSize, 0.5, 2.0, 1.0);
-        this.weatherMode = Math.min(3, Math.max(0, this.weatherMode));
-        this.lyricsDelay = Math.min(5000, Math.max(-5000, this.lyricsDelay));
         this.lyricsBearing = Math.min(360, Math.max(0, this.lyricsBearing));
         this.lyricsElevation = Math.min(80, Math.max(15, this.lyricsElevation));
         this.armorFmt = Math.min(2, Math.max(0, this.armorFmt));
@@ -229,7 +239,8 @@ public final class SceneConfig {
     }
 
     public void save() {
-        this.save(file());
+        this.clamp();
+        ClientSettings.current().save();
     }
 
     void save(Path p) {

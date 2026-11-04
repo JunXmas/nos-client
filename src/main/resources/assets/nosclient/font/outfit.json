@@ -1,0 +1,32 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "nosclient:ttf/outfit.ttf",
+      "size": 16.0,
+      "oversample": 4.0,
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "ttf",
+      "file": "nosclient:ttf/arabic.ttf",
+      "size": 16.0,
+      "oversample": 8.0,
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/default"
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/unifont"
+    }
+  ]
+}

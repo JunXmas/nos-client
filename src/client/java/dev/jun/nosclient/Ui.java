@@ -6,7 +6,7 @@ import dev.jun.nosclient.theme.Theme;
 import dev.jun.nosclient.theme.ThemePalette;
 import dev.jun.nosclient.typography.FontCoverage;
 import dev.jun.nosclient.typography.Typography;
-import java.util.Optional;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -14,11 +14,13 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.FontDescription.Resource;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.FontDescription.Resource;
 import net.minecraft.resources.Identifier;
+
+import java.util.Optional;
 
 @Environment(EnvType.CLIENT)
 public final class Ui {
@@ -30,7 +32,8 @@ public final class Ui {
     public static int BRAND = -7225463;
     public static int ACC0 = -11107477;
     public static int ACC1 = -5845325;
-    private static final String[] NAMES = new String[]{"ui", "ui_bold", "small", "big", "logo", "num", "hud", "hud_num", "sky"};
+    private static final String[] NAMES =
+            new String[] {"ui", "ui_bold", "small", "big", "logo", "num", "hud", "hud_num", "sky"};
     private static final int TIERS = Typography.DENSITIES.length;
     private static final FontDescription[][] FONTS = new FontDescription[NAMES.length][TIERS];
     public static float hint;
@@ -48,8 +51,7 @@ public final class Ui {
     private static final int SKY = 8;
     private static final FontDescription FALLBACK;
 
-    private Ui() {
-    }
+    private Ui() {}
 
     private static Style style(int i) {
         return styleAt(i, Minecraft.getInstance().getWindow().getGuiScale() * hint);
@@ -66,36 +68,44 @@ public final class Ui {
     }
 
     private static MutableComponent fallback(MutableComponent text) {
-        if (text.getString().codePoints().allMatch(cp -> Character.isWhitespace(cp) || FontCoverage.contains(cp))) {
+        if (text.getString()
+                .codePoints()
+                .allMatch(cp -> Character.isWhitespace(cp) || FontCoverage.contains(cp))) {
             return text;
         }
 
         MutableComponent result = Component.empty().withStyle(text.getStyle());
-        text.visit((span, value) -> {
-            int start = 0;
-            int i = 0;
+        text.visit(
+                (span, value) -> {
+                    int start = 0;
+                    int i = 0;
 
-            while (i < value.length()) {
-                int cp = value.codePointAt(i);
-                int end = i + Character.charCount(cp);
-                if (!Character.isWhitespace(cp) && !FontCoverage.contains(cp)) {
-                    if (start < i) {
-                        result.append(Component.literal(value.substring(start, i)).withStyle(span));
+                    while (i < value.length()) {
+                        int cp = value.codePointAt(i);
+                        int end = i + Character.charCount(cp);
+                        if (!Character.isWhitespace(cp) && !FontCoverage.contains(cp)) {
+                            if (start < i) {
+                                result.append(
+                                        Component.literal(value.substring(start, i))
+                                                .withStyle(span));
+                            }
+
+                            result.append(
+                                    Component.literal(value.substring(i, end))
+                                            .withStyle(span.withFont(FALLBACK)));
+                            start = end;
+                        }
+
+                        i = end;
                     }
 
-                    result.append(Component.literal(value.substring(i, end)).withStyle(span.withFont(FALLBACK)));
-                    start = end;
-                }
+                    if (start < value.length()) {
+                        result.append(Component.literal(value.substring(start)).withStyle(span));
+                    }
 
-                i = end;
-            }
-
-            if (start < value.length()) {
-                result.append(Component.literal(value.substring(start)).withStyle(span));
-            }
-
-            return Optional.empty();
-        }, Style.EMPTY);
+                    return Optional.empty();
+                },
+                Style.EMPTY);
         return result;
     }
 
@@ -107,25 +117,50 @@ public final class Ui {
         return fallback(Component.literal(s).withStyle(style(0)));
     }
 
+    public static MutableComponent uiText(String text, boolean bold, double pixelsPerUnit) {
+        return fallback(
+                Component.literal(text).withStyle(styleAt(bold ? UI_BOLD : UI, pixelsPerUnit)));
+    }
+
     public static MutableComponent worldText(String text, double pixelsPerUnit) {
         return worldText(text, pixelsPerUnit, false);
     }
 
     /** poster = Be Vietnam Pro Black cho lời nhạc kiểu chữ khối; còn lại Nos Celestial. */
     public static MutableComponent worldText(String text, double pixelsPerUnit, boolean poster) {
+        String chosen = dev.jun.nosclient.config.MusicSettings.get().font;
+        if (chosen != null && !chosen.equals("nos-celestial")) {
+            if (chosen.equals("minecraft")) return Component.literal(text);
+            return Component.literal(text)
+                    .withStyle(
+                            Style.EMPTY.withFont(
+                                    new Resource(
+                                            Identifier.fromNamespaceAndPath(
+                                                    "nosclient", chosen + "_sky"))));
+        }
         int index = Typography.worldDensityIndex(pixelsPerUnit);
         Style[] styles = poster ? POSTER_STYLES : SKY_STYLES;
         Style style = styles[index];
         if (style == null) {
-            style = styles[index] = Style.EMPTY
-                .withFont(new Resource(Identifier.fromNamespaceAndPath("nosclient", (poster ? "sky_poster_" : "sky_") + Typography.WORLD_DENSITIES[index])));
+            style =
+                    styles[index] =
+                            Style.EMPTY.withFont(
+                                    new Resource(
+                                            Identifier.fromNamespaceAndPath(
+                                                    "nosclient",
+                                                    (poster ? "sky_poster_" : "sky_")
+                                                            + Typography.WORLD_DENSITIES[index])));
         }
 
         return fallback(Component.literal(text).withStyle(style));
     }
 
     public static MutableComponent hud(String s) {
-        boolean numeric = !s.isBlank() && s.codePoints().allMatch(c -> Character.isDigit(c) || "−-+.,°%| :/".indexOf(c) >= 0);
+        boolean numeric =
+                !s.isBlank()
+                        && s.codePoints()
+                                .allMatch(
+                                        c -> Character.isDigit(c) || "−-+.,°%| :/".indexOf(c) >= 0);
         return fallback(Component.literal(s).withStyle(style(numeric ? 7 : 6)));
     }
 
@@ -171,7 +206,10 @@ public final class Ui {
     public static void snapText(GuiGraphics g) {
         if (!(Math.abs(g.pose().m01()) > 1.0E-4F) && !(Math.abs(g.pose().m10()) > 1.0E-4F)) {
             double scale = Minecraft.getInstance().getWindow().getGuiScale();
-            g.pose().setTranslation((float)Typography.snap(g.pose().m20(), scale), (float)Typography.snap(g.pose().m21(), scale));
+            g.pose()
+                    .setTranslation(
+                            (float) Typography.snap(g.pose().m20(), scale),
+                            (float) Typography.snap(g.pose().m21(), scale));
         }
     }
 
@@ -185,7 +223,11 @@ public final class Ui {
             return c;
         }
 
-        FormattedText cut = f.substrByWidth(c, Math.max(0, maxW - f.width(Component.literal("…").withStyle(c.getStyle()))));
+        FormattedText cut =
+                f.substrByWidth(
+                        c,
+                        Math.max(
+                                0, maxW - f.width(Component.literal("…").withStyle(c.getStyle()))));
         return fallback(Component.literal(cut.getString() + "…").withStyle(c.getStyle()));
     }
 
@@ -252,13 +294,16 @@ public final class Ui {
     }
 
     public static float approach(float v, float target, float dt, float speed) {
-        return v + (target - v) * (1.0F - (float)Math.exp(-dt * speed));
+        return v + (target - v) * (1.0F - (float) Math.exp(-dt * speed));
     }
 
     static {
         for (int i = 0; i < NAMES.length; i++) {
             for (int k = 0; k < TIERS; k++) {
-                FONTS[i][k] = new Resource(Identifier.fromNamespaceAndPath("nosclient", NAMES[i] + "_" + Typography.DENSITIES[k]));
+                FONTS[i][k] =
+                        new Resource(
+                                Identifier.fromNamespaceAndPath(
+                                        "nosclient", NAMES[i] + "_" + Typography.DENSITIES[k]));
             }
         }
 

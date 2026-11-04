@@ -1,32 +1,35 @@
 {
-	"schemaVersion": 1,
-	"id": "nosclient",
-	"version": "${version}",
-	"name": "Nos client",
-	"description": "Mod client của Nostalgia Launcher. Bản đầu: màn chính là cảnh hồ 3D (anh đào, mía, hoàng hôn – đêm) có shader riêng.",
-	"authors": [
-		"JunXmas"
-	],
-	"license": "MIT",
-	"environment": "client",
-	"entrypoints": {
-		"client": [
-			"dev.jun.nosclient.NosClient"
-		]
-	},
-	"mixins": [
-		{
-			"config": "nosclient.mixins.json",
-			"environment": "client"
-		}
-	],
-	"depends": {
-		"fabricloader": ">=0.15.0",
-		"fabric-screen-api-v1": "*",
-		"minecraft": ">=1.21.11 <1.22",
-		"java": ">=21",
-		"fabric-rendering-v1": "*",
-		"fabric-key-binding-api-v1": "*",
-		"fabric-lifecycle-events-v1": "*"
-	}
+  "schemaVersion": 1,
+  "id": "nosclient",
+  "version": "${version}",
+  "name": "Nos Client",
+  "description": "Client của Nostalgia Launcher: giao diện, HUD, bản đồ, lời nhạc từng chữ, bầu trời và hiệu ứng tùy chỉnh.",
+  "authors": [
+    "JunXmas"
+  ],
+  "license": "LicenseRef-Nos-Client",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.jun.nosclient.NosClient"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "nosclient.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-screen-api-v1": "*",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-rendering-v1": "*",
+    "fabric-key-binding-api-v1": "*",
+    "fabric-lifecycle-events-v1": "*"
+  },
+  "contributors": [
+    "374m (LyricsFlow)"
+  ]
 }

@@ -75,3 +75,34 @@ jar {
 		rename { "${it}_${project.name}" }
 	}
 }
+
+// Mod kiểm thử riêng, không đưa vào jar phát hành.
+sourceSets {
+    verification {
+        java.srcDir 'checks/game/java'
+        resources.srcDir 'checks/game/resources'
+        compileClasspath += sourceSets.client.compileClasspath + sourceSets.client.output + sourceSets.main.output
+        runtimeClasspath += compileClasspath
+    }
+}
+tasks.register('verificationJar', Jar) {
+    dependsOn tasks.named('verificationClasses')
+    archiveClassifier = 'verification-dev'
+    destinationDirectory = layout.buildDirectory.dir('verification')
+    from sourceSets.verification.output
+}
+tasks.register('remapVerificationJar', net.fabricmc.loom.task.RemapJarTask) {
+    dependsOn tasks.named('verificationJar')
+    inputFile = tasks.named('verificationJar').flatMap { it.archiveFile }
+    archiveClassifier = 'verification'
+    destinationDirectory = layout.buildDirectory.dir('verification')
+}
+
+tasks.register('writeVerificationClasspath') {
+    dependsOn tasks.named('clientClasses')
+    doLast {
+        def target = layout.buildDirectory.file('verification/client-classpath.txt').get().asFile
+        target.parentFile.mkdirs()
+        target.text = sourceSets.client.runtimeClasspath.asPath
+    }
+}

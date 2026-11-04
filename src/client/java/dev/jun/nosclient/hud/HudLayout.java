@@ -3,18 +3,23 @@ package dev.jun.nosclient.hud;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
+import dev.jun.nosclient.config.ClientSettings;
 import dev.jun.nosclient.scene.ConfigValues;
 import dev.jun.nosclient.storage.ClientFiles;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Environment(EnvType.CLIENT)
 public final class HudLayout {
@@ -23,8 +28,7 @@ public final class HudLayout {
     private static final HudLayout.Slot DEFAULT = new HudLayout.Slot();
     private static Map<String, HudLayout.Slot> slots;
 
-    private HudLayout() {
-    }
+    private HudLayout() {}
 
     private static Path file() {
         return FabricLoader.getInstance().getConfigDir().resolve("nosclient-hud.json");
@@ -35,26 +39,44 @@ public final class HudLayout {
             return slots;
         }
 
-        slots = new HashMap<>();
+        LayoutData data =
+                ClientSettings.current().section("hud", LayoutData.class, HudLayout::legacy);
+        slots = data.slots == null ? new HashMap<>() : data.slots;
+        slots.replaceAll((id, slot) -> slot == null ? new Slot() : clamp(slot));
+        return slots;
+    }
+
+    private static LayoutData legacy() {
+        Map<String, Slot> loaded = new HashMap<>();
         Path p = file();
         if (Files.exists(p)) {
             try {
-                Map<String, HudLayout.Slot> m = (Map<String, HudLayout.Slot>)GSON.fromJson(
-                    ClientFiles.read(p), (new TypeToken<Map<String, HudLayout.Slot>>() {}).getType()
-                );
+                Map<String, HudLayout.Slot> m =
+                        (Map<String, HudLayout.Slot>)
+                                GSON.fromJson(
+                                        ClientFiles.read(p),
+                                        (new TypeToken<Map<String, HudLayout.Slot>>() {})
+                                                .getType());
                 if (m != null) {
-                    m.forEach((k, v) -> {
-                        if (v != null) {
-                            slots.put(k, clamp(v));
-                        }
-                    });
+                    m.forEach(
+                            (k, v) -> {
+                                if (v != null) {
+                                    loaded.put(k, clamp(v));
+                                }
+                            });
                 }
             } catch (IOException | RuntimeException e) {
                 LOG.warn("Không đọc được {}, dùng bố cục mặc định", p, e);
             }
         }
 
-        return slots;
+        LayoutData data = new LayoutData();
+        data.slots = loaded;
+        return data;
+    }
+
+    private static final class LayoutData {
+        Map<String, Slot> slots = new HashMap<>();
     }
 
     private static HudLayout.Slot clamp(HudLayout.Slot s) {
@@ -92,17 +114,13 @@ public final class HudLayout {
     }
 
     public static void save() {
-        Path p = file();
-
-        try {
-            all().values().forEach(HudLayout::clamp);
-            ClientFiles.write(p, GSON.toJson(all()));
-        } catch (IOException e) {
-            LOG.warn("Không lưu được {}", p, e);
-        }
+        all().values().forEach(HudLayout::clamp);
+        LayoutData data = new LayoutData();
+        data.slots = all();
+        ClientSettings.current().replace("hud", data);
+        ClientSettings.current().save();
     }
 
-    @Environment(EnvType.CLIENT)
     public static final class Slot {
         public double x = -1.0;
         public double y = -1.0;
