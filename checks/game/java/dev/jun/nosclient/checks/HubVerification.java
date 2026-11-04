@@ -22,10 +22,22 @@ final class HubVerification {
     private boolean previousToggle;
     private double previousSlider;
     private int step;
+    private int frame;
+    private int actedFrame = -2;
+
+    void rendered() {
+        frame++;
+    }
+
+    boolean done() {
+        return step >= 5;
+    }
 
     void tick(Screen screen, double elapsed) throws Exception {
         MusicPanels panel = (MusicPanels) read(screen, "musicPanels");
-        if (elapsed < .8) return;
+        if (elapsed < .8 || frame < actedFrame + 2) return;
+        if (Math.abs((float) read(screen, "dScroll") - (double) read(screen, "dTarget")) > .75)
+            return;
         if (step == 0) {
             List<Ui.Widget> rows = new ArrayList<>();
             for (Ui.Widget widget : (List<Ui.Widget>) read(panel, "widgets")) collect(widget, rows);
@@ -46,6 +58,8 @@ final class HubVerification {
                 scroll(screen, panel, toggle);
             }
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 1.4 && step == 1) {
             if (toggle != null) {
@@ -54,6 +68,8 @@ final class HubVerification {
                     throw new AssertionError("Hub toggle did not change");
             }
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 2 && step == 2) {
             if (toggle != null) {
@@ -66,6 +82,8 @@ final class HubVerification {
                 scroll(screen, panel, slider);
             } else screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -3);
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 2.8 && step == 3) {
             if (slider != null) {
@@ -81,6 +99,8 @@ final class HubVerification {
                     throw new AssertionError("Hub slider drag did not change its value");
             }
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 3.6 && step == 4) {
             if (slider != null) {
@@ -96,6 +116,8 @@ final class HubVerification {
                 dev.jun.nosclient.ClientEffects.saveConfig();
             }
             step++;
+            actedFrame = frame;
+            return;
         }
     }
 

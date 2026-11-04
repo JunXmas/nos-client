@@ -15,6 +15,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -133,7 +134,10 @@ public final class GameVerification implements ClientModInitializer {
                 hub.tick(screen, elapsed);
             }
             if (hud != null && mc.screen instanceof HudEditScreen) hud.tick(mc, mc.screen, elapsed);
-            if (elapsed >= (inHub ? 5 : 3) && !photographed) {
+            boolean inputsReady = (!inHub || hub.done()) && (hud == null || hud.done());
+            if (!inputsReady && elapsed > 45)
+                throw new AssertionError("UI input verification timed out");
+            if (elapsed >= (inHub ? 5 : 3) && inputsReady && !photographed) {
                 String name = label();
                 Files.createDirectories(output);
                 Screenshot.grab(
@@ -146,7 +150,7 @@ public final class GameVerification implements ClientModInitializer {
                                 mc.options.cloudStatus().get());
                 photographed = true;
             }
-            if (elapsed >= (inHub ? 6 : 4)) {
+            if (elapsed >= (inHub ? 6 : 4) && inputsReady) {
                 phase++;
                 apply(mc);
             }
@@ -200,6 +204,9 @@ public final class GameVerification implements ClientModInitializer {
             mc.options.hideGui = false;
             mc.setScreen(NosSettingsScreen.forFeature(null, panels[phase - count]));
             hub = new HubVerification();
+            HubVerification currentHub = hub;
+            ScreenEvents.afterRender(mc.screen)
+                    .register((screen, graphics, x, y, delta) -> currentHub.rendered());
             boolean enabled = MusicSettings.get().enabled;
             int offset = MusicSettings.get().syncOffsetMs;
             var songOffsets = new java.util.HashMap<>(MusicSettings.get().songOffsets);
@@ -256,6 +263,8 @@ public final class GameVerification implements ClientModInitializer {
             mc.setScreen(new HudEditScreen(null));
         } else if (phase == count + panels.length + fonts.size() + 9) {
             hud = new HudVerification();
+            ScreenEvents.afterRender(mc.screen)
+                    .register((screen, graphics, x, y, delta) -> hud.rendered());
         } else {
             SceneConfig.INSTANCE.sky = false;
             dev.jun.nosclient.sky.SkyRenderer.restoreClouds(mc);

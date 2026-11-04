@@ -50,7 +50,7 @@ public final class MediaKeys {
                         new KeyMapping("key.nosclient.music.player", Type.KEYSYM, 59, CATEGORY));
         toggle =
                 KeyBindingHelper.registerKeyBinding(
-                        new KeyMapping("key.nosclient.music.onoff", Type.KEYSYM, 73, CATEGORY));
+                        new KeyMapping("key.nosclient.music.onoff", Type.KEYSYM, 39, CATEGORY));
         previous =
                 KeyBindingHelper.registerKeyBinding(
                         new KeyMapping("key.nosclient.music.previous", Type.KEYSYM, 263, CATEGORY));

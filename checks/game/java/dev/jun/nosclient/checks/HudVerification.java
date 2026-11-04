@@ -16,9 +16,21 @@ import java.nio.file.Files;
 /** Kéo ô karaoke và hai thanh chỉnh qua sự kiện chuột của trình sửa HUD. */
 final class HudVerification {
     private int step;
+    private int frame;
+    private int actedFrame = -2;
+
+    void rendered() {
+        frame++;
+    }
+
+    boolean done() {
+        return step >= 4;
+    }
+
     private float initialHeight;
 
     void tick(Minecraft mc, Screen screen, double elapsed) throws Exception {
+        if (frame < actedFrame + 2) return;
         if (elapsed >= .6 && step == 0) {
             float[] bounds = Hud.INSTANCE.rects.get("karaoke");
             if (bounds == null) throw new AssertionError("Karaoke preview is missing");
@@ -31,18 +43,24 @@ final class HudVerification {
             screen.mouseReleased(target);
             if (HudLayout.get("karaoke").auto()) throw new AssertionError("HUD drag was not saved");
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 1.2 && step == 1) {
             slide(screen, 0, .7);
             if (Math.abs(HudLayout.get("karaoke").scale - 1.55) > .01)
                 throw new AssertionError("Karaoke scale slider failed");
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 1.8 && step == 2) {
             slide(screen, 1, .375);
             if (Math.abs(HudLayout.get("karaoke").alpha - .5) > .01)
                 throw new AssertionError("Karaoke opacity slider failed");
             step++;
+            actedFrame = frame;
+            return;
         }
         if (elapsed >= 2.5 && step == 3) {
             float[] bounds = Hud.INSTANCE.rects.get("karaoke");
@@ -61,6 +79,8 @@ final class HudVerification {
                     || Math.abs(saved.get("alpha").getAsDouble() - .5) > .01)
                 throw new AssertionError("Karaoke layout was not persisted in the shared config");
             step++;
+            actedFrame = frame;
+            return;
         }
     }
 

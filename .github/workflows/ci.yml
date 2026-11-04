@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: ./gradlew build test --no-daemon
+      - run: ./gradlew build test remapVerificationJar --no-daemon
         shell: bash
       - run: python checks/localization.py
       - uses: actions/upload-artifact@v4
