@@ -4,6 +4,7 @@
 
 - Tích hợp nguồn nhạc, lời từng chữ, bầu trời và hiệu ứng từ LyricsFlow vào Nos Client.
 - Dùng một entrypoint, bộ phím, namespace tài nguyên, hub cài đặt và file cấu hình chung.
+- Đồng bộ bo góc hub theo Glass; tránh phím trùng Iris và giữ trời/lời hiện sau shaderpack.
 - Giữ SkyLyrics Nos cho lời trên trời; thêm dữ liệu từng chữ, font lựa chọn và kiểu lời trôi nổi.
 - Giữ đủ 29 preset trời cùng tùy chỉnh màu, thời tiết, ảnh nền và phản ứng theo nhạc.
 - Đưa karaoke vào hệ vị trí HUD, đồng bộ giao diện trình phát với bảng màu Nos.

@@ -38,7 +38,8 @@ python3 checks/localization.py
 Jar tại `build/libs/nosclient-0.4.0.jar`. Thả jar cùng Fabric API vào thư mục `mods/`.
 Bộ kiểm trong `checks/` gồm kiểm descriptor mixin, biên dịch shader, môi trường MPRIS và chạy Minecraft
 thật với world/cấu hình riêng. Mod kiểm thử được đóng riêng bằng `./gradlew remapVerificationJar`;
-nó không nằm trong jar phát hành.
+nó không nằm trong jar phát hành. Xem [hướng dẫn kiểm thử](checks/README.md) và
+[báo cáo QA 0.4.0](docs/qa-0.4.0.md) để biết phạm vi kiểm chứng, ảnh và số đo.
 
 ## Ghi công và giấy phép
 
