@@ -24,6 +24,8 @@ cosmetic trong game.
 - Kiểm nội dung jar đạt: không còn lớp/tài nguyên LF đã gỡ hoặc verifier; có thông báo MIT và font.
 - FO không Iris đạt: 8 trang hub có thao tác bấm/kéo/cuộn thực, cửa sổ nhỏ/lớn, trình phát, lời trôi nổi,
   nhân vật vanilla, lời từng chữ trên trời, kéo/scale/opacity karaoke, bảo toàn mây/mưa và phím media.
+- Lượt đầy đủ FO không Iris đạt trên cùng SHA-256: 58 ảnh của 29 preset ngày/đêm, 23 font và toàn bộ
+  8 trang hub cùng các ca hồi quy nêu trên. Đã kiểm ảnh ngày/đêm và nhân vật sau khi gỡ cosmetic.
 - FO với Iris và Complementary Reimagined 5.9.3 LOW đạt cùng phạm vi hồi quy 8 trang hub.
   Ảnh xác nhận bầu trời và lời vẫn hiện sau shaderpack. Heap 768 MiB, 4 luồng JVM, 2 luồng llvmpipe;
   dùng để kiểm chức năng, không làm số đo FPS.
@@ -31,7 +33,8 @@ cosmetic trong game.
   `startedCleanly` từ `false` sang `true`.
 
 Log và ảnh gốc của lượt đạt ở `nos-verification/lyrics-sky-only-native/` và
-`nos-verification/lyrics-sky-only-iris-low/`. Các lượt dùng D-Bus, save,
+`nos-verification/lyrics-sky-only-iris-low/`; lượt đầy đủ ở `nos-verification/lyrics-sky-only-full/`.
+Các lượt dùng D-Bus, save,
 game directory, cấu hình và JVM home riêng; không điều khiển player hoặc sửa world thật.
 
 ## Iris và giới hạn kiểm chứng
@@ -42,6 +45,17 @@ còn ghi SIGSEGV trong `libLLVM.so.20.1` ngay sau SIGTERM. Không tính các lư
 Lượt LOW nêu trên hoàn tất sau khi giảm áp lực RAM trong môi trường riêng. Chưa kiểm lại HIGH
 trên artifact hiện tại với đủ RAM hoặc GPU thật.
 
+Chưa chạy SMTC hoặc đăng nhập Spotify thực trên Windows/macOS. Game QA dùng tài khoản offline;
+401/Realms và thiếu thiết bị âm thanh trong Xvfb được ghi trong log.
+
+## CI và gói bàn giao
+
+[CI Linux/Windows](https://github.com/JunXmas/nos-client/actions/runs/41768062294) đạt cho commit
+`9c2ce43a654d5a2c49d659204de96bb5384c58b9`: build, 72 JUnit, localization và biên dịch verifier.
+Jar tải từ CI Linux trùng từng byte với jar chạy game, cùng SHA-256 ở đầu báo cáo.
+Gói bàn giao dùng jar đã chạy Minecraft thật với SHA-256 ở đầu báo cáo, đổi tên thành
+`nos-client-0.4.0.jar` theo tiền tố launcher nhận diện.
+
 ## Ảnh kiểm tra
 
 ![Hub bầu trời bo góc](qa-lyrics-sky-only/hub-sky.png)
@@ -51,8 +65,5 @@ trên artifact hiện tại với đủ RAM hoặc GPU thật.
 Bản tích hợp trước có báo cáo [QA 0.4.0](qa-0.4.0.md), gồm 58 ảnh preset ngày/đêm, 23 font,
 MPRIS, nguồn lời trực tuyến, kiểm shader/mixin và số đo hiệu năng. Các kết quả đó được giữ theo đúng
 artifact đã đo, không gán cho jar hiện tại.
-
-Chưa chạy SMTC hoặc đăng nhập Spotify thực trên Windows/macOS. Game QA dùng tài khoản offline;
-401/Realms và thiếu thiết bị âm thanh trong Xvfb được ghi trong log.
 
 Hướng dẫn chạy lại: [checks/README.md](../checks/README.md).
