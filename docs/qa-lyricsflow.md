@@ -1,7 +1,22 @@
-# QA lyrics LF và lựa chọn Nos
+# QA lyrics LF và Nos
+
+## Bản vá 0.4.2: Nos mặc định
+
+Kiểu mặc định và giá trị dự phòng khi thiếu/hỏng cấu hình là `NOS_SKY`, font `nos-celestial`.
+Đặt lại lyrics/kiểu chữ dùng các giá trị mặc định này; lựa chọn hợp lệ đã lưu hoặc nhập từ profile
+vẫn được giữ nguyên, gồm cả hai kiểu LF.
+
+Build, 73 JUnit và 788 khóa dịch đạt. SHA-256 jar 0.4.2:
+`c92596a48f4a198d0aaa6fbc70d471ed76f8f44aa7a16ee5b5417667f841418d`.
+So với 0.4.1, các lớp renderer và tài nguyên trùng từng byte. Ngoài lớp cấu hình mặc định,
+chỉ đổi metadata/chuỗi phiên bản; lớp switch sinh tự động chỉ khác chỉ số constant pool,
+bytecode sau phân giải giống nhau. Không chạy lại Minecraft cho thay đổi mặc định này;
+các lượt game dưới đây dùng artifact 0.4.1.
+
+## Artifact 0.4.1 chạy Minecraft
 
 Ngày kiểm tra: 04/11/2026. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21, Linux.
-Artifact 0.4.1 đang chờ phát hành: `nosclient-0.4.1.jar`.
+Artifact 0.4.1: `nosclient-0.4.1.jar`.
 
 SHA-256: `ffd4a7daca67b45209218263e793d5e3efb0c9b87d545b3886aa630b0ab1f1e8`.
 

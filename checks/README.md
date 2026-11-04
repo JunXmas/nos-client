@@ -7,7 +7,7 @@
 python3 checks/localization.py
 ```
 
-`build/libs/nosclient-0.4.1.jar` là mod phát hành. Jar trong `build/verification/` là mod điều khiển
+`build/libs/nosclient-0.4.2.jar` là mod phát hành. Jar trong `build/verification/` là mod điều khiển
 kiểm thử riêng, không được cài vào game sử dụng hằng ngày. CI chạy build/test và biên dịch mod kiểm thử
 trên Linux lẫn Windows bằng Java 21.
 

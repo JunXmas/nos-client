@@ -3,14 +3,14 @@
 Mod phía client của Nostalgia Launcher, dành cho Minecraft 1.21.11, Fabric Loader 0.19.3 trở lên,
 Fabric API và Java 21.
 
-## Bản 0.4.1
+## Bản 0.4.2
 
 - Một hub cài đặt chung cho HUD, bản đồ, lời nhạc, trình phát, bầu trời.
 - Đọc nhạc từ MPRIS trên Linux, SMTC trên Windows, Music/Spotify trên macOS và Spotify Web.
   Có điều khiển phát, tua và ảnh bìa. Điều chỉnh âm lượng ứng dụng hỗ trợ trên Windows.
-- Lyrics mặc định dùng cách hiển thị LF: câu ghép cặp trên trời hoặc rải từng từ, và kiểu trôi nổi.
-  Kiểu bầu trời Nos được giữ thành lựa chọn riêng. Có hiệu ứng vào/ra, bố cục cong, font, màu,
-  quầng sáng, độ lệch toàn cục/từng bài và nhập file LRC. Mỗi kiểu chỉ hiện các tùy chỉnh phù hợp.
+- Lyrics mặc định dùng kiểu trên trời Nos và font Nos Celestial. Các kiểu LF câu ghép cặp/rải từ
+  trên trời và trôi nổi vẫn chọn được. Có hiệu ứng vào/ra, bố cục cong, font, màu, quầng sáng,
+  độ lệch toàn cục/từng bài và nhập file LRC. Mỗi kiểu chỉ hiện các tùy chỉnh phù hợp.
 - Giữ 29 preset bầu trời, ảnh nền riêng, màu, thời tiết, sao, cực quang, tia sáng và phản ứng theo nhạc.
   Aurora Nos là lớp chồng tùy chọn. Màu sương lấy từ preset đang chọn.
 - Karaoke dùng trình chỉnh vị trí HUD của Nos.
@@ -22,6 +22,7 @@ Fabric API và Java 21.
 Nhấn **R-Shift** để mở hub, **U** để mở thẻ lời nhạc, **;** để mở trình phát.
 Các phím đều đổi được trong cài đặt. Phím nhạc không tác động khi đang nhập trong menu hoặc chat.
 Bật thẻ **Lời nhạc** rồi phát nhạc bằng ứng dụng hoặc trình duyệt.
+Mặc định mới và khi đặt lại là **Trên trời Nos**; lựa chọn đã lưu được giữ nguyên.
 
 Kéo file `.lrc` vào hub khi đang có bài phát để nhập lời cho bài đó. Mục mở thư mục lời cho biết tên file
 tương ứng với bài hiện tại. LRC nhập tay được ưu tiên hơn lời tải về. Cache JSON giữ mốc từng chữ.
@@ -36,7 +37,7 @@ khôi phục khi tắt hoặc rời thế giới. Tự điều chỉnh hiệu �
 python3 checks/localization.py
 ```
 
-Jar tại `build/libs/nosclient-0.4.1.jar`. Thả jar cùng Fabric API vào thư mục `mods/`.
+Jar tại `build/libs/nosclient-0.4.2.jar`. Thả jar cùng Fabric API vào thư mục `mods/`.
 Bộ kiểm trong `checks/` gồm kiểm descriptor mixin, biên dịch shader, môi trường MPRIS và chạy Minecraft
 thật với world/cấu hình riêng. Mod kiểm thử được đóng riêng bằng `./gradlew remapVerificationJar`;
 nó không nằm trong jar phát hành. Xem [hướng dẫn kiểm thử](checks/README.md) và
