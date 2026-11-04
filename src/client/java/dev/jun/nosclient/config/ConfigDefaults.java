@@ -13,7 +13,7 @@ public final class ConfigDefaults {
                     copy(
                             music,
                             m,
-                            "showLyrics lyricsStyle lyricsScale lyricsDistance skyDistance"
+                            "showLyrics lyricsStyle skyWords lyricsScale lyricsDistance skyDistance"
                                 + " showUnderground musicNotes followView viewLock randomPosition"
                                 + " maxLines enterAnim exitAnim animSpeed syncOffsetMs"
                                 + " songOffsets");

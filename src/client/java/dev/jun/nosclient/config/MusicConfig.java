@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MusicConfig {
-    public int configVersion = 18;
+    public int configVersion = 19;
     public volatile boolean enabled = true;
     public boolean uiSounds = true;
     public boolean songChime = false;
@@ -14,6 +14,7 @@ public class MusicConfig {
     public Map<String, Integer> songOffsets = new HashMap<>();
     public boolean showLyrics = false;
     public MusicConfig.LyricsStyle lyricsStyle = MusicConfig.LyricsStyle.SKY;
+    public boolean skyWords = false;
     public boolean followView = false;
     public boolean viewLock = false;
     public boolean showUnderground = false;
@@ -29,7 +30,7 @@ public class MusicConfig {
     public boolean varySizes = true;
     public boolean arcLayout = true;
     public int maxLines = 2;
-    public String font = "nos-celestial";
+    public String font = "poppins";
     public MusicConfig.TextStyle textStyle = MusicConfig.TextStyle.NEON;
     public String theme = "lavender";
     public boolean customTheme = false;
@@ -68,6 +69,7 @@ public class MusicConfig {
     public Map<String, String> profiles = new LinkedHashMap<>();
 
     public void clamp() {
+        configVersion = Math.max(19, configVersion);
         if (source == null) source = Source.ANY;
         if (lyricsStyle == null) lyricsStyle = LyricsStyle.SKY;
         if (textStyle == null) textStyle = TextStyle.NEON;
@@ -119,7 +121,8 @@ public class MusicConfig {
 
     public enum LyricsStyle {
         SKY,
-        FLOATING;
+        FLOATING,
+        NOS_SKY;
     }
 
     public enum Source {

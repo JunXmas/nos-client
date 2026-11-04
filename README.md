@@ -8,8 +8,9 @@ Fabric API và Java 21.
 - Một hub cài đặt chung cho HUD, bản đồ, lời nhạc, trình phát, bầu trời.
 - Đọc nhạc từ MPRIS trên Linux, SMTC trên Windows, Music/Spotify trên macOS và Spotify Web.
   Có điều khiển phát, tua và ảnh bìa. Điều chỉnh âm lượng ứng dụng hỗ trợ trên Windows.
-- Lời trên trời dùng chuyển động và bố cục Nos, nhận thời gian từng chữ từ các nguồn lời đã tích hợp.
-  Có kiểu trôi nổi, font tùy chọn, độ lệch toàn cục/từng bài và nhập file LRC.
+- Lyrics mặc định dùng cách hiển thị LF: câu ghép cặp trên trời hoặc rải từng từ, và kiểu trôi nổi.
+  Kiểu bầu trời Nos được giữ thành lựa chọn riêng. Có hiệu ứng vào/ra, bố cục cong, font, màu,
+  quầng sáng, độ lệch toàn cục/từng bài và nhập file LRC. Mỗi kiểu chỉ hiện các tùy chỉnh phù hợp.
 - Giữ 29 preset bầu trời, ảnh nền riêng, màu, thời tiết, sao, cực quang, tia sáng và phản ứng theo nhạc.
   Aurora Nos là lớp chồng tùy chọn. Màu sương lấy từ preset đang chọn.
 - Karaoke dùng trình chỉnh vị trí HUD của Nos.
@@ -39,7 +40,7 @@ Jar tại `build/libs/nosclient-0.4.1.jar`. Thả jar cùng Fabric API vào thư
 Bộ kiểm trong `checks/` gồm kiểm descriptor mixin, biên dịch shader, môi trường MPRIS và chạy Minecraft
 thật với world/cấu hình riêng. Mod kiểm thử được đóng riêng bằng `./gradlew remapVerificationJar`;
 nó không nằm trong jar phát hành. Xem [hướng dẫn kiểm thử](checks/README.md) và
-[báo cáo QA lyrics và bầu trời](docs/qa-lyrics-sky-only.md) để biết phạm vi kiểm chứng, ảnh và số đo.
+[báo cáo QA lyrics và bầu trời](docs/qa-lyricsflow.md) để biết phạm vi kiểm chứng, ảnh và số đo.
 
 ## Giấy phép
 

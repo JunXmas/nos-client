@@ -8,6 +8,7 @@ import dev.jun.nosclient.gui.HudEditScreen;
 import dev.jun.nosclient.gui.NosSettingsScreen;
 import dev.jun.nosclient.gui.music.PlayerScreen;
 import dev.jun.nosclient.render.Fonts;
+import dev.jun.nosclient.render.WorldLyrics;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.sky.SkyPreset;
 
@@ -31,6 +32,7 @@ public final class GameVerification implements ClientModInitializer {
     private Path output;
     private CloudStatus clouds;
     private long since;
+    private long nosFramesAtPhase;
     private int phase = -1;
     private long loadedAt;
     private boolean finished;
@@ -138,6 +140,20 @@ public final class GameVerification implements ClientModInitializer {
                 throw new AssertionError("UI input verification timed out");
             if (elapsed >= (inHub ? 5 : 3) && inputsReady && !photographed) {
                 String name = label();
+                if (name.startsWith("lf-") || name.equals("nos-sky")) {
+                    var field = WorldLyrics.class.getDeclaredField("visible");
+                    field.setAccessible(true);
+                    boolean lfVisible = !((java.util.List<?>) field.get(null)).isEmpty();
+                    long nosDraws =
+                            dev.jun.nosclient.media.SkyLyrics.renderFrames - nosFramesAtPhase;
+                    if (name.equals("nos-sky")) {
+                        if (lfVisible || nosDraws <= 0)
+                            throw new AssertionError("Nos renderer was not isolated");
+                    } else if (!lfVisible || nosDraws != 0) {
+                        throw new AssertionError(
+                                "LF renderer was missing or overlapped Nos: " + name);
+                    }
+                }
                 Files.createDirectories(output);
                 Screenshot.grab(
                         output.toFile(), name + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
@@ -184,13 +200,18 @@ public final class GameVerification implements ClientModInitializer {
             case 6 -> "hub-resize-large";
             case 7 -> "hud-karaoke-before";
             case 8 -> "hud-karaoke-after";
-            case 9 -> "sky-word-sync";
+            case 9 -> "lf-sky-pairs";
+            case 10 -> "lf-sky-words";
+            case 11 -> "nos-sky";
+            case 12 -> "lf-view-lock";
+            case 13 -> "lf-clean-text";
             default -> "done";
         };
     }
 
     private void apply(Minecraft mc) throws Exception {
         since = System.nanoTime();
+        nosFramesAtPhase = dev.jun.nosclient.media.SkyLyrics.renderFrames;
         photographed = false;
         photographedTop = false;
         int count = presetCount * 2;
@@ -263,10 +284,30 @@ public final class GameVerification implements ClientModInitializer {
             MusicSettings.get().enabled = true;
             MusicSettings.get().showLyrics = true;
             MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.SKY;
-            MusicSettings.get().font = "nos-celestial";
+            MusicSettings.get().font = "poppins";
+            MusicSettings.get().skyWords = false;
+            WorldLyrics.clear();
             SceneConfig.INSTANCE.lyricsFollow = false;
             SceneConfig.INSTANCE.lyricsBearing = 270;
             SceneConfig.INSTANCE.lyricsElevation = 15;
+        } else if (phase == count + panels.length + fonts.size() + 10) {
+            MusicSettings.get().skyWords = true;
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 11) {
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.NOS_SKY;
+            MusicSettings.get().font = "nos-celestial";
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 12) {
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.SKY;
+            MusicSettings.get().font = "poppins";
+            MusicSettings.get().viewLock = true;
+            MusicSettings.get().skyWords = false;
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 13) {
+            MusicSettings.get().textStyle = MusicConfig.TextStyle.CLEAN;
+            MusicSettings.get().viewLock = false;
+            MusicSettings.get().glow = false;
+            WorldLyrics.clear();
         } else {
             SceneConfig.INSTANCE.sky = false;
             dev.jun.nosclient.sky.SkyRenderer.restoreClouds(mc);

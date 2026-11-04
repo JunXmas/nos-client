@@ -81,7 +81,6 @@ record Opt(
                                     rng("lyricsGlow", "opt.lyrics.glow", 0.0, 2.5, "×"),
                                     rng("lyricsWidth", "opt.lyrics.width", 1.0, 1.8, "%"),
                                     rng("lyricsTracking", "opt.lyrics.tracking", 0.0, 2.0, ""),
-                                    chk("lyricsAutoFetch", "opt.lyrics.auto"),
                                     chk("lyricsNext", "opt.lyrics.next"),
                                     seg(
                                             "lyricsMotion",
@@ -96,8 +95,12 @@ record Opt(
                                             1200.0,
                                             " ms"),
                                     rng("lyricsBearing", "opt.lyrics.bearing", 0.0, 360.0, "°"),
-                                    rng("lyricsElevation", "opt.lyrics.elevation", 15.0, 80.0, "°"),
-                                    rng("lyricsSize", "opt.lyrics.size", 0.5, 2.0, "×"))),
+                                    rng(
+                                            "lyricsElevation",
+                                            "opt.lyrics.elevation",
+                                            15.0,
+                                            80.0,
+                                            "°"))),
                     Map.entry(
                             "blockinfo",
                             List.of(

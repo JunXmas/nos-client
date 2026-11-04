@@ -116,7 +116,7 @@ class ClientSettingsTest {
         music.clamp();
         assertEquals(MusicConfig.Source.ANY, music.source);
         assertEquals(MusicConfig.LyricsStyle.SKY, music.lyricsStyle);
-        assertEquals("nos-celestial", music.font);
+        assertEquals("poppins", music.font);
         music.font = "../../wrong";
         music.lyricsStyle = null;
         music.topBarStyle = null;

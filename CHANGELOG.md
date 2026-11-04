@@ -2,6 +2,10 @@
 
 ## 0.4.1
 
+- Dùng lyrics LF mặc định; khôi phục kiểu câu ghép cặp/rải từ trên trời, giữ kiểu Nos riêng.
+- Mở lại tùy chỉnh bố cục, cỡ từng từ, hiệu ứng vào/ra, quầng sáng và hai màu cho lyrics LF.
+- Gom đồng bộ và tải lời về trang Lyrics; bỏ các nút bật/tắt, cỡ chữ và kiểu lời trùng trong hub.
+
 - Dùng tên JunXmas trong thông báo bản quyền thay cho họ tên đầy đủ.
 
 ## 0.4.0

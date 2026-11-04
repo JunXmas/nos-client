@@ -17,6 +17,10 @@ import java.util.function.DoubleSupplier;
 
 /** Gửi sự kiện qua Screen thật; reflection chỉ để chọn điều khiển và đọc kết quả kiểm thử. */
 final class HubVerification {
+    private Ui.Choice lyricsChoice;
+    private int choicesChecked;
+    private boolean choiceScrolled;
+    private static final java.util.Map<String, String> OWNERS = new java.util.HashMap<>();
     private Ui.Toggle toggle;
     private Ui.Slider slider;
     private boolean previousToggle;
@@ -30,7 +34,7 @@ final class HubVerification {
     }
 
     boolean done() {
-        return step >= 5;
+        return step >= 5 && (lyricsChoice == null || choicesChecked >= 3);
     }
 
     void tick(Screen screen, double elapsed) throws Exception {
@@ -41,6 +45,26 @@ final class HubVerification {
         if (step == 0) {
             List<Ui.Widget> rows = new ArrayList<>();
             for (Ui.Widget widget : (List<Ui.Widget>) read(panel, "widgets")) collect(widget, rows);
+            for (Ui.Widget row : rows) {
+                if (!(row instanceof Ui.Toggle
+                        || row instanceof Ui.Slider
+                        || row instanceof Ui.Choice)) continue;
+                String key = (String) read(row, "label");
+                if (java.util.Set.of(
+                                "nosclient.music.opt.lyrics_style",
+                                "nosclient.music.opt.scale",
+                                "nosclient.music.opt.sync_offset",
+                                "nosclient.music.opt.show_lyrics",
+                                "nosclient.music.opt.enabled",
+                                "nosclient.music.opt.top_bar",
+                                "nosclient.music.opt.media_keys")
+                        .contains(key)) {
+                    String owner = String.valueOf(read(panel, "tab"));
+                    if (OWNERS.putIfAbsent(key, owner) != null)
+                        throw new AssertionError("Duplicate control: " + key);
+                }
+                if (key.equals("nosclient.music.opt.lyrics_style")) lyricsChoice = (Ui.Choice) row;
+            }
             toggle =
                     rows.stream()
                             .filter(Ui.Toggle.class::isInstance)
@@ -58,6 +82,30 @@ final class HubVerification {
                 scroll(screen, panel, toggle);
             }
             step++;
+            actedFrame = frame;
+            return;
+        }
+        if (step >= 5 && lyricsChoice != null && choicesChecked < 3) {
+            List<Ui.Widget> rows = new ArrayList<>();
+            for (Ui.Widget widget : (List<Ui.Widget>) read(panel, "widgets")) collect(widget, rows);
+            for (Ui.Widget row : rows)
+                if (row instanceof Ui.Choice
+                        && "nosclient.music.opt.lyrics_style".equals(read(row, "label")))
+                    lyricsChoice = (Ui.Choice) row;
+            if (!choiceScrolled) {
+                scroll(screen, panel, lyricsChoice);
+                choiceScrolled = true;
+            } else {
+                int before =
+                        ((java.util.function.IntSupplier) read(lyricsChoice, "get")).getAsInt();
+                click(screen, panel, lyricsChoice, .01, 5, false);
+                int after = dev.jun.nosclient.config.MusicSettings.get().lyricsStyle.ordinal();
+                if (after != (before + 1) % 3)
+                    throw new AssertionError(
+                            "Lyric style choice did not cycle through all three renderers");
+                choicesChecked++;
+                choiceScrolled = false;
+            }
             actedFrame = frame;
             return;
         }

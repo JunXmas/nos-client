@@ -10,6 +10,27 @@ import java.util.Base64;
 
 class MusicProfileTest {
     @Test
+    void lyricRenderersAndTuningSurviveProfileImportWithoutReplacingTheChosenStyle() {
+        for (MusicConfig.LyricsStyle style : MusicConfig.LyricsStyle.values()) {
+            String json =
+                    "{\"lyricsStyle\":\""
+                            + style.name()
+                            + "\",\"skyWords\":true,\"font\":\"nos-celestial\",\"syncOffsetMs\":750,\"enterAnim\":\"RISE\",\"viewLock\":true}";
+            String encoded = MusicSettings.exportCode(json);
+            for (String code : new String[] {encoded, encoded.replace("NS1:", "LF1:")}) {
+                var imported =
+                        JsonParser.parseString(MusicSettings.importCode(code)).getAsJsonObject();
+                assertEquals(style.name(), imported.get("lyricsStyle").getAsString());
+                assertTrue(imported.get("skyWords").getAsBoolean());
+                assertTrue(imported.get("viewLock").getAsBoolean());
+                assertEquals("nos-celestial", imported.get("font").getAsString());
+                assertEquals(750, imported.get("syncOffsetMs").getAsInt());
+                assertEquals("RISE", imported.get("enterAnim").getAsString());
+            }
+        }
+    }
+
+    @Test
     void newAndLegacyCodesRoundTripWithoutImportingNestedProfiles() {
         String encoded =
                 MusicSettings.exportCode(

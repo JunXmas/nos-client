@@ -2,12 +2,14 @@ package dev.jun.nosclient.gui;
 
 import dev.jun.nosclient.Mods;
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.config.MusicConfig;
+import dev.jun.nosclient.config.MusicSettings;
 import dev.jun.nosclient.cosmetic.Cosmetics;
 import dev.jun.nosclient.feat.Waypoints;
 import dev.jun.nosclient.gui.music.MusicPanels;
 import dev.jun.nosclient.hud.HudSurface;
 import dev.jun.nosclient.media.LyricsService;
-import dev.jun.nosclient.media.SkyLyrics;
+import dev.jun.nosclient.media.MediaManager;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.theme.Theme;
 import dev.jun.nosclient.theme.ThemePalette;
@@ -240,12 +242,16 @@ public final class NosSettingsScreen extends Screen {
         return tr("nosclient.mod." + m.id());
     }
 
+    private static boolean utility(Mods.Mod m) {
+        return m.id().equals("mediaProfiles") || m.id().equals("textstyle");
+    }
+
     private static boolean on(Mods.Mod m) {
-        return !m.id().equals("mediaProfiles") && m.get().get();
+        return !utility(m) && m.get().get();
     }
 
     private void flip(Mods.Mod m) {
-        if (m.id().equals("mediaProfiles")) return;
+        if (utility(m)) return;
         boolean v = !on(m);
         m.set().accept(v);
         this.c.save();
@@ -732,7 +738,7 @@ public final class NosSettingsScreen extends Screen {
 
         Icons.draw(g, m.id(), x + 3, y, 18.0F);
         Ui.text(g, Ui.fit(Ui.ui(name(m)), w - 64), x + 27, y + 6, Ui.TEXT);
-        if (m.id().equals("mediaProfiles")) {
+        if (utility(m)) {
             this.hit(x, y, x + w, y + 19, () -> this.openDetail(m.id()));
             return;
         }
@@ -826,7 +832,7 @@ public final class NosSettingsScreen extends Screen {
         Icons.draw(g, m.id(), px - 2, y - 2, 30.0F);
         Ui.text(g, Ui.fit(Ui.bold(name(m)), pw - 34 - 14), px + 34, y + 3, Ui.TEXT);
         y += 36;
-        if (!m.id().equals("mediaProfiles")) {
+        if (!utility(m)) {
             boolean on = on(m);
             Glass.panel(g, px, y, pw, 24, 268435455, 352321535);
             Ui.text(
@@ -839,7 +845,8 @@ public final class NosSettingsScreen extends Screen {
             this.hit(px, y, px + pw, y + 24, () -> this.flip(m));
             y += 32;
         }
-        if (m.id().equals("lyrics")) {
+        if (m.id().equals("lyrics")
+                && MusicSettings.get().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY) {
             this.button(
                     g,
                     Ui.small(tr("nosclient.lyrics.place")),
@@ -871,7 +878,12 @@ public final class NosSettingsScreen extends Screen {
                     () -> musicPanels.click(this.mx, this.my));
         }
         List<Opt> opts =
-                m.id().equals("sky") ? List.of() : Opt.BY_MOD.getOrDefault(m.id(), List.of());
+                m.id().equals("sky")
+                                || (m.id().equals("lyrics")
+                                        && MusicSettings.get().lyricsStyle
+                                                != MusicConfig.LyricsStyle.NOS_SKY)
+                        ? List.of()
+                        : Opt.BY_MOD.getOrDefault(m.id(), List.of());
         boolean extra =
                 m.id().equals("waypoint")
                         || m.id().equals("mp")
@@ -1172,7 +1184,7 @@ public final class NosSettingsScreen extends Screen {
                                 + 4;
             }
         } else if (m.id().equals("lyrics")) {
-            LyricsService service = SkyLyrics.service;
+            LyricsService service = MediaManager.get().lyricsService();
             if (service != null) {
                 LyricsService.Snapshot snapshot = service.snapshot();
                 y +=
@@ -1709,8 +1721,8 @@ public final class NosSettingsScreen extends Screen {
                         .toLowerCase(Locale.ROOT)
                         .endsWith(".lrc")) {
             this.openDetail("lyrics");
-            if (SkyLyrics.service != null) {
-                SkyLyrics.service.importLrc(paths.getFirst());
+            if (MediaManager.get().lyricsService() != null) {
+                MediaManager.get().lyricsService().importLrc(paths.getFirst());
             }
         } else {
             super.onFilesDrop(paths);

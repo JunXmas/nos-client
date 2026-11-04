@@ -30,7 +30,9 @@ Fixture cố ý có cấu hình cosmetic LF cũ để kiểm chúng bị bỏ qu
 Với `--fo`, mod/cấu hình FO được chép từ instance `optimized-1.21.11`.
 
 Mặc định kiểm 29 preset ngày/đêm, 23 font, 8 trang hub, trình phát, lời trôi nổi, nhân vật vanilla, cửa sổ nhỏ/lớn,
-kéo ô karaoke, scale/opacity, bảo toàn mây/mưa và phím khi mở menu. Các trang hub được bấm/kéo thật;
+kéo ô karaoke, scale/opacity, bảo toàn mây/mưa và phím khi mở menu. Kiểm ba lựa chọn lyrics bằng
+click thật; các cảnh LF câu ghép cặp, LF rải từ, Nos riêng, khóa theo góc nhìn và chữ gọn xác nhận
+renderer đang chọn hoạt động và không vẽ chồng. Kiểm các điều khiển chính không trùng giữa các trang. Các trang hub được bấm/kéo thật;
 verifier từ chối màn hình khác và phát hiện phím media bị trùng.
 
 Các biến tùy chọn:
