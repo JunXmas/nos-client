@@ -9,6 +9,7 @@ import dev.jun.nosclient.config.MusicConfig;
 import dev.jun.nosclient.config.MusicSettings;
 import dev.jun.nosclient.feat.Feats;
 import dev.jun.nosclient.media.lyrics.Lyrics;
+import dev.jun.nosclient.render.IrisCompat;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.sky.SkyPreset;
 import dev.jun.nosclient.theme.Theme;
@@ -98,14 +99,24 @@ public final class SkyLyrics {
         AuroraSky.init();
         WorldRenderEvents.AFTER_ENTITIES.register(
                 context -> {
-                    PoseStack matrices = context.matrices();
-                    if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
-                        long t0 = System.nanoTime();
-                        render(matrices, context.consumers());
-                        renderNanos += System.nanoTime() - t0;
-                        renderFrames++;
-                    }
+                    if (!IrisCompat.shadersOn()) drawFrame(context.matrices(), context.consumers());
                 });
+    }
+
+    public static void renderLate(PoseStack matrices, MultiBufferSource buffers) {
+        if (IrisCompat.shadersOn()) {
+            AuroraSky.renderLate(matrices, buffers);
+            drawFrame(matrices, buffers);
+        }
+    }
+
+    private static void drawFrame(PoseStack matrices, MultiBufferSource buffers) {
+        if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
+            long t0 = System.nanoTime();
+            render(matrices, buffers);
+            renderNanos += System.nanoTime() - t0;
+            renderFrames++;
+        }
     }
 
     private static void extract() {
@@ -250,7 +261,7 @@ public final class SkyLyrics {
                         Math.min(
                                 MusicSettings.get().skyDistance,
                                 mc.options.getEffectiveRenderDistance() * 16 * 0.92));
-        if (ShaderPacks.active()) {
+        if (IrisCompat.shadersOn()) {
             // Shaderpack phủ sương theo khoảng cách lên cả chữ: sát mép tầm nhìn chữ chìm hẳn. Kéo
             // về gần — đổi lại
             // núi rất xa không che chữ được nữa.
@@ -263,7 +274,7 @@ public final class SkyLyrics {
                         ? camera.attributeProbe().getValue(EnvironmentAttributes.SKY_COLOR, 1.0F)
                         : preset.horizon;
         ink = CelestialTypography.ink(sky, palette.text(), palette.accent(), c.lyricsBlendSky);
-        if (ShaderPacks.active()) {
+        if (IrisCompat.shadersOn()) {
             // Shaderpack tone-map lại cả khung hình nên chữ trắng-mờ chìm vào trời: dùng màu mực
             // người chơi chọn, đậm.
             int lyricInk = 0xFF000000 | c.lyricsInk;
@@ -726,7 +737,7 @@ public final class SkyLyrics {
     }
 
     private static boolean poster() {
-        return SceneConfig.INSTANCE.lyricsStyle == 0 && !ShaderPacks.active();
+        return SceneConfig.INSTANCE.lyricsStyle == 0 && !IrisCompat.shadersOn();
     }
 
     private static List<Line> wrap(Font font, String raw, double raster) {

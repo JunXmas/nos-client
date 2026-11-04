@@ -186,6 +186,7 @@ public final class GameVerification implements ClientModInitializer {
             case 7 -> "hub-resize-large";
             case 8 -> "hud-karaoke-before";
             case 9 -> "hud-karaoke-after";
+            case 10 -> "sky-word-sync";
             default -> "done";
         };
     }
@@ -265,6 +266,16 @@ public final class GameVerification implements ClientModInitializer {
             hud = new HudVerification();
             ScreenEvents.afterRender(mc.screen)
                     .register((screen, graphics, x, y, delta) -> hud.rendered());
+        } else if (phase == count + panels.length + fonts.size() + 10) {
+            mc.setScreen(null);
+            mc.options.hideGui = true;
+            MusicSettings.get().enabled = true;
+            MusicSettings.get().showLyrics = true;
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.SKY;
+            MusicSettings.get().font = "nos-celestial";
+            SceneConfig.INSTANCE.lyricsFollow = false;
+            SceneConfig.INSTANCE.lyricsBearing = 270;
+            SceneConfig.INSTANCE.lyricsElevation = 15;
         } else {
             SceneConfig.INSTANCE.sky = false;
             dev.jun.nosclient.sky.SkyRenderer.restoreClouds(mc);

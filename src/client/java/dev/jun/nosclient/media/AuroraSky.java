@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.render.IrisCompat;
 import dev.jun.nosclient.scene.SceneConfig;
 import dev.jun.nosclient.theme.HsvColor;
 import dev.jun.nosclient.theme.ThemePalette;
@@ -81,15 +82,23 @@ public final class AuroraSky {
     private AuroraSky() {}
 
     static void init() {
-        ShaderPacks.assign(PIPELINE, "BEACON_BEAM");
+        IrisCompat.assign(PIPELINE, "BEACON_BEAM");
         WorldRenderEvents.AFTER_ENTITIES.register(
                 context -> {
-                    if (context.matrices() != null) {
-                        long t0 = System.nanoTime();
-                        render(context.matrices(), context.consumers());
-                        renderNanos += System.nanoTime() - t0;
-                    }
+                    if (!IrisCompat.shadersOn()) drawFrame(context.matrices(), context.consumers());
                 });
+    }
+
+    static void renderLate(PoseStack matrices, MultiBufferSource buffers) {
+        drawFrame(matrices, buffers);
+    }
+
+    private static void drawFrame(PoseStack matrices, MultiBufferSource buffers) {
+        if (matrices != null) {
+            long t0 = System.nanoTime();
+            render(matrices, buffers);
+            renderNanos += System.nanoTime() - t0;
+        }
     }
 
     /** Một câu lời mới: nhịp bừng sáng + đặt mức năng lượng theo tốc độ hát (chữ/giây). */

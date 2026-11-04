@@ -15,6 +15,7 @@ import dev.jun.nosclient.gui.effects.Theme;
 import dev.jun.nosclient.media.MediaManager;
 import dev.jun.nosclient.media.playback.NowPlaying;
 import dev.jun.nosclient.mixin.GameRendererAccessor;
+import dev.jun.nosclient.render.IrisCompat;
 
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Camera;
@@ -187,6 +188,15 @@ public final class WorldSky {
     }
 
     public static void render(WorldRenderContext ctx) {
+        if (!IrisCompat.shadersOn())
+            render(ctx.matrices(), ctx.consumers(), ctx.worldState().cameraRenderState.pos);
+    }
+
+    public static void renderLate(PoseStack pose, MultiBufferSource buffers, Vec3 camera) {
+        if (IrisCompat.shadersOn()) render(pose, buffers, camera);
+    }
+
+    private static void render(PoseStack pose, MultiBufferSource buffers, Vec3 camera) {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null || client.player == null) return;
         EffectsConfig settings = ClientEffects.cfg();
@@ -212,7 +222,7 @@ public final class WorldSky {
         }
 
         try {
-            renderSky(ctx);
+            renderSky(pose, buffers, camera);
         } catch (Throwable e) {
             if (!warned) {
                 warned = true;
@@ -227,7 +237,7 @@ public final class WorldSky {
         }
     }
 
-    private static void renderSky(WorldRenderContext ctx) {
+    private static void renderSky(PoseStack pose, MultiBufferSource buffers, Vec3 camera) {
         fogMix = 0.0F;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.level != null) {
@@ -273,9 +283,7 @@ public final class WorldSky {
             skyTime = skyTime + dt * Math.max(0.1F, Math.min(3.0F, c.skySpeed));
             breathT = breathT + dt * c.skyBreath * 1.3;
             double t = skyTime;
-            PoseStack ps = ctx.matrices();
-            base = new Matrix4f(ps.last().pose());
-            MultiBufferSource buffers = ctx.consumers();
+            base = new Matrix4f(pose.last().pose());
             NowPlaying npm = NowPlaying.now();
             float beat = 0.0F;
             float calm = 1.0F;
@@ -364,7 +372,7 @@ public final class WorldSky {
                         && c.weatherAmount > 0.01F
                         && p.weather != SkyPreset.Weather.NONE
                         && out > 0.01F) {
-                    Vec3 cam = ctx.worldState().cameraRenderState.pos;
+                    Vec3 cam = camera;
                     VertexConsumer ts = buffers.getBuffer(RenderTypes.text(SkyTextures.SPRITES));
                     drawWeather(
                             ts,
@@ -377,7 +385,7 @@ public final class WorldSky {
                 }
             }
 
-            Vec3 camV = ctx.worldState().cameraRenderState.pos;
+            Vec3 camV = camera;
             drawPlayerFx(mc, c, buffers, camV, pt, t, p);
             DeathFx.render(mc, buffers, base, camV, pt);
             base = null;

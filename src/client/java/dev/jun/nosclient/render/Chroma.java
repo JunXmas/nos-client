@@ -10,8 +10,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.jun.nosclient.ClientResources;
 import dev.jun.nosclient.config.MusicConfig;
 import dev.jun.nosclient.config.MusicSettings;
+import dev.jun.nosclient.media.SkyLyrics;
 import dev.jun.nosclient.mixin.PostChainAccessor;
 import dev.jun.nosclient.mixin.PostPassAccessor;
+import dev.jun.nosclient.sky.WorldSky;
 import dev.jun.nosclient.util.Anim;
 
 import net.minecraft.client.Camera;
@@ -110,7 +112,12 @@ public final class Chroma {
                 }
 
                 BufferSource buffers = mc.renderBuffers().bufferSource();
-                Hud.renderWorldSky(new PoseStack(), buffers);
+                PoseStack pose = new PoseStack();
+                // Trời và lời được vẽ sau khi shaderpack ghép cảnh, theo thứ tự nền rồi chữ.
+                WorldSky.renderLate(pose, buffers, new Vec3(camX, camY, camZ));
+                buffers.endBatch();
+                SkyLyrics.renderLate(pose, buffers);
+                Hud.renderWorldSky(pose, buffers);
                 WorldLyrics.renderWorld(new PoseStack(), buffers);
                 buffers.endBatch();
             } catch (Throwable t) {
