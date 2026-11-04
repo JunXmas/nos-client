@@ -7,11 +7,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.jun.nosclient.ClientEffects;
 import dev.jun.nosclient.config.EffectsConfig;
-import dev.jun.nosclient.cosmetic.effects.DeathFx;
 import dev.jun.nosclient.feat.AutoPerf;
 import dev.jun.nosclient.gui.effects.Anim;
 import dev.jun.nosclient.gui.effects.Gfx;
-import dev.jun.nosclient.gui.effects.Theme;
 import dev.jun.nosclient.media.MediaManager;
 import dev.jun.nosclient.media.playback.NowPlaying;
 import dev.jun.nosclient.mixin.GameRendererAccessor;
@@ -20,24 +18,19 @@ import dev.jun.nosclient.render.IrisCompat;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer.FogMode;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public final class WorldSky {
@@ -163,23 +156,11 @@ public final class WorldSky {
     private static float fogMix;
     private static final int[] SUB_COL = new int[16];
     private static final float[][] SUB_P = new float[16][3];
-    private static final ArrayDeque<double[]> TRAIL = new ArrayDeque<>();
-    private static long lastTrail = 0L;
-    private static double lastTx;
-    private static double lastTz;
-    private static double lastSide = 0.0;
-    private static final Matrix4f M0 = new Matrix4f();
-    private static final Matrix4f TMP = new Matrix4f();
-    private static final Matrix4f WM = new Matrix4f();
-    private static final Matrix4f SCR = new Matrix4f();
-    private static final Map<String, Component> COMP = new HashMap<>();
-    private static int compFont = -1;
     public static final int[] LYRIC_COLORS =
             new int[] {
                 13219327, 16777215, 16747224, 9098495, 9240520, 16765562, 16743034, 11635967
             };
     private static boolean warned;
-    private static String compFontId = "";
 
     private WorldSky() {}
 
@@ -204,11 +185,7 @@ public final class WorldSky {
                 dev.jun.nosclient.scene.SceneConfig.INSTANCE.sky
                         && ClientEffects.skyWorld(client.level)
                         && (settings.sky >= 0 || settings.skyImage);
-        boolean playerFx =
-                settings.cosmeticsEnabled
-                        && (settings.trail > 0 || settings.aura || DeathFx.hasActive());
-        if (!settings.cosmeticsEnabled || settings.trail <= 0) TRAIL.clear();
-        if (!sky && !playerFx) return;
+        if (!sky) return;
         AutoPerf.begin();
         GpuBufferSlice oldFog = null;
 
@@ -247,7 +224,6 @@ public final class WorldSky {
             long nowNs = System.nanoTime();
             float dt = Math.min(0.1F, (float) (nowNs - lastNanos) / 1.0E9F);
             lastNanos = nowNs;
-            float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
             Camera mainCam = mc.gameRenderer.getMainCamera();
             camYaw = mainCam.yRot();
             camPitch = mainCam.xRot();
@@ -385,9 +361,6 @@ public final class WorldSky {
                 }
             }
 
-            Vec3 camV = camera;
-            drawPlayerFx(mc, c, buffers, camV, pt, t, p);
-            DeathFx.render(mc, buffers, base, camV, pt);
             base = null;
         }
     }
@@ -2125,116 +2098,6 @@ public final class WorldSky {
                     a1 * f1,
                     c1,
                     a1 * f0);
-        }
-    }
-
-    private static void drawPlayerFx(
-            Minecraft mc,
-            EffectsConfig c,
-            MultiBufferSource buffers,
-            Vec3 cam,
-            float pt,
-            double t,
-            SkyPreset p) {
-        if (!c.cosmeticsEnabled) {
-            TRAIL.clear();
-            return;
-        }
-        LocalPlayer pl = mc.player;
-        if (pl != null && !pl.isInvisible()) {
-            Vec3 pos = pl.getPosition(pt);
-            long now = System.currentTimeMillis();
-            NowPlaying np = NowPlaying.now();
-            float beat = np.playing ? np.beatPulse(np.progressNow(0)) : 0.0F;
-            int acc = Theme.accent();
-            int skyCol = p != null ? aurora1(p) : acc;
-            if (c.trail > 0 && SkyTextures.spritesReady()) {
-                double mvx = pos.x - lastTx;
-                double mvz = pos.z - lastTz;
-                if (now - lastTrail > 35L && mvx * mvx + mvz * mvz > 9.0E-4) {
-                    lastTrail = now;
-                    lastTx = pos.x;
-                    lastTz = pos.z;
-                    double jx = (Math.random() - 0.5) * 0.35;
-                    double jz = (Math.random() - 0.5) * 0.35;
-                    TRAIL.addLast(
-                            new double[] {
-                                pos.x + jx,
-                                pos.y + 0.12 + Math.random() * 0.25,
-                                pos.z + jz,
-                                now,
-                                now / 1400.0 % 1.0
-                            });
-                }
-
-                while (!TRAIL.isEmpty() && now - ((double[]) TRAIL.peekFirst())[3] > 1300.0) {
-                    TRAIL.pollFirst();
-                }
-
-                if (!TRAIL.isEmpty()) {
-                    VertexConsumer ts = buffers.getBuffer(RenderTypes.text(SkyTextures.SPRITES));
-
-                    for (double[] q : TRAIL) {
-                        float age = (float) ((now - q[3]) / 1300.0);
-                        int col =
-                                c.trail == 2
-                                        ? Gfx.hsv((float) q[4], 0.65F, 1.0F)
-                                        : (c.trail == 3 ? skyCol : acc);
-                        double rise = age * 0.35;
-                        sprite(
-                                ts,
-                                q[0] - cam.x,
-                                q[1] + rise - cam.y,
-                                q[2] - cam.z,
-                                0.32 * (1.0 - age * 0.6) * (1.0 + 0.4 * beat),
-                                2,
-                                col,
-                                (1.0F - age) * 0.9F);
-                    }
-                }
-            } else if (!TRAIL.isEmpty()) {
-                TRAIL.clear();
-            }
-
-            if (c.aura) {
-                quads = buffers.getBuffer(RenderTypes.debugQuads());
-                double fx0 = pos.x - cam.x;
-                double fy0 = pos.y + 0.03 - cam.y;
-                double fz0 = pos.z - cam.z;
-                int seg = 40;
-                float pulse = 0.35F + 0.65F * beat;
-                double r0 = 0.55 + 0.08 * beat;
-                double r1 = r0 + 0.16;
-
-                for (int i = 0; i < seg; i++) {
-                    double a0 = i * Math.PI * 2.0 / seg + t * 0.6;
-                    double a1 = (i + 1) * Math.PI * 2.0 / seg + t * 0.6;
-                    float k = (float) (0.5 + 0.5 * Math.cos(a0 * 3.0 - t * 2.4));
-                    float al = (0.18F + 0.45F * k) * pulse;
-                    int col =
-                            c.trail == 2
-                                    ? Gfx.hsv(
-                                            (float) (((double) i / seg + t * 0.1) % 1.0),
-                                            0.6F,
-                                            1.0F)
-                                    : acc;
-                    quad(
-                            p(fx0 + Math.cos(a0) * r0, fy0, fz0 + Math.sin(a0) * r0),
-                            p(fx0 + Math.cos(a1) * r0, fy0, fz0 + Math.sin(a1) * r0),
-                            p(fx0 + Math.cos(a1) * r1, fy0, fz0 + Math.sin(a1) * r1),
-                            p(fx0 + Math.cos(a0) * r1, fy0, fz0 + Math.sin(a0) * r1),
-                            col,
-                            al,
-                            col,
-                            al,
-                            col,
-                            0.0F,
-                            col,
-                            0.0F);
-                }
-
-                quads = null;
-            }
         }
     }
 }

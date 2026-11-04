@@ -56,7 +56,6 @@ public class MusicConfig {
     public boolean skyAlways = true;
     public int chromaColor = 0;
     public boolean customHotbar = false;
-    public String cosmetic = "none";
     public MusicConfig.TopBarStyle topBarStyle = MusicConfig.TopBarStyle.KARAOKE;
     public String topBarFont = "outfit";
     public float topBarScale = 1.0F;
@@ -88,7 +87,6 @@ public class MusicConfig {
         quality = Math.max(0, Math.min(2, quality));
         if (targetFps != 0) targetFps = Math.max(30, Math.min(240, targetFps));
         twoColorStrength = bounded(twoColorStrength, 0, 1, 0);
-        if (cosmetic == null) cosmetic = "none";
         syncOffsetMs = Math.max(-5000, Math.min(5000, syncOffsetMs));
         maxLines = Math.max(1, Math.min(3, maxLines));
         lyricsScale = bounded(lyricsScale, .4F, 2.5F, 1);

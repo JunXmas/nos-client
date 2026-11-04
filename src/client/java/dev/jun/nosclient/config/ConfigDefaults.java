@@ -22,9 +22,9 @@ public final class ConfigDefaults {
                             music,
                             m,
                             "allCaps varySizes arcLayout font textStyle theme customTheme"
-                                + " singleColor customMain customA customB twoColor"
-                                + " twoColorStrength twoColorColor glow textOpacity textShadow"
-                                + " shadowColor beatGlow accentColor barColor");
+                                    + " singleColor customMain customA customB twoColor"
+                                    + " twoColorStrength twoColorColor glow textOpacity textShadow"
+                                    + " shadowColor beatGlow accentColor barColor");
             case "karaoke" ->
                     copy(
                             music,
@@ -34,10 +34,6 @@ public final class ConfigDefaults {
             case "mediaKeys" -> copy(music, m, "mediaKeys");
             case "mediaProfiles" -> copy(music, m, "profiles");
             case "visualPerformance" -> copy(music, m, "autoPerf targetFps quality");
-            case "accessories" -> {
-                copy(music, m, "cosmetic");
-                copy(effects, e, "cosmeticsEnabled trail aura deathFx deathOthers");
-            }
             case "sky" ->
                     copy(
                             effects,

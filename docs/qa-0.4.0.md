@@ -1,5 +1,8 @@
 # QA Nos Client 0.4.0
 
+Báo cáo này lưu kết quả trước khi gỡ cosmetic LF. Phạm vi và kết quả hiện tại ở
+[QA lyrics và bầu trời](qa-lyrics-sky-only.md).
+
 Ngày kiểm tra: 03–04/11/2026. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21, Linux.
 Jar cuối: `nosclient-0.4.0.jar`.
 

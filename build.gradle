@@ -71,6 +71,7 @@ java {
 }
 
 jar {
+	from('THIRD_PARTY_NOTICES.md')
 	from('LICENSE') {
 		rename { "${it}_${project.name}" }
 	}

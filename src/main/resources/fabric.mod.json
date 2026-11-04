@@ -28,8 +28,5 @@
     "fabric-rendering-v1": "*",
     "fabric-key-binding-api-v1": "*",
     "fabric-lifecycle-events-v1": "*"
-  },
-  "contributors": [
-    "374m (LyricsFlow)"
-  ]
+  }
 }

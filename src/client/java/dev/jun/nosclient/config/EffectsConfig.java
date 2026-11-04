@@ -27,12 +27,6 @@ public class EffectsConfig {
     public boolean fxSkyMusic = true;
     public float skySpeed = 1.0F;
     public int skyPalette = -1;
-    public boolean cosmeticsEnabled = true;
-    public int trail = 0;
-    public boolean aura = false;
-    public int deathFx = 1;
-    public boolean deathOthers = false;
-    public boolean beatGlow = false;
     public boolean skyShuffle = false;
     public float skyPattern = 1.0F;
     public float skyLively = 0.6F;
@@ -71,8 +65,6 @@ public class EffectsConfig {
         }
         visualHour = Math.max(-1, Math.min(24, visualHour));
         starDensity = Math.max(0, Math.min(2, starDensity));
-        deathFx = Math.max(0, Math.min(3, deathFx));
-        trail = Math.max(0, Math.min(3, trail));
         uiFont = Math.max(0, Math.min(Gfx.FONT_IDS.length, uiFont));
         sky = Math.max(-1, Math.min(SkyPreset.values().length - 1, sky));
         lastSky = Math.max(0, Math.min(SkyPreset.values().length - 1, lastSky));

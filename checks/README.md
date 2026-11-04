@@ -26,9 +26,10 @@ bash checks/run-game-verification.sh /tmp/nos-visual --world /path/to/Probe --fo
 
 Mỗi lượt cần thư mục kết quả mới. Harness dùng game directory, cấu hình, Java user home và các thư mục
 XDG riêng; không đổi `HOME`. Nguồn nhạc giả chạy trên D-Bus riêng nên không điều khiển ứng dụng thật.
+Fixture cố ý có cấu hình cosmetic LF cũ để kiểm chúng bị bỏ qua mà không ảnh hưởng nhạc/trời.
 Với `--fo`, mod/cấu hình FO được chép từ instance `optimized-1.21.11`.
 
-Mặc định kiểm 29 preset ngày/đêm, 23 font, 9 trang hub, trình phát, lời trôi nổi, phụ kiện, cửa sổ nhỏ/lớn,
+Mặc định kiểm 29 preset ngày/đêm, 23 font, 8 trang hub, trình phát, lời trôi nổi, nhân vật vanilla, cửa sổ nhỏ/lớn,
 kéo ô karaoke, scale/opacity, bảo toàn mây/mưa và phím khi mở menu. Các trang hub được bấm/kéo thật;
 verifier từ chối màn hình khác và phát hiện phím media bị trùng.
 

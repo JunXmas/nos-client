@@ -36,12 +36,12 @@ class ConfigDefaultsTest {
                     "mediaKeys",
                     "mediaProfiles",
                     "visualPerformance",
-                    "accessories",
                     "sky"
                 }) {
             assertTrue(
                     ConfigDefaults.reset(feature, new MusicConfig(), new EffectsConfig()), feature);
         }
+        assertFalse(ConfigDefaults.reset("accessories", new MusicConfig(), new EffectsConfig()));
         assertFalse(ConfigDefaults.reset("unknown", new MusicConfig(), new EffectsConfig()));
     }
 }

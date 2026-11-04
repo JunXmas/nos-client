@@ -3,7 +3,6 @@ package dev.jun.nosclient;
 import dev.jun.nosclient.config.ClientSettings;
 import dev.jun.nosclient.config.EffectsConfig;
 import dev.jun.nosclient.config.LegacyConfig;
-import dev.jun.nosclient.cosmetic.effects.DeathFx;
 import dev.jun.nosclient.gui.effects.Gfx;
 import dev.jun.nosclient.gui.effects.GlassHotbar;
 import dev.jun.nosclient.media.playback.NowPlaying;
@@ -14,10 +13,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
 
@@ -80,17 +77,11 @@ public final class ClientEffects {
                 Identifier.fromNamespaceAndPath("nosclient", "sky_flash"), SkyRenderer::render);
         HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR, GlassHotbar::wrap);
         WorldRenderEvents.AFTER_ENTITIES.register(WorldSky::render);
-        AttackEntityCallback.EVENT.register(
-                (player, level, hand, entity, hit) -> {
-                    DeathFx.onAttack(entity);
-                    return InteractionResult.PASS;
-                });
         ClientTickEvents.END_CLIENT_TICK.register(ClientEffects::tick);
     }
 
     private static void tick(Minecraft mc) {
         NowPlaying.tick();
-        DeathFx.tick(mc);
         SkyRenderer.tick(mc);
     }
 }

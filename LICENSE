@@ -1,5 +1,8 @@
 Bản quyền © 2026 Nguyễn Nhật Minh (JunXmas). Giữ mọi quyền.
 
+Thông báo và điều khoản này chỉ áp dụng cho phần mã/tài nguyên thuộc quyền sở hữu của
+JunXmas. Thành phần bên thứ ba giữ bản quyền và điều khoản riêng; xem THIRD_PARTY_NOTICES.md.
+
 Mã nguồn trong kho này được công khai để ai cũng xem được, KHÔNG phải để sao chép, phân
 phối lại, sửa đổi, dịch ngược thành bản khác, hay dùng làm nền cho một mod/launcher khác —
 kể cả khi không thu phí, kể cả khi làm vì mục đích cộng đồng. Không có giấy phép mã nguồn
@@ -20,6 +23,9 @@ Không được phép, trừ khi có sự đồng ý bằng văn bản của tá
 ---
 
 Copyright © 2026 Nguyễn Nhật Minh (JunXmas). All rights reserved.
+
+This notice and these terms apply only to code/assets owned by JunXmas. Third-party
+components retain their own copyrights and terms; see THIRD_PARTY_NOTICES.md.
 
 This repository's source code is public so anyone can read it — NOT so it can be copied,
 redistributed, modified, reverse-derived into another mod/launcher, or used as a base for

@@ -130,7 +130,7 @@ public final class Icons {
             case "day" -> 3;
             case "cps" -> 4;
             case "ping" -> 5;
-            case "effects", "textstyle", "accessories" -> 6;
+            case "effects", "textstyle" -> 6;
             case "invhud" -> 7;
             case "armor" -> 8;
             case "shulker" -> 9;
