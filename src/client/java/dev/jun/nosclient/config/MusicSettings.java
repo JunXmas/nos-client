@@ -142,7 +142,7 @@ public final class MusicSettings {
                 c.enterAnim = MusicConfig.EnterAnim.NEON;
             }
             c.font = LegacyConfig.fontId(c.font);
-            c.configVersion = 18;
+            c.configVersion = 19;
             return c;
         } catch (Exception error) {
             ClientResources.LOG.warn("Could not migrate legacy music settings", error);
@@ -247,7 +247,7 @@ public final class MusicSettings {
                             MusicConfig.class);
             c.font = LegacyConfig.fontId(c.font);
             c.profiles = config.profiles;
-            c.configVersion = 18;
+            c.configVersion = 19;
             config = c;
             save();
         } catch (Exception e) {

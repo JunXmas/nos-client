@@ -1,0 +1,31 @@
+{
+  "junit": {
+    "tests": 73,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "localization_keys": 788,
+  "runs": [
+    {
+      "id": "lf-lyrics-native",
+      "artifact_sha256": "d8a003cd09b04851fc780b7000ca33015241f3f861d64b2ea8220c680c5cc5ea",
+      "result": "preset captures=0, hub captures=8, fonts=23, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+    },
+    {
+      "id": "lf-lyrics-iris",
+      "artifact_sha256": "d8a003cd09b04851fc780b7000ca33015241f3f861d64b2ea8220c680c5cc5ea",
+      "result": "preset captures=0, hub captures=8, fonts=23, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+    },
+    {
+      "id": "lf-lyrics-native-final",
+      "artifact_sha256": "ffd4a7daca67b45209218263e793d5e3efb0c9b87d545b3886aa630b0ab1f1e8",
+      "result": "preset captures=0, hub captures=8, fonts=0, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+    },
+    {
+      "id": "lf-lyrics-iris-final-stable",
+      "artifact_sha256": "ffd4a7daca67b45209218263e793d5e3efb0c9b87d545b3886aa630b0ab1f1e8",
+      "result": "preset captures=0, hub captures=8, fonts=0, cloud/weather restoration=passed, input guard=passed, HUD drag/scale/opacity=passed"
+    }
+  ]
+}

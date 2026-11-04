@@ -154,59 +154,6 @@ final class Pages {
                 new Ui.Card()
                         .add(
                                 new Ui.Toggle(
-                                        "nosclient.music.opt.enabled",
-                                        "nosclient.music.opt.enabled.desc",
-                                        () -> c().enabled,
-                                        v -> c().enabled = v))
-                        .add(
-                                new Ui.Toggle(
-                                        "nosclient.music.opt.show_lyrics",
-                                        "nosclient.music.opt.show_lyrics.desc",
-                                        () -> c().showLyrics,
-                                        v -> {
-                                            c().showLyrics = v;
-                                        }))
-                        .add(
-                                new Ui.Choice(
-                                        "nosclient.music.opt.lyrics_style",
-                                        null,
-                                        new String[] {
-                                            "nosclient.music.style.sky",
-                                            "nosclient.music.style.floating"
-                                        },
-                                        () -> Math.min(1, c().lyricsStyle.ordinal()),
-                                        i -> {
-                                            c().lyricsStyle = MusicConfig.LyricsStyle.values()[i];
-                                            WorldLyrics.clear();
-                                        }))
-                        .add(
-                                new Ui.Slider(
-                                        "nosclient.music.opt.scale",
-                                        0.4,
-                                        2.5,
-                                        0.05,
-                                        () ->
-                                                c().lyricsStyle == MusicConfig.LyricsStyle.SKY
-                                                        ? dev.jun.nosclient.scene.SceneConfig
-                                                                .INSTANCE
-                                                                .lyricsSize
-                                                        : c().lyricsScale,
-                                        v -> {
-                                            if (c().lyricsStyle == MusicConfig.LyricsStyle.SKY)
-                                                dev.jun.nosclient.scene.SceneConfig.INSTANCE
-                                                                .lyricsSize =
-                                                        v;
-                                            else c().lyricsScale = (float) v;
-                                        },
-                                        Pages::mult))
-                        .add(
-                                new Ui.Toggle(
-                                        "nosclient.music.opt.top_bar",
-                                        "nosclient.music.opt.top_bar.desc",
-                                        () -> c().showTopBar,
-                                        v -> c().showTopBar = v))
-                        .add(
-                                new Ui.Toggle(
                                         "nosclient.music.opt.chroma",
                                         "nosclient.music.opt.chroma.desc",
                                         () -> c().chroma,
@@ -245,44 +192,90 @@ final class Pages {
         l.add(
                 new Ui.Card()
                         .add(
-                                new Ui.Toggle(
-                                        "nosclient.music.opt.show_lyrics",
-                                        "nosclient.music.opt.show_lyrics.desc",
-                                        () -> c().showLyrics,
-                                        v -> {
-                                            c().showLyrics = v;
-                                        }))
-                        .add(
                                 new Ui.Choice(
                                         "nosclient.music.opt.lyrics_style",
                                         "nosclient.music.opt.lyrics_style.desc",
                                         new String[] {
                                             "nosclient.music.style.sky",
-                                            "nosclient.music.style.floating"
+                                            "nosclient.music.style.floating",
+                                            "nosclient.music.style.nos_sky"
                                         },
-                                        () -> Math.min(1, c().lyricsStyle.ordinal()),
+                                        () -> c().lyricsStyle.ordinal(),
                                         i -> {
                                             c().lyricsStyle = MusicConfig.LyricsStyle.values()[i];
                                             WorldLyrics.clear();
                                             screen.rebuildSoon();
                                         })));
+        MediaManager mm = MediaManager.get();
+        l.add(
+                new Ui.Card()
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.opt.lyrics.auto",
+                                        null,
+                                        () ->
+                                                dev.jun.nosclient.scene.SceneConfig.INSTANCE
+                                                        .lyricsAutoFetch,
+                                        v ->
+                                                dev.jun.nosclient.scene.SceneConfig.INSTANCE
+                                                                .lyricsAutoFetch =
+                                                        v)));
+        l.add(new Ui.Section("nosclient.music.section.timing"));
+        l.add(
+                new Ui.Card()
+                        .add(
+                                new Ui.Slider(
+                                        "nosclient.music.opt.sync_offset",
+                                        -2000.0,
+                                        2000.0,
+                                        50.0,
+                                        () -> c().syncOffsetMs,
+                                        v -> c().syncOffsetMs = (int) Math.round(v),
+                                        Pages::ms))
+                        .add(
+                                new Ui.Button(
+                                        "nosclient.music.opt.clear_song_offsets",
+                                        "nosclient.music.opt.clear_song_offsets.desc",
+                                        () ->
+                                                Ui.tr(
+                                                        "nosclient.music.button.clear_n",
+                                                        c().songOffsets.size()),
+                                        "trash",
+                                        false,
+                                        () -> {
+                                            c().songOffsets.clear();
+                                            MusicSettings.save();
+                                            screen.rebuildSoon();
+                                        }))
+                        .add(
+                                new Ui.Button(
+                                        "nosclient.music.opt.refetch",
+                                        "nosclient.music.opt.refetch.desc",
+                                        () -> Ui.tr("nosclient.music.button.retry"),
+                                        "refresh",
+                                        false,
+                                        mm::refetch)));
         l.add(new Ui.Section("nosclient.music.section.size"));
         Ui.Card size =
                 new Ui.Card()
                         .add(
                                 new Ui.Slider(
                                         "nosclient.music.opt.scale",
-                                        0.4,
-                                        2.5,
+                                        c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY
+                                                ? 0.5
+                                                : 0.4,
+                                        c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY
+                                                ? 2.0
+                                                : 2.5,
                                         0.05,
                                         () ->
-                                                c().lyricsStyle == MusicConfig.LyricsStyle.SKY
+                                                c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY
                                                         ? dev.jun.nosclient.scene.SceneConfig
                                                                 .INSTANCE
                                                                 .lyricsSize
                                                         : c().lyricsScale,
                                         v -> {
-                                            if (c().lyricsStyle == MusicConfig.LyricsStyle.SKY)
+                                            if (c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY)
                                                 dev.jun.nosclient.scene.SceneConfig.INSTANCE
                                                                 .lyricsSize =
                                                         v;
@@ -332,15 +325,20 @@ final class Pages {
                                     v -> Math.round(v) + "m"))
                     .add(
                             new Ui.Toggle(
-                                    "nosclient.music.opt.sky_follow",
-                                    "nosclient.music.opt.sky_follow.desc",
-                                    () -> dev.jun.nosclient.scene.SceneConfig.INSTANCE.lyricsFollow,
-                                    v ->
-                                            dev.jun.nosclient.scene.SceneConfig.INSTANCE
-                                                            .lyricsFollow =
-                                                    v));
+                                    "nosclient.music.opt.sky_words",
+                                    "nosclient.music.opt.sky_words.desc",
+                                    () -> c().skyWords,
+                                    v -> {
+                                        c().skyWords = v;
+                                        WorldLyrics.clear();
+                                        screen.rebuildSoon();
+                                    }));
         }
 
+        if (c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY) {
+            l.add(size);
+            return;
+        }
         size.add(
                 new Ui.Slider(
                         "nosclient.music.opt.opacity",
@@ -350,19 +348,24 @@ final class Pages {
                         () -> c().textOpacity,
                         v -> c().textOpacity = (float) v,
                         Pages::pct));
-        if (c().lyricsStyle == MusicConfig.LyricsStyle.FLOATING) {
+        {
             size.add(
                     new Ui.Slider(
                             "nosclient.music.opt.max_lines",
-                            1.0,
+                            c().lyricsStyle == MusicConfig.LyricsStyle.SKY && !c().skyWords
+                                    ? 2.0
+                                    : 1.0,
                             3.0,
                             1.0,
-                            () -> c().maxLines,
+                            () ->
+                                    c().lyricsStyle == MusicConfig.LyricsStyle.SKY && !c().skyWords
+                                            ? Math.max(2, c().maxLines)
+                                            : c().maxLines,
                             v -> c().maxLines = (int) Math.round(v),
                             v -> String.valueOf((int) Math.round(v))));
         }
         l.add(size);
-        if (c().lyricsStyle == MusicConfig.LyricsStyle.FLOATING) {
+        {
             l.add(new Ui.Section("nosclient.music.section.animation"));
             l.add(
                     new Ui.Card()
@@ -399,6 +402,26 @@ final class Pages {
                                             v -> c().animSpeed = (float) v,
                                             Pages::mult)));
         }
+        l.add(
+                new Ui.Card()
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.music.opt.random_position",
+                                        null,
+                                        () -> c().randomPosition,
+                                        v -> {
+                                            c().randomPosition = v;
+                                            WorldLyrics.clear();
+                                        }))
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.music.opt.view_lock",
+                                        "nosclient.music.opt.view_lock.desc",
+                                        () -> c().viewLock,
+                                        v -> {
+                                            c().viewLock = v;
+                                            WorldLyrics.clear();
+                                        })));
         l.add(new Ui.Section("nosclient.music.section.advanced"));
         l.add(
                 new Ui.Card()
@@ -441,7 +464,47 @@ final class Pages {
                                                 () -> {
                                                     c().font = (new MusicConfig()).font;
                                                     WorldLyrics.clear();
-                                                }))
+                                                })));
+        if (c().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY) return;
+        l.add(
+                new Ui.Card()
+                        .add(
+                                new Ui.Choice(
+                                        "nosclient.music.opt.text_style",
+                                        null,
+                                        new String[] {
+                                            "nosclient.music.text_style.neon",
+                                            "nosclient.music.text_style.clean"
+                                        },
+                                        () -> c().textStyle.ordinal(),
+                                        i -> c().textStyle = MusicConfig.TextStyle.values()[i]))
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.music.opt.all_caps",
+                                        null,
+                                        () -> c().allCaps,
+                                        v -> {
+                                            c().allCaps = v;
+                                            WorldLyrics.clear();
+                                        }))
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.music.opt.vary_sizes",
+                                        null,
+                                        () -> c().varySizes,
+                                        v -> {
+                                            c().varySizes = v;
+                                            WorldLyrics.clear();
+                                        }))
+                        .add(
+                                new Ui.Toggle(
+                                        "nosclient.music.opt.arc_layout",
+                                        null,
+                                        () -> c().arcLayout,
+                                        v -> {
+                                            c().arcLayout = v;
+                                            WorldLyrics.clear();
+                                        }))
                         .add(
                                 new Ui.Choice(
                                         "nosclient.music.opt.text_shadow",
@@ -452,16 +515,30 @@ final class Pages {
                                             "nosclient.music.shadow.strong"
                                         },
                                         () -> c().textShadow,
-                                        i -> c().textShadow = i))
+                                        i -> c().textShadow = i)));
+        l.add(
+                new Ui.Card()
                         .add(
                                 new Ui.Toggle(
-                                        "nosclient.music.opt.all_caps",
+                                        "nosclient.music.opt.glow",
                                         null,
-                                        () -> c().allCaps,
-                                        v -> {
-                                            c().allCaps = v;
-                                            WorldLyrics.clear();
-                                        })));
+                                        () -> c().glow,
+                                        v -> c().glow = v))
+                        .add(
+                                new Ui.Slider(
+                                        "nosclient.music.opt.two_color_strength",
+                                        0,
+                                        1,
+                                        .05,
+                                        () -> c().twoColorStrength,
+                                        v -> c().twoColorStrength = (float) v,
+                                        Pages::pct))
+                        .add(
+                                new Ui.Colors(
+                                        "nosclient.music.opt.two_color_color",
+                                        null,
+                                        () -> c().twoColorColor,
+                                        v -> c().twoColorColor = v)));
         l.add(new Ui.Section("nosclient.music.section.look"));
         l.add(
                 new Ui.Card()
@@ -1183,12 +1260,6 @@ final class Pages {
                 new Ui.Card()
                         .add(
                                 new Ui.Toggle(
-                                        "nosclient.music.opt.top_bar",
-                                        "nosclient.music.opt.top_bar.desc",
-                                        () -> c().showTopBar,
-                                        v -> c().showTopBar = v))
-                        .add(
-                                new Ui.Toggle(
                                         "nosclient.music.opt.custom_hotbar",
                                         "nosclient.music.opt.custom_hotbar.desc",
                                         () -> c().customHotbar,
@@ -1348,27 +1419,16 @@ final class Pages {
                                             }
                                         })));
         l.add(new Ui.Info(() -> Ui.tr("nosclient.music.info.spotify_exact")));
-        l.add(new Ui.Section("nosclient.music.section.playback"));
         l.add(
                 new Ui.Card()
                         .add(
-                                new Ui.Slider(
-                                        "nosclient.music.opt.sync_offset",
-                                        -2000.0,
-                                        2000.0,
-                                        50.0,
-                                        () -> c().syncOffsetMs,
-                                        v -> c().syncOffsetMs = (int) Math.round(v),
-                                        Pages::ms))
-                        .add(
                                 new Ui.Button(
-                                        "nosclient.music.opt.refetch",
-                                        "nosclient.music.opt.refetch.desc",
-                                        () -> Ui.tr("nosclient.music.button.retry"),
+                                        "nosclient.music.opt.reconnect",
+                                        null,
+                                        () -> Ui.tr("nosclient.music.button.reconnect"),
                                         "refresh",
                                         false,
-                                        mm::refetch)));
-        l.add(new Ui.Info(() -> Ui.tr("nosclient.music.info.sync_offset")));
+                                        mm::reconnect)));
     }
 
     private static void keys(List<Ui.Widget> l) {
@@ -1384,12 +1444,6 @@ final class Pages {
                                         "key.nosclient.music.onoff",
                                         "nosclient.music.opt.toggle_key.desc",
                                         MediaKeys.toggle))
-                        .add(
-                                new Ui.Toggle(
-                                        "nosclient.music.opt.media_keys",
-                                        "nosclient.music.opt.media_keys.desc",
-                                        () -> c().mediaKeys,
-                                        v -> c().mediaKeys = v))
                         .add(
                                 new Ui.KeyBind(
                                         "key.nosclient.music.play_pause",
@@ -1420,50 +1474,6 @@ final class Pages {
     }
 
     private static void saved(List<Ui.Widget> l, MusicPanels screen) {
-        MediaManager mm = MediaManager.get();
-        l.add(new Ui.Section("nosclient.music.section.timing"));
-        l.add(
-                new Ui.Card()
-                        .add(
-                                new Ui.Slider(
-                                        "nosclient.music.opt.sync_offset",
-                                        -2000.0,
-                                        2000.0,
-                                        50.0,
-                                        () -> c().syncOffsetMs,
-                                        v -> c().syncOffsetMs = (int) Math.round(v),
-                                        Pages::ms))
-                        .add(
-                                new Ui.Button(
-                                        "nosclient.music.opt.clear_song_offsets",
-                                        "nosclient.music.opt.clear_song_offsets.desc",
-                                        () ->
-                                                Ui.tr(
-                                                        "nosclient.music.button.clear_n",
-                                                        c().songOffsets.size()),
-                                        "trash",
-                                        false,
-                                        () -> {
-                                            c().songOffsets.clear();
-                                            MusicSettings.save();
-                                            screen.rebuildSoon();
-                                        }))
-                        .add(
-                                new Ui.Button(
-                                        "nosclient.music.opt.refetch",
-                                        "nosclient.music.opt.refetch.desc",
-                                        () -> Ui.tr("nosclient.music.button.retry"),
-                                        "refresh",
-                                        false,
-                                        mm::refetch))
-                        .add(
-                                new Ui.Button(
-                                        "nosclient.music.opt.reconnect",
-                                        null,
-                                        () -> Ui.tr("nosclient.music.button.reconnect"),
-                                        "refresh",
-                                        false,
-                                        mm::reconnect)));
         l.add(new Ui.Section("nosclient.music.section.profiles"));
         l.add(
                 new Ui.Card()
@@ -1708,15 +1718,6 @@ final class Pages {
 
         l.add(
                 new Ui.Card()
-                        .add(
-                                new Ui.Toggle(
-                                        "nosclient.music.perf.auto",
-                                        "nosclient.music.perf.auto.desc",
-                                        () -> c().autoPerf,
-                                        v -> {
-                                            c().autoPerf = v;
-                                            AutoPerf.reset();
-                                        }))
                         .add(
                                 new Ui.Choice(
                                         "nosclient.music.perf.target",

@@ -1,4 +1,8 @@
-# QA Nos Client 0.4.0: nhạc, lời và bầu trời
+# QA Nos Client: nhạc, lời và bầu trời
+
+Báo cáo này lưu artifact 0.4.0 trước khi ưu tiên lyrics LF. Kết quả mới ở [QA lyrics LF](qa-lyricsflow.md).
+
+## Artifact 0.4.0 chạy Minecraft
 
 Ngày kiểm tra: 04/11/2026. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21, Linux.
 Jar: `nosclient-0.4.0.jar`.

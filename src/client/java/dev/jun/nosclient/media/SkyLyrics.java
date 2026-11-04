@@ -45,7 +45,7 @@ import java.util.List;
  */
 @Environment(EnvType.CLIENT)
 public final class SkyLyrics {
-    public static LyricsService service;
+    private static LyricsService service;
 
     /** Thời gian CPU vẽ lời nhạc (cộng dồn) — chỉ để probe đo chi phí khung hình. */
     public static long renderNanos;
@@ -111,7 +111,10 @@ public final class SkyLyrics {
     }
 
     private static void drawFrame(PoseStack matrices, MultiBufferSource buffers) {
-        if (matrices != null && presence > 0.01F && !shown.isEmpty()) {
+        if (MusicSettings.get().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY
+                && matrices != null
+                && presence > 0.01F
+                && !shown.isEmpty()) {
             long t0 = System.nanoTime();
             render(matrices, buffers);
             renderNanos += System.nanoTime() - t0;
@@ -135,7 +138,7 @@ public final class SkyLyrics {
         boolean active =
                 MusicSettings.get().enabled
                         && MusicSettings.get().showLyrics
-                        && MusicSettings.get().lyricsStyle == MusicConfig.LyricsStyle.SKY
+                        && MusicSettings.get().lyricsStyle == MusicConfig.LyricsStyle.NOS_SKY
                         && mc.level != null
                         && mc.level.dimensionType().skybox() == Skybox.OVERWORLD;
         String line = "";
