@@ -1,6 +1,6 @@
 # QA chữ lyrics và tiếng Việt
 
-Bản sửa trên nền 0.4.2, chưa phát hành. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21,
+Bản sửa trên nền 0.4.2, kiểm trước khi phát hành 0.4.3. Minecraft 1.21.11, Fabric Loader 0.19.5, Java 21,
 Linux; dữ liệu game, world, cấu hình, D-Bus và player giả đều được cô lập.
 
 ## Thay đổi

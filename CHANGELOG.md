@@ -1,6 +1,6 @@
 # Thay đổi
 
-## Chưa phát hành
+## 0.4.3
 
 - Giới hạn nền tô karaoke trong vùng lyrics, đặt lại chiều rộng tô khi đổi câu và giữ pill trong cửa sổ.
 - Chọn atlas Nos Celestial theo mật độ pixel thực tế cho lyrics Float/Sky; tăng độ phân giải các profile chữ lớn.

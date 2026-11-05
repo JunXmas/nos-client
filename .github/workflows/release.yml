@@ -42,4 +42,4 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" "nos-client-${GITHUB_REF_NAME#v}.jar" SHA256SUMS \
             --repo "${GITHUB_REPOSITORY}" --draft --title "Nos client ${GITHUB_REF_NAME}" \
-            --notes "Xem LICENSE — mã nguồn công khai để xem, không phải để sao chép/phân phối lại."
+            --notes-file docs/RELEASE_NOTES.md
