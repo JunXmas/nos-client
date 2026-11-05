@@ -20,6 +20,11 @@ Fabric API và Java 21.
 ## Sử dụng
 
 Nhấn **R-Shift** để mở hub, **U** để mở thẻ lời nhạc, **;** để mở trình phát.
+
+Trong trang Kiểu chữ, chọn **Be Vietnam Pro** để dùng bộ glyph tiếng Việt có sẵn. Chữ tổ hợp
+được chuẩn hóa trước khi vẽ. Lyrics Float/Sky chọn atlas mật độ cao cho chữ lớn, giữ nguyên
+cỡ chữ đã chọn; karaoke giới hạn phần tô và nội dung trong khung hiển thị.
+
 Các phím đều đổi được trong cài đặt. Phím nhạc không tác động khi đang nhập trong menu hoặc chat.
 Bật thẻ **Lời nhạc** rồi phát nhạc bằng ứng dụng hoặc trình duyệt.
 Mặc định mới và khi đặt lại là **Trên trời Nos**; lựa chọn đã lưu được giữ nguyên.

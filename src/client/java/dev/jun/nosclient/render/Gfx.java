@@ -1069,7 +1069,7 @@ public final class Gfx {
             Component c =
                     fontId != null && fontId.startsWith("ui_")
                             ? dev.jun.nosclient.Ui.uiText(s, fontId.startsWith("ui_bold"), raster)
-                            : Fonts.text(s, fontId);
+                            : Fonts.rasterText(s, fontId, raster);
             g.pose().pushMatrix();
             g.pose().translate(x, y + size * Fonts.yShift(fontId));
             g.pose().scale(k, k);
