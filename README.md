@@ -3,7 +3,7 @@
 Mod phía client của Nostalgia Launcher, dành cho Minecraft 1.21.11, Fabric Loader 0.19.3 trở lên,
 Fabric API và Java 21.
 
-## Bản 0.4.2
+## Bản 0.4.3
 
 - Một hub cài đặt chung cho HUD, bản đồ, lời nhạc, trình phát, bầu trời.
 - Đọc nhạc từ MPRIS trên Linux, SMTC trên Windows, Music/Spotify trên macOS và Spotify Web.
@@ -20,6 +20,11 @@ Fabric API và Java 21.
 ## Sử dụng
 
 Nhấn **R-Shift** để mở hub, **U** để mở thẻ lời nhạc, **;** để mở trình phát.
+
+Trong trang Kiểu chữ, chọn **Be Vietnam Pro** để dùng bộ glyph tiếng Việt có sẵn. Chữ tổ hợp
+được chuẩn hóa trước khi vẽ. Lyrics Float/Sky chọn atlas mật độ cao cho chữ lớn, giữ nguyên
+cỡ chữ đã chọn; karaoke giới hạn phần tô và nội dung trong khung hiển thị.
+
 Các phím đều đổi được trong cài đặt. Phím nhạc không tác động khi đang nhập trong menu hoặc chat.
 Bật thẻ **Lời nhạc** rồi phát nhạc bằng ứng dụng hoặc trình duyệt.
 Mặc định mới và khi đặt lại là **Trên trời Nos**; lựa chọn đã lưu được giữ nguyên.
@@ -37,7 +42,7 @@ khôi phục khi tắt hoặc rời thế giới. Tự điều chỉnh hiệu �
 python3 checks/localization.py
 ```
 
-Jar tại `build/libs/nosclient-0.4.2.jar`. Thả jar cùng Fabric API vào thư mục `mods/`.
+Jar tại `build/libs/nosclient-0.4.3.jar`. Thả jar cùng Fabric API vào thư mục `mods/`.
 Bộ kiểm trong `checks/` gồm kiểm descriptor mixin, biên dịch shader, môi trường MPRIS và chạy Minecraft
 thật với world/cấu hình riêng. Mod kiểm thử được đóng riêng bằng `./gradlew remapVerificationJar`;
 nó không nằm trong jar phát hành. Xem [hướng dẫn kiểm thử](checks/README.md) và

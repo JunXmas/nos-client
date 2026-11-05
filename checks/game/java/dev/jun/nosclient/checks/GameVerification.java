@@ -205,6 +205,11 @@ public final class GameVerification implements ClientModInitializer {
             case 11 -> "nos-sky";
             case 12 -> "lf-view-lock";
             case 13 -> "lf-clean-text";
+            case 14 -> "karaoke-vietnamese-small";
+            case 15 -> "karaoke-vietnamese-large";
+            case 16 -> "lf-float-vietnamese";
+            case 17 -> "lf-sky-celestial-dense";
+            case 18 -> "nos-sky-vietnamese";
             default -> "done";
         };
     }
@@ -307,6 +312,35 @@ public final class GameVerification implements ClientModInitializer {
             MusicSettings.get().textStyle = MusicConfig.TextStyle.CLEAN;
             MusicSettings.get().viewLock = false;
             MusicSettings.get().glow = false;
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 14) {
+            mc.options.hideGui = false;
+            mc.getWindow().setWindowed(960, 540);
+            MusicSettings.get().font = "be-vietnam";
+            MusicSettings.get().allCaps = false;
+            MusicSettings.get().topBarScale = 1.8F;
+            MusicSettings.get().topBarX = 1;
+            MusicSettings.get().topBarY = .72F;
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.SKY;
+            MusicSettings.get().textStyle = MusicConfig.TextStyle.CLEAN;
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 15) {
+            mc.getWindow().setWindowed(originalWidth, originalHeight);
+            MusicSettings.get().topBarX = 0;
+            MusicSettings.get().topBarScale = 1;
+        } else if (phase == count + panels.length + fonts.size() + 16) {
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.FLOATING;
+            MusicSettings.get().lyricsScale = 1.8F;
+            MusicSettings.get().textStyle = MusicConfig.TextStyle.NEON;
+            MusicSettings.get().glow = true;
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 17) {
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.SKY;
+            MusicSettings.get().font = "nos-celestial";
+            WorldLyrics.clear();
+        } else if (phase == count + panels.length + fonts.size() + 18) {
+            MusicSettings.get().lyricsStyle = MusicConfig.LyricsStyle.NOS_SKY;
+            MusicSettings.get().font = "be-vietnam";
             WorldLyrics.clear();
         } else {
             SceneConfig.INSTANCE.sky = false;

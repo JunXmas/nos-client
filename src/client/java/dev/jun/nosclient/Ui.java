@@ -67,7 +67,7 @@ public final class Ui {
         return st;
     }
 
-    private static MutableComponent fallback(MutableComponent text) {
+    public static MutableComponent fallback(MutableComponent text) {
         if (text.getString()
                 .codePoints()
                 .allMatch(cp -> Character.isWhitespace(cp) || FontCoverage.contains(cp))) {

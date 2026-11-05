@@ -29,7 +29,7 @@ XDG riêng; không đổi `HOME`. Nguồn nhạc giả chạy trên D-Bus riêng
 Fixture cố ý có cấu hình cosmetic LF cũ để kiểm chúng bị bỏ qua mà không ảnh hưởng nhạc/trời.
 Với `--fo`, mod/cấu hình FO được chép từ instance `optimized-1.21.11`.
 
-Mặc định kiểm 29 preset ngày/đêm, 23 font, 8 trang hub, trình phát, lời trôi nổi, nhân vật vanilla, cửa sổ nhỏ/lớn,
+Mặc định kiểm 29 preset ngày/đêm, 24 font, 8 trang hub, trình phát, lời trôi nổi, nhân vật vanilla, cửa sổ nhỏ/lớn,
 kéo ô karaoke, scale/opacity, bảo toàn mây/mưa và phím khi mở menu. Kiểm ba lựa chọn lyrics bằng
 click thật; các cảnh LF câu ghép cặp, LF rải từ, Nos riêng, khóa theo góc nhìn và chữ gọn xác nhận
 renderer đang chọn hoạt động và không vẽ chồng. Kiểm các điều khiển chính không trùng giữa các trang. Các trang hub được bấm/kéo thật;
@@ -41,7 +41,7 @@ Các biến tùy chọn:
 | --- | --- |
 | `NOS_DISABLE_IRIS=1` | Bỏ Iris khỏi bản sao FO |
 | `NOS_VERIFY_QUICK=true` | Bỏ vòng chụp 58 ảnh preset |
-| `NOS_JVM=-Dnos.verify.uiOnly=true` | Bỏ vòng 23 font |
+| `NOS_JVM=-Dnos.verify.uiOnly=true` | Bỏ vòng 24 font |
 | `NOS_SHADERPACK=/path/pack.zip` | Chép và bật shaderpack trong bản sao |
 | `NOS_SHADER_OPTIONS` | Nội dung tùy chọn shaderpack, mỗi dòng `key=value` |
 | `NOS_JAR=/path/mod.jar` | Chọn jar cần kiểm |
@@ -50,6 +50,10 @@ Các biến tùy chọn:
 `complete.txt` xác nhận các assertion đã qua. Thiếu marker hoặc có `failed.txt` là thất bại. Kết quả
 còn có ảnh framebuffer, log, SHA-256 jar và cấu hình/options trước/sau. Nếu JVM dừng bất ngờ, kiểm thêm
 mã thoát, `crash-reports`, `hs_err_pid*.log` và nhật ký OOM của máy.
+
+Dữ liệu mẫu có câu dài và tiếng Việt dạng NFC/NFD. Các cảnh bổ sung chụp pill karaoke ở
+960×540 với scale 1,8, cạnh trái/phải cửa sổ, Float/Sky mật độ cao và font Be Vietnam Pro.
+Ảnh framebuffer cần được xem trực tiếp; marker không tự chứng minh chữ đẹp hoặc sắc nét.
 
 ## So FPS
 

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sys
+import unicodedata
 from pathlib import Path
 
 directory = Path(sys.argv[1])
@@ -18,7 +19,12 @@ data = {"synced": True, "source": "verification fixture", "duration": 3600000, "
 lrc = []
 for index in range(300):
     start = index * 4000
-    text = "Nostalgia music under aurora" if index % 2 == 0 else "Âm nhạc Nostalgia dưới bầu trời"
+    text = (
+        "Risk it all for you",
+        "Âm nhạc Nostalgia dưới bầu trời",
+        "Giữ những kỷ niệm tuổi thơ, cùng lắng nghe giai điệu dưới bầu trời đêm đầy ánh sáng và những vì sao xa",
+        unicodedata.normalize("NFD", "Tiếng Việt: đường về nhà, ước mơ và những ký ức dịu dàng"),
+    )[index % 4]
     words = text.split()
     data["starts"].append(start)
     data["ends"].append(start + 3900)

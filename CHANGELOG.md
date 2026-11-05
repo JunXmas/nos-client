@@ -1,5 +1,12 @@
 # Thay đổi
 
+## 0.4.3
+
+- Giới hạn nền tô karaoke trong vùng lyrics, đặt lại chiều rộng tô khi đổi câu và giữ pill trong cửa sổ.
+- Chọn atlas Nos Celestial theo mật độ pixel thực tế cho lyrics Float/Sky; tăng độ phân giải các profile chữ lớn.
+- Thêm Be Vietnam Pro dùng bộ font OFL có sẵn, hỗ trợ đầy đủ dấu tiếng Việt và chuẩn hóa chữ tổ hợp NFC.
+- Bổ sung kiểm tra glyph tiếng Việt và các cảnh game với lời dài, chữ tổ hợp, pill lớn và cửa sổ nhỏ.
+
 ## 0.4.2
 
 - Dùng lyrics trên trời Nos và font Nos Celestial làm mặc định cho cấu hình mới và khi đặt lại.

@@ -497,7 +497,10 @@ public final class WorldLyrics {
                                         word = part;
                                     }
 
-                                    neon3d(wm, word, font, th, alpha, glow, buffers, mode);
+                                    double distance = Math.sqrt(vx * vx + vy * vy + vz * vz);
+                                    double raster = k * Proj.focal() * mc.getWindow().getGuiScale()
+                                            / Math.max(0.1, distance);
+                                    neon3d(wm, word, font, raster, th, alpha, glow, buffers, mode);
                                     ps.popPose();
                                 }
                             }
@@ -522,6 +525,7 @@ public final class WorldLyrics {
             Matrix4f m,
             String s,
             String font,
+            double raster,
             Themes.Theme th,
             float alpha,
             float glow,
@@ -529,7 +533,7 @@ public final class WorldLyrics {
             DisplayMode mode) {
         Font f = Minecraft.getInstance().font;
         layer = 0;
-        Component comp = Fonts.text(s, font);
+        Component comp = Fonts.rasterText(s, font, raster);
         float h = Fonts.height(font);
         float w = Fonts.unitWidth(s, font, f) * h;
         float x = -w / 2.0F;

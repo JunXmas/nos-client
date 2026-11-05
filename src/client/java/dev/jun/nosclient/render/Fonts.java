@@ -1,6 +1,8 @@
 package dev.jun.nosclient.render;
 
 import dev.jun.nosclient.ClientResources;
+import dev.jun.nosclient.Ui;
+import dev.jun.nosclient.typography.Typography;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -10,6 +12,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +23,7 @@ public final class Fonts {
     public static final List<Fonts.LyricFont> LYRICS =
             List.of(
                     new Fonts.LyricFont("nos-celestial", "Nos Celestial"),
+                    new Fonts.LyricFont("be-vietnam", "Be Vietnam Pro"),
                     new Fonts.LyricFont("outfit", "Outfit"),
                     new Fonts.LyricFont("syne", "Syne"),
                     new Fonts.LyricFont("nosclient_script", "Nos Client Script"),
@@ -55,6 +59,7 @@ public final class Fonts {
     private static final Map<String, Float> SHIFT =
             Map.ofEntries(
                     Map.entry("alexbrush", 0.35F),
+                    Map.entry("be-vietnam", 0.36F),
                     Map.entry("allura", 0.285F),
                     Map.entry("courgette", 0.379F),
                     Map.entry("damion", 0.326F),
@@ -104,6 +109,7 @@ public final class Fonts {
     }
 
     public static MutableComponent text(String s, String fontId) {
+        s = Normalizer.normalize(s, Normalizer.Form.NFC);
         if (fontId != null && fontId.startsWith("ui_")) {
             return dev.jun.nosclient.Ui.uiText(
                     s,
@@ -122,6 +128,21 @@ public final class Fonts {
         }
 
         return c;
+    }
+
+    /** Chọn atlas theo mật độ pixel; giữ nguyên kích thước và metrics của font đang chọn. */
+    public static MutableComponent rasterText(String s, String fontId, double pixelsPerUnit) {
+        if ("nos-celestial".equals(fontId)) {
+            int density = Typography.WORLD_DENSITIES[Typography.worldDensityIndex(pixelsPerUnit)];
+            return Ui.fallback(text(s, "sky_" + density));
+        }
+        if (fontId == null || fontId.equals("minecraft") || fontId.startsWith("custom_")) {
+            return text(s, fontId);
+        }
+        for (LyricFont choice : LYRICS) {
+            if (choice.id.equals(fontId)) return text(s, fontId + "_lyrics");
+        }
+        return text(s, fontId);
     }
 
     public static float unitWidth(String s, String fontId, Font font) {

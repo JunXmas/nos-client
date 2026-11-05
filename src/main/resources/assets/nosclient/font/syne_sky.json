@@ -4,7 +4,7 @@
       "type": "ttf",
       "file": "nosclient:ttf/syne.ttf",
       "size": 8,
-      "oversample": 8,
+      "oversample": 16,
       "shift": [
         0,
         0
@@ -14,7 +14,7 @@
       "type": "ttf",
       "file": "nosclient:ttf/arabic.ttf",
       "size": 8,
-      "oversample": 8,
+      "oversample": 16,
       "shift": [
         0,
         0

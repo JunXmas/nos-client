@@ -1,0 +1,22 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "nosclient:be-vietnam-semibold.ttf",
+      "size": 8,
+      "oversample": 16,
+      "shift": [
+        0,
+        0
+      ]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/default"
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/unifont"
+    }
+  ]
+}

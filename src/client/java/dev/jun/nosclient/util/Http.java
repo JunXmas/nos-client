@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
 
 public final class Http {
     public static final String USER_AGENT =
-            "NosClient/0.4.2 (https://github.com/JunXmas/nos-client)";
+            "NosClient/0.4.3 (https://github.com/JunXmas/nos-client)";
     private static final HttpClient CLIENT =
             HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(4L))

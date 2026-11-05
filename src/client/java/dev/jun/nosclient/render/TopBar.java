@@ -152,6 +152,7 @@ public final class TopBar {
                 swap = 0.0F;
                 if (showLyrics) {
                     scroll = 0.0F;
+                    hlW = 0.0F;
                 }
             }
 
@@ -165,7 +166,9 @@ public final class TopBar {
             float maxText = Math.min(330.0F * k, g.guiWidth() * 0.62F);
             float targetW = iconW + Math.min(textW, maxText) + barsW + pad * 2.0F;
             targetW = Math.max(targetW, 150.0F * k);
-            width = Anim.approach(width, targetW, 8.0F);
+            float available = Math.max(1, g.guiWidth() - 4.0F);
+            targetW = Math.min(targetW, available);
+            width = Math.min(available, Anim.approach(width, targetW, 8.0F));
             float x = c.topBarX * g.guiWidth() - width / 2.0F;
             float y = c.topBarY * g.guiHeight() + (1.0F - Anim.easeOutCubic(vis)) * -10.0F;
             x = Math.max(2.0F, Math.min(g.guiWidth() - width - 2.0F, x));
@@ -263,7 +266,7 @@ public final class TopBar {
             }
 
             float tx = x + iconW + 2.0F * k;
-            float tw = width - iconW - barsW - pad - 2.0F * k;
+            float tw = Math.max(0, width - iconW - barsW - pad - 2.0F * k);
             int sx0 = (int) Math.floor(tx);
             int sx1 = (int) Math.ceil(tx + tw);
             g.enableScissor(sx0, (int) y, sx1, (int) Math.ceil(y + h));
@@ -390,7 +393,11 @@ public final class TopBar {
             hlX = Anim.approach(hlX, targetX, 16.0F);
             hlW = Anim.approach(hlW, targetW, 16.0F);
             float bh = ts + 2.6F;
-            Gfx.round(g, ox + hlX, ty - 1.3F, hlW, bh, 3.0F, Col.alpha(accent, a * 0.95F));
+            float left = Math.max(tx, ox + hlX);
+            float right = Math.min(tx + tw, ox + hlX + hlW);
+            if (right > left) {
+                Gfx.round(g, left, ty - 1.3F, right - left, bh, 3.0F, Col.alpha(accent, a * 0.95F));
+            }
         }
 
         for (int i = 0; i < words.size(); i++) {
