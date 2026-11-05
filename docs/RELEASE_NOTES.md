@@ -9,5 +9,6 @@ Dành cho Minecraft **1.21.11**, Fabric Loader **0.19.3+**, Fabric API và Java 
 Launcher tự tải bản tương thích khi bật Nos hoặc bấm Chơi; có thể cài thủ công jar vào `mods/`.
 
 Đã kiểm build, 75 JUnit, dịch tiếng Việt/Anh, shader core và Minecraft thực tế với bộ FO
-không Iris, gồm 24 font và các cảnh karaoke/Float/Sky. Lượt Iris cùng Complementary chưa
-hoàn tất; không khẳng định tương thích mọi shaderpack. Chi tiết: `docs/qa-lyrics-sharpness.md`.
+không Iris, gồm 24 font và các cảnh karaoke/Float/Sky. Lượt bổ sung với Iris cùng
+Complementary Reimagined r5.9.3 ở mức POTATO cũng hoàn tất. Không suy ra tương thích
+mọi shaderpack. Chi tiết: `docs/qa-lyrics-sharpness.md`.

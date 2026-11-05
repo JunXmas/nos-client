@@ -24,10 +24,14 @@ Linux; dữ liệu game, world, cấu hình, D-Bus và player giả đều đư�
 | Game FO, bỏ Iris | Hoàn tất 24 font, 8 trang hub, input/HUD/mây/mưa và các cảnh lyrics |
 | Ảnh framebuffer | Đã xem Float/Sky, dấu tiếng Việt và karaoke 960×540 scale 1,8; không thấy phần tô tràn vùng lyrics |
 | Iris + Complementary Reimagined r5.9.3 | Không hoàn tất: JVM dừng với mã 143, không có marker complete; chưa xác định nguyên nhân |
+| Bổ sung: 0.4.3 + Iris + Complementary POTATO | Đạt marker complete: 8 hub, input/HUD/mây/mưa và các cảnh karaoke/Float/Sky; ảnh đã xem |
 
 Lượt FO dùng llvmpipe; FPS trong ảnh không đại diện hiệu năng GPU của người chơi. Không
 suy ra tương thích mọi shaderpack hoặc mọi cấu hình từ các kết quả này. Lượt kiểm nhanh
 bỏ 58 cảnh preset bầu trời; phần sửa không thay shader hoặc preset.
+Lượt Iris bổ sung bỏ vòng font (đã kiểm 24 font riêng với FO không Iris), dùng profile
+POTATO từ shaderpack, cửa sổ 1280×720 và 960×540. Renderer/tài nguyên font của jar 0.4.3
+trùng từng byte với artifact QA 0.4.2 dưới đây; bump chỉ đổi metadata và chuỗi phiên bản.
 
 Artifact QA `nosclient-0.4.2.jar` có SHA-256:
 `33dda27e77531dc48b0db1cb4849e7f1036d9a4e8045a8b6e7af9d7d8acf219e`.
