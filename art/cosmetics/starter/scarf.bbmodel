@@ -1,0 +1,253 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "free",
+  "box_uv": false
+ },
+ "name": "scarf",
+ "resolution": {
+  "width": 64,
+  "height": 64
+ },
+ "elements": [
+  {
+   "uuid": "scarf-c0",
+   "type": "cube",
+   "name": "wool",
+   "from": [
+    -4.45,
+    21.4,
+    -2.45
+   ],
+   "to": [
+    4.45,
+    24.4,
+    2.45
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      9,
+      3
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      9,
+      3
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      5,
+      3
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      5,
+      3
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      9,
+      5
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      9,
+      5
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "scarf-c1",
+   "type": "cube",
+   "name": "wool",
+   "from": [
+    -3.2,
+    14.6,
+    -2.95
+   ],
+   "to": [
+    -0.9,
+    21.4,
+    -2.45
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      7
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      7
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      7
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      7
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "scarf-c2",
+   "type": "cube",
+   "name": "wool",
+   "from": [
+    -0.9,
+    16.4,
+    -2.85
+   ],
+   "to": [
+    0.9,
+    21.4,
+    -2.45
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      5
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      5
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      5
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      5
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  }
+ ],
+ "outliner": [
+  "scarf-c0",
+  "scarf-c1",
+  "scarf-c2"
+ ],
+ "textures": [
+  {
+   "name": "scarf.png",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC6UlEQVR4nO3XO24jRxDG8X9X9zwoPsSlCFsLOXPk3HsBn8I+gn1PBw423cDAGnawFiVR1Isi59Fd7UCDvYAMCCTql00wQHX1dH817o8PH3KXM6Vz1CI8pkSjSjE8VyLsValFALjrezpVau/JwE8fPzoOmOxUGXtPcI7HlIg5E5yjUSXmzKptqUW46Tp6VU5DYBICtQhT79+6/leTJiW2KbHue6beM/WeeQgIoMCiKLjtewBiztz2/UuzYiS4g958AOS8qoiqnBUFdzGyU+U+RgoRBNjEiAcK5yhFOC9LWlW+LcuvjTlk7vOn3/Oortjt9lxcvGd1dUPWzHg8Yjad8rTd8vS05buL92TAOcd6fUtd1zRNy8X3Px70ZyCjuubsbMF8fsrd3QOalNGooiwLbta3jMcn+OHC69oOcY7JZMx2+8xsNnnr+l8tXP78K5fOse46zsuSq66jFGHsPY0q1yJ45/g7RjpVpiHQ50wtwp8xvnX9ryaNKgJMvCcOC9ursk+JExFSzmRAc355AehUqZwjqr5l7f+LEIeFNaookIB5CFQiNKp4oB8isRDhKSXgJSHcEaRAmIZAp0oGpsNZ36vSqELO3KfESIRShHkIPMTINAQa1aOIQRe3/+QUI49PW56fd1RVxeLdKevNHcvFO1Qz4oXL1TVehKIIXy/Bk5MRs29+OOguhOvrNX3fszxb0LYds9mEL/+uUFW+NC3L5YLN9T3L5YLV1Q0ijs3mnpwzaTgOhyysfvmNVpW/hjH3U9eRAXGO0jkunaNV5TMvk+DEe3aqzENgewwNeIiRyjkm3vMYIyPvX36AUmI83Akn3uOATd+TgLH3PKdEfwQpILUIkxBIOTMLgdI59ikxDQE/zPwOeIyReVFQOkfhHJUIpyG8df2vFlpVNGfaIQafUyLnjE+J/bDDfc6MvedmGJJSzpyGwP0RDELGGGOMMcYYY4wxxhhjjDHGGGOMMcYYY4wxxhhjjDk+/wF4wXQNJ4uAxQAAAABJRU5ErkJggg=="
+  }
+ ]
+}

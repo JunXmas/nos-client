@@ -1,0 +1,775 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "free",
+  "box_uv": false
+ },
+ "name": "fox_ears",
+ "resolution": {
+  "width": 64,
+  "height": 64
+ },
+ "elements": [
+  {
+   "uuid": "fox_ears-c0",
+   "type": "cube",
+   "name": "fur",
+   "from": [
+    -4.3,
+    32,
+    -0.9
+   ],
+   "to": [
+    -0.9,
+    34.2,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c1",
+   "type": "cube",
+   "name": "fur",
+   "from": [
+    -3.8,
+    34.2,
+    -0.9
+   ],
+   "to": [
+    -1.4,
+    35.8,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c2",
+   "type": "cube",
+   "name": "tip",
+   "from": [
+    -3.3,
+    35.8,
+    -0.9
+   ],
+   "to": [
+    -1.9,
+    37.2,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      34,
+      1
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      34,
+      1
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      33,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      33,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c3",
+   "type": "cube",
+   "name": "inner",
+   "from": [
+    -3.6,
+    32.4,
+    -1.05
+   ],
+   "to": [
+    -1.6,
+    35.2,
+    -0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      16,
+      0,
+      18,
+      3
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      18,
+      3
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      16,
+      0,
+      17,
+      3
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      0,
+      17,
+      3
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      0,
+      18,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      16,
+      0,
+      18,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c4",
+   "type": "cube",
+   "name": "fur",
+   "from": [
+    0.9,
+    32,
+    -0.9
+   ],
+   "to": [
+    4.3,
+    34.2,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      3,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c5",
+   "type": "cube",
+   "name": "fur",
+   "from": [
+    1.4,
+    34.2,
+    -0.9
+   ],
+   "to": [
+    3.8,
+    35.8,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c6",
+   "type": "cube",
+   "name": "tip",
+   "from": [
+    1.9,
+    35.8,
+    -0.9
+   ],
+   "to": [
+    3.3,
+    37.2,
+    0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      34,
+      1
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      34,
+      1
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      33,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      33,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "fox_ears-c7",
+   "type": "cube",
+   "name": "inner",
+   "from": [
+    1.6,
+    32.4,
+    -1.05
+   ],
+   "to": [
+    3.6,
+    35.2,
+    -0.9
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      16,
+      0,
+      18,
+      3
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      18,
+      3
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      16,
+      0,
+      17,
+      3
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      0,
+      17,
+      3
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      0,
+      18,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      16,
+      0,
+      18,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  }
+ ],
+ "outliner": [
+  {
+   "uuid": "fox_ears-g0",
+   "name": "ear_right",
+   "origin": [
+    -2.6,
+    32,
+    0
+   ],
+   "rotation": [
+    0,
+    0,
+    14
+   ],
+   "children": [
+    "fox_ears-c0",
+    "fox_ears-c1",
+    "fox_ears-c2",
+    "fox_ears-c3"
+   ]
+  },
+  {
+   "uuid": "fox_ears-g2",
+   "name": "ear_left",
+   "origin": [
+    2.6,
+    32,
+    0
+   ],
+   "rotation": [
+    0,
+    0,
+    -14
+   ],
+   "children": [
+    "fox_ears-c4",
+    "fox_ears-c5",
+    "fox_ears-c6",
+    "fox_ears-c7"
+   ]
+  }
+ ],
+ "textures": [
+  {
+   "name": "fox_ears.png",
+   "source": "data:image/png;base64,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"
+  }
+ ],
+ "animations": [
+  {
+   "name": "idle",
+   "loop": "loop",
+   "length": 3.0,
+   "animators": {
+    "fox_ears-g0": {
+     "keyframes": [
+      {
+       "channel": "rotation",
+       "time": 0,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 2.6,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 2.75,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": -14
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 3.0,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      }
+     ]
+    },
+    "fox_ears-g2": {
+     "keyframes": [
+      {
+       "channel": "rotation",
+       "time": 0,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 2.6,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 2.75,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 14
+        }
+       ]
+      },
+      {
+       "channel": "rotation",
+       "time": 3.0,
+       "data_points": [
+        {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+[
+ {
+  "key": "cap",
+  "name": "Mũ lưỡi trai",
+  "slot": "head"
+ },
+ {
+  "key": "shades",
+  "name": "Kính râm pixel",
+  "slot": "face"
+ },
+ {
+  "key": "fox_ears",
+  "name": "Tai cáo",
+  "slot": "head"
+ },
+ {
+  "key": "crown",
+  "name": "Vương miện",
+  "slot": "head"
+ },
+ {
+  "key": "halo",
+  "name": "Hào quang",
+  "slot": "head"
+ },
+ {
+  "key": "scarf",
+  "name": "Khăn len",
+  "slot": "neck"
+ },
+ {
+  "key": "backpack",
+  "name": "Balo phiêu lưu",
+  "slot": "back"
+ },
+ {
+  "key": "pixel_wings",
+  "name": "Cánh pixel",
+  "slot": "back"
+ }
+]

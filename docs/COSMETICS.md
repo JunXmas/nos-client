@@ -19,3 +19,16 @@ The showroom uses a dedicated cutout shader with neutral colors, no scene fog or
 Build with JDK21: `./gradlew build`. The normal `nosclient-0.2.0.jar` is remapped for Fabric/intermediary; sources are also built. Do not ship the development probe or `run/` files.
 
 JVM tests cover delivered triangle budgets (Angel904 / Red demon676), finite UV/rig data, cycle repetition after hours, immutable deferred snapshots, invalid rig cycles and the emitted Minecraft coordinate/normal transform. Native verification and artifact hashes are recorded with the delivered build. Scope is the reference cosmetics and supported Minecraft version; other shader mods/armor animations still require compatibility testing.
+
+## Blockbench → Nos
+
+`tools/bbmodel_to_nos.py <file.bbmodel> <slot> <namespace:textures/...png> <out.json> [out.png]` chuyển một
+Generic Model của Blockbench sang rig `CosmeticMesh` (format 1). Đơn vị pixel (16 = 1 block), gốc ở chân,
+Y lên, mặt nhân vật về -Z. Group là xương, xoay theo thứ tự ZYX như Blockbench; hoạt ảnh xoay của group
+(animation đầu tiên) lấy mẫu 60 hình/giây. Một texture, nhúng trong file. Gác bởi `BlockbenchImportTest`
+(so với JOML `rotateZYX`).
+
+Bộ khởi đầu (`tools/cosmetic_starter.py`): 8 món mũ lưỡi trai, kính râm, tai cáo, vương miện, hào quang,
+khăn len, balo, cánh pixel. Nguồn Blockbench ở `art/cosmetics/starter/*.bbmodel` (mở bằng Blockbench để
+sửa, rồi chạy lại công cụ chuyển). Không có áo choàng: Minecraft Usage Guidelines cấm bán áo choàng.
+Ảnh duyệt: `tools/render_cosmetics.py` (không thay ảnh trong game), `docs/shots/cosmetic-starter/`.

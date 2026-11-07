@@ -1,0 +1,1485 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "free",
+  "box_uv": false
+ },
+ "name": "crown",
+ "resolution": {
+  "width": 64,
+  "height": 64
+ },
+ "elements": [
+  {
+   "uuid": "crown-c0",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    32,
+    -4.75
+   ],
+   "to": [
+    4.75,
+    33.6,
+    -4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      10,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      10,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      10,
+      1
+     ],
+     "texture": null
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      10,
+      1
+     ],
+     "texture": null
+    }
+   }
+  },
+  {
+   "uuid": "crown-c1",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    32,
+    4.25
+   ],
+   "to": [
+    4.75,
+    33.6,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      10,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      10,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      10,
+      1
+     ],
+     "texture": null
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      10,
+      1
+     ],
+     "texture": null
+    }
+   }
+  },
+  {
+   "uuid": "crown-c2",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    32,
+    -4.25
+   ],
+   "to": [
+    -4.25,
+    33.6,
+    4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      8,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      8,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      8
+     ],
+     "texture": null
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      8
+     ],
+     "texture": null
+    }
+   }
+  },
+  {
+   "uuid": "crown-c3",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    4.25,
+    32,
+    -4.25
+   ],
+   "to": [
+    4.75,
+    33.6,
+    4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      8,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      8,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      8
+     ],
+     "texture": null
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      8
+     ],
+     "texture": null
+    }
+   }
+  },
+  {
+   "uuid": "crown-c4",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    33.6,
+    -4.75
+   ],
+   "to": [
+    -3.25,
+    35.2,
+    -4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c5",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    33.6,
+    4.25
+   ],
+   "to": [
+    -3.25,
+    35.2,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c6",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -0.75,
+    33.6,
+    -4.75
+   ],
+   "to": [
+    0.75,
+    35.2,
+    -4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c7",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -0.75,
+    33.6,
+    4.25
+   ],
+   "to": [
+    0.75,
+    35.2,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c8",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    3.25,
+    33.6,
+    -4.75
+   ],
+   "to": [
+    4.75,
+    35.2,
+    -4.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c9",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    3.25,
+    33.6,
+    4.25
+   ],
+   "to": [
+    4.75,
+    35.2,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c10",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    33.6,
+    -4.75
+   ],
+   "to": [
+    -4.25,
+    35.2,
+    -3.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c11",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    4.25,
+    33.6,
+    -4.75
+   ],
+   "to": [
+    4.75,
+    35.2,
+    -3.25
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c12",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    33.6,
+    -0.75
+   ],
+   "to": [
+    -4.25,
+    35.2,
+    0.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c13",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    4.25,
+    33.6,
+    -0.75
+   ],
+   "to": [
+    4.75,
+    35.2,
+    0.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c14",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    -4.75,
+    33.6,
+    3.25
+   ],
+   "to": [
+    -4.25,
+    35.2,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c15",
+   "type": "cube",
+   "name": "gold",
+   "from": [
+    4.25,
+    33.6,
+    3.25
+   ],
+   "to": [
+    4.75,
+    35.2,
+    4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      1,
+      2
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c16",
+   "type": "cube",
+   "name": "gem",
+   "from": [
+    -0.7,
+    32.3,
+    -5.05
+   ],
+   "to": [
+    0.7,
+    33.3,
+    -4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      16,
+      0,
+      17,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c17",
+   "type": "cube",
+   "name": "blue",
+   "from": [
+    -3.4,
+    32.5,
+    -4.95
+   ],
+   "to": [
+    -2.4,
+    33.1,
+    -4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  },
+  {
+   "uuid": "crown-c18",
+   "type": "cube",
+   "name": "blue",
+   "from": [
+    2.4,
+    32.5,
+    -4.95
+   ],
+   "to": [
+    3.4,
+    33.1,
+    -4.75
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      33,
+      1
+     ],
+     "texture": 0
+    }
+   }
+  }
+ ],
+ "outliner": [
+  "crown-c0",
+  "crown-c1",
+  "crown-c2",
+  "crown-c3",
+  "crown-c4",
+  "crown-c5",
+  "crown-c6",
+  "crown-c7",
+  "crown-c8",
+  "crown-c9",
+  "crown-c10",
+  "crown-c11",
+  "crown-c12",
+  "crown-c13",
+  "crown-c14",
+  "crown-c15",
+  "crown-c16",
+  "crown-c17",
+  "crown-c18"
+ ],
+ "textures": [
+  {
+   "name": "crown.png",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADPElEQVR4nO3XT27jNhTH8S8fSUmWbflf4jSYQS/SdQ8zB+gleoxue4EueoQCvUEX7aRF7IntOLZliSLZhQO0QFNnMQMEBvhZCaDwwB8hPT2pxU/fRFFgtOJ+3fLVNGO79xSZUBYCQAhQtx6rhYet43aWsas9vVwYfphyzo9Pd2fXv//ul7Prq19/Prv+2w/fqrM3vEKGpWbz1LGrPV/fFNyvHEUm9Huaza5jsXYs1i0hwMPW0fnIx0XDsDS0Lp4t/lr417wW/kswj7sOJeB9pPOR0UATY2Sxamlc4PYqxxqF6yJV37BYtQxKzadHR5H9/+FfQngAM+xrciss1i0Pj47MKDJ7egJChOW6JUTQAjHCbGTxIeJ9pF+YF4teSngAc79yTIaGSWXY14Fefnr0M6uYTyxKQecjrYuInK6fDv50COG/BS8pPICZVQYtimMDPkTWT44QYVhaRBR149k8dfDcKH2A+diyP3rqxjP8V7FLCw8gxzbwcdlQ5MJ8kuG6yNXY0vnA3bLhcAyIKKrSMB4YMqPQohj0NJ3/pwleYngA47rIzSTjUHt2tUcpWK4dvVwIIVIWgusidePxQRiWGvccvOqfesClhgeQIhM2u45+qbm9yjBaUfU1mRWux5b1tqPIhNZFBqXm2Ab2tSfEiOKywwNIWWh6uWC1wmjFbGTZ1wFrFLvaczW23K9a5lPLoT71g35PEwJsD/5NN/8lmN/vjwxLza72dD6iRVEWghaYVpa7ZUOv0GhRdAGuJxlNG/Ahsq8v/wDk/TzncAxs956qNIgCpaBuAk8HjzGKXi789dBSlZpPG4dS4LrIsNRvvf/PJs5F3s9zrFZ0/jTtWX2a8AalpsiEfe25GllQzwMRMBkaRoOXB6FLYhoXOLaB2diyXDti1Cw2Di2KGOHYBCaVZblx9HuaaWV5eHSEUvO47956/59NRBQxRv5cNpSFoJSi6htmI0NZCDfTjPXW8e46QwEikGeC1ooiv/xXwPQLoXUKEUXrAkpBVWrulg15dvodfned88ei4fr5i2C0YE2kdS/MwkmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJG/sbwY7iqWBb2hQAAAAAElFTkSuQmCC"
+  }
+ ]
+}
